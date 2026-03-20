@@ -150,7 +150,6 @@ export default function StandingsTab({ tournamentId }: Props) {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-16">#</TableHead>
-                    <TableHead>Jogador</TableHead>
                     <TableHead>Nick</TableHead>
                     <TableHead className="text-right">Pts Jogo</TableHead>
                     <TableHead className="text-right">Pts Mesa</TableHead>

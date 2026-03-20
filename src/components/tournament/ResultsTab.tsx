@@ -99,7 +99,7 @@ export default function ResultsTab({ tournamentId }: Props) {
                 <SelectTrigger><SelectValue placeholder="Selecione o jogador" /></SelectTrigger>
                 <SelectContent>
                   {players.map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.nome_completo}{p.nick_playroom ? ` (${p.nick_playroom})` : ""}</SelectItem>
+                    <SelectItem key={p.id} value={p.id}>{p.nick_playroom || p.nome_completo}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

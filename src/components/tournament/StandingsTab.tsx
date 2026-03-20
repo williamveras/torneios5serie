@@ -150,7 +150,6 @@ export default function StandingsTab({ tournamentId }: Props) {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-16">#</TableHead>
-                    <TableHead>Jogador</TableHead>
                     <TableHead>Nick</TableHead>
                     <TableHead className="text-right">Pts Jogo</TableHead>
                     <TableHead className="text-right">Pts Mesa</TableHead>
@@ -159,10 +158,9 @@ export default function StandingsTab({ tournamentId }: Props) {
                 </TableHeader>
                 <TableBody>
                   {standings.map(s => (
-                    <TableRow key={s.playerName + s.position} className={s.hasPenalty ? "bg-destructive/5" : ""}>
+                    <TableRow key={s.nick + s.position} className={s.hasPenalty ? "bg-destructive/5" : ""}>
                       <TableCell className="font-bold tabular-nums">{s.position}º</TableCell>
-                      <TableCell className="font-medium">{s.playerName}</TableCell>
-                      <TableCell>{s.nick || "—"}</TableCell>
+                      <TableCell className="font-medium">{s.nick || s.playerName}</TableCell>
                       <TableCell className="text-right tabular-nums">{s.pontosJogo}</TableCell>
                       <TableCell className="text-right tabular-nums">{s.pontosMesa}</TableCell>
                       <TableCell className={s.hasPenalty ? "text-destructive" : "text-muted-foreground"}>{s.penalidades}</TableCell>
@@ -184,7 +182,7 @@ export default function StandingsTab({ tournamentId }: Props) {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Jogador</TableHead>
+                            <TableHead>Nick</TableHead>
                             <TableHead>Grupo</TableHead>
                             <TableHead className="text-right">Pts Jogo</TableHead>
                             <TableHead className="text-right">Pts Mesa</TableHead>
@@ -195,7 +193,7 @@ export default function StandingsTab({ tournamentId }: Props) {
                         <TableBody>
                           {roundResults.map(r => (
                             <TableRow key={r.id}>
-                              <TableCell className="font-medium">{getPlayerName(r.player_id)}</TableCell>
+                              <TableCell className="font-medium">{getPlayerNick(r.player_id) || getPlayerName(r.player_id)}</TableCell>
                               <TableCell>{r.grupo}</TableCell>
                               <TableCell className="text-right tabular-nums">{r.pontos_jogo}</TableCell>
                               <TableCell className="text-right tabular-nums">{r.pontos_mesa}</TableCell>

@@ -60,6 +60,7 @@ export default function ResultsTab({ tournamentId }: Props) {
       pontos_jogo: parseInt(r.pontos_jogo),
       pontos_mesa: parseInt(r.pontos_mesa),
       penalidades: r.penalidades.trim() || "Sem penalidades",
+      registered_by: user?.id || null,
     }));
 
     const { error } = await supabase.from("match_results").insert(toInsert);

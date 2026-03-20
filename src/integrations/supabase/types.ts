@@ -23,6 +23,7 @@ export type Database = {
           player_id: string
           pontos_jogo: number
           pontos_mesa: number
+          registered_by: string | null
           rodada: number
           tournament_id: string
         }
@@ -34,6 +35,7 @@ export type Database = {
           player_id: string
           pontos_jogo?: number
           pontos_mesa?: number
+          registered_by?: string | null
           rodada: number
           tournament_id: string
         }
@@ -45,6 +47,7 @@ export type Database = {
           player_id?: string
           pontos_jogo?: number
           pontos_mesa?: number
+          registered_by?: string | null
           rodada?: number
           tournament_id?: string
         }
@@ -105,6 +108,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       tournaments: {
         Row: {

@@ -10,6 +10,7 @@ import { Trophy } from "lucide-react";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
+  const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,10 +28,11 @@ export default function Auth() {
         navigate("/");
       }
     } else {
-      const { error } = await supabase.auth.signUp({ email, password });
+      const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) {
         toast.error(error.message);
-      } else {
+      } else if (data.user) {
+        await supabase.from("profiles").insert({ user_id: data.user.id, nome: nome.trim() });
         toast.success("Conta criada! Verifique seu email para confirmar.");
       }
     }
@@ -48,6 +50,12 @@ export default function Auth() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {!isLogin && (
+              <div className="space-y-2">
+                <Label htmlFor="nome">Nome</Label>
+                <Input id="nome" value={nome} onChange={e => setNome(e.target.value)} required={!isLogin} placeholder="Seu nome completo" />
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="seu@email.com" />

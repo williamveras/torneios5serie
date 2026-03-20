@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +25,7 @@ const emptyResult = (): PlayerResult => ({ player_id: "", pontos_jogo: "", ponto
 interface Props { tournamentId: string; }
 
 export default function ResultsTab({ tournamentId }: Props) {
+  const { user } = useAuth();
   const [players, setPlayers] = useState<Player[]>([]);
   const [grupo, setGrupo] = useState("");
   const [rodada, setRodada] = useState("");
@@ -58,6 +60,7 @@ export default function ResultsTab({ tournamentId }: Props) {
       pontos_jogo: parseInt(r.pontos_jogo),
       pontos_mesa: parseInt(r.pontos_mesa),
       penalidades: r.penalidades.trim() || "Sem penalidades",
+      registered_by: user?.id || null,
     }));
 
     const { error } = await supabase.from("match_results").insert(toInsert);

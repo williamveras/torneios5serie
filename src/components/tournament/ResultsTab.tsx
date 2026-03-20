@@ -25,6 +25,7 @@ const emptyResult = (): PlayerResult => ({ player_id: "", pontos_jogo: "", ponto
 interface Props { tournamentId: string; }
 
 export default function ResultsTab({ tournamentId }: Props) {
+  const { user } = useAuth();
   const [players, setPlayers] = useState<Player[]>([]);
   const [grupo, setGrupo] = useState("");
   const [rodada, setRodada] = useState("");

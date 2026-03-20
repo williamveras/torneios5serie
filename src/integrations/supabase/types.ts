@@ -14,7 +14,125 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      match_results: {
+        Row: {
+          created_at: string
+          grupo: string
+          id: string
+          penalidades: string
+          player_id: string
+          pontos_jogo: number
+          pontos_mesa: number
+          rodada: number
+          tournament_id: string
+        }
+        Insert: {
+          created_at?: string
+          grupo: string
+          id?: string
+          penalidades?: string
+          player_id: string
+          pontos_jogo?: number
+          pontos_mesa?: number
+          rodada: number
+          tournament_id: string
+        }
+        Update: {
+          created_at?: string
+          grupo?: string
+          id?: string
+          penalidades?: string
+          player_id?: string
+          pontos_jogo?: number
+          pontos_mesa?: number
+          rodada?: number
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_results_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_results_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      players: {
+        Row: {
+          comentario: string | null
+          created_at: string
+          id: string
+          nick_playroom: string | null
+          nome_completo: string
+          preferencia_horarios: string | null
+          tournament_id: string
+          whatsapp: string | null
+        }
+        Insert: {
+          comentario?: string | null
+          created_at?: string
+          id?: string
+          nick_playroom?: string | null
+          nome_completo: string
+          preferencia_horarios?: string | null
+          tournament_id: string
+          whatsapp?: string | null
+        }
+        Update: {
+          comentario?: string | null
+          created_at?: string
+          id?: string
+          nick_playroom?: string | null
+          nome_completo?: string
+          preferencia_horarios?: string | null
+          tournament_id?: string
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "players_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournaments: {
+        Row: {
+          created_at: string
+          created_by: string
+          data_inicio: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          data_inicio: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          data_inicio?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

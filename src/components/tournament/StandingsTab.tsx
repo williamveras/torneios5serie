@@ -182,7 +182,7 @@ export default function StandingsTab({ tournamentId }: Props) {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Jogador</TableHead>
+                            <TableHead>Nick</TableHead>
                             <TableHead>Grupo</TableHead>
                             <TableHead className="text-right">Pts Jogo</TableHead>
                             <TableHead className="text-right">Pts Mesa</TableHead>

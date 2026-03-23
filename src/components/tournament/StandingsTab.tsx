@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Download, BarChart3 } from "lucide-react";
 import * as XLSX from "xlsx";
+import { FASES } from "@/lib/constants";
 import type { Tables } from "@/integrations/supabase/types";
 
 type MatchResult = Tables<"match_results">;
@@ -30,7 +31,10 @@ export default function StandingsTab({ tournamentId }: Props) {
   const [results, setResults] = useState<MatchResult[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [selectedFase, setSelectedFase] = useState<string>("Fase de Grupos");
   const [selectedGroup, setSelectedGroup] = useState<string>("__all__");
+
+  const isFaseDeGrupos = selectedFase === "Fase de Grupos";
 
   useEffect(() => {
     Promise.all([
@@ -44,23 +48,35 @@ export default function StandingsTab({ tournamentId }: Props) {
     });
   }, [tournamentId]);
 
-  const getPlayerName = (id: string) => players.find(p => p.id === id)?.nome_completo || "Desconhecido";
   const getPlayerNick = (id: string) => players.find(p => p.id === id)?.nick_playroom || "";
+  const getPlayerName = (id: string) => players.find(p => p.id === id)?.nome_completo || "Desconhecido";
   const getRegistrantName = (userId: string | null) => {
     if (!userId) return "—";
     return profiles.find(p => p.user_id === userId)?.nome || "—";
   };
 
-  const groups = useMemo(() => [...new Set(results.map(r => r.grupo))].sort(), [results]);
-  const rounds = useMemo(() => {
-    const filtered = selectedGroup === "__all__" ? results : results.filter(r => r.grupo === selectedGroup);
-    return [...new Set(filtered.map(r => r.rodada))].sort((a, b) => a - b);
-  }, [results, selectedGroup]);
+  // Available fases that actually have data
+  const availableFases = useMemo(() => {
+    const fases = [...new Set(results.map(r => (r as any).fase || "Fase de Grupos"))];
+    return FASES.filter(f => fases.includes(f));
+  }, [results]);
+
+  const filteredByFase = useMemo(() => {
+    return results.filter(r => ((r as any).fase || "Fase de Grupos") === selectedFase);
+  }, [results, selectedFase]);
+
+  const groups = useMemo(() => [...new Set(filteredByFase.map(r => r.grupo))].sort(), [filteredByFase]);
+
+  const filteredResults = useMemo(() => {
+    if (!isFaseDeGrupos || selectedGroup === "__all__") return filteredByFase;
+    return filteredByFase.filter(r => r.grupo === selectedGroup);
+  }, [filteredByFase, selectedGroup, isFaseDeGrupos]);
+
+  const rounds = useMemo(() => [...new Set(filteredResults.map(r => r.rodada))].sort((a, b) => a - b), [filteredResults]);
 
   const standings = useMemo(() => {
-    const filtered = selectedGroup === "__all__" ? results : results.filter(r => r.grupo === selectedGroup);
     const agg = new Map<string, { pontosJogo: number; pontosMesa: number; penalties: string[] }>();
-    for (const r of filtered) {
+    for (const r of filteredResults) {
       const prev = agg.get(r.player_id) || { pontosJogo: 0, pontosMesa: 0, penalties: [] };
       prev.pontosJogo += r.pontos_jogo;
       prev.pontosMesa += r.pontos_mesa;
@@ -88,41 +104,49 @@ export default function StandingsTab({ tournamentId }: Props) {
     });
     rows.forEach((r, i) => { r.position = i + 1; });
     return rows;
-  }, [results, players, selectedGroup]);
-
-  const getResultsForRound = (round: number) => {
-    const filtered = selectedGroup === "__all__" ? results : results.filter(r => r.grupo === selectedGroup);
-    return filtered.filter(r => r.rodada === round);
-  };
+  }, [filteredResults, players]);
 
   const exportToXlsx = () => {
     const data = standings.map(s => ({
       "Posição": s.position,
-      "Jogador": s.playerName,
-      "Nick": s.nick,
-      "Pontos de Jogo": s.pontosJogo,
-      "Pontos de Mesa": s.pontosMesa,
+      "Nick": s.nick || s.playerName,
+      "Pts Jogo": s.pontosJogo,
+      "Pts Mesa": s.pontosMesa,
       "Penalidades": s.penalidades,
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Classificação");
-    XLSX.writeFile(wb, `classificacao_${selectedGroup === "__all__" ? "geral" : `grupo_${selectedGroup}`}.xlsx`);
+    const groupLabel = isFaseDeGrupos && selectedGroup !== "__all__" ? `_grupo_${selectedGroup}` : "";
+    XLSX.writeFile(wb, `classificacao_${selectedFase.replace(/ /g, "_")}${groupLabel}.xlsx`);
   };
 
   return (
     <div className="space-y-4">
       <div className="flex items-end gap-4 flex-wrap">
         <div className="space-y-2">
-          <Label>Filtrar por grupo</Label>
-          <Select value={selectedGroup} onValueChange={setSelectedGroup}>
-            <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+          <Label>Fase</Label>
+          <Select value={selectedFase} onValueChange={v => { setSelectedFase(v); setSelectedGroup("__all__"); }}>
+            <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">Todos os grupos</SelectItem>
-              {groups.map(g => <SelectItem key={g} value={g}>Grupo {g}</SelectItem>)}
+              {(availableFases.length > 0 ? availableFases : FASES).map(f => (
+                <SelectItem key={f} value={f}>{f}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
+        {isFaseDeGrupos && (
+          <div className="space-y-2">
+            <Label>Grupo</Label>
+            <Select value={selectedGroup} onValueChange={setSelectedGroup}>
+              <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Todos os grupos</SelectItem>
+                {groups.map(g => <SelectItem key={g} value={g}>Grupo {g}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         {standings.length > 0 && (
           <Button variant="outline" onClick={exportToXlsx}>
             <Download className="h-4 w-4 mr-1" /> Exportar Planilha
@@ -134,7 +158,7 @@ export default function StandingsTab({ tournamentId }: Props) {
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             <BarChart3 className="h-10 w-10 mx-auto mb-3 opacity-40" />
-            <p>Nenhum resultado registrado ainda.</p>
+            <p>Nenhum resultado registrado para esta fase.</p>
           </CardContent>
         </Card>
       ) : (
@@ -173,7 +197,7 @@ export default function StandingsTab({ tournamentId }: Props) {
 
           <TabsContent value="rounds" className="space-y-4">
             {rounds.map(round => {
-              const roundResults = getResultsForRound(round);
+              const roundResults = filteredResults.filter(r => r.rodada === round);
               return (
                 <Card key={round}>
                   <CardContent className="pt-4">
@@ -183,7 +207,7 @@ export default function StandingsTab({ tournamentId }: Props) {
                         <TableHeader>
                           <TableRow>
                             <TableHead>Nick</TableHead>
-                            <TableHead>Grupo</TableHead>
+                            {isFaseDeGrupos && <TableHead>Grupo</TableHead>}
                             <TableHead className="text-right">Pts Jogo</TableHead>
                             <TableHead className="text-right">Pts Mesa</TableHead>
                             <TableHead>Penalidades</TableHead>
@@ -194,7 +218,7 @@ export default function StandingsTab({ tournamentId }: Props) {
                           {roundResults.map(r => (
                             <TableRow key={r.id}>
                               <TableCell className="font-medium">{getPlayerNick(r.player_id) || getPlayerName(r.player_id)}</TableCell>
-                              <TableCell>{r.grupo}</TableCell>
+                              {isFaseDeGrupos && <TableCell>{r.grupo}</TableCell>}
                               <TableCell className="text-right tabular-nums">{r.pontos_jogo}</TableCell>
                               <TableCell className="text-right tabular-nums">{r.pontos_mesa}</TableCell>
                               <TableCell className={r.penalidades !== "Sem penalidades" ? "text-destructive" : "text-muted-foreground"}>

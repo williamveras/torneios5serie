@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Save } from "lucide-react";
 import { toast } from "sonner";
+import { FASES } from "@/lib/constants";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Player = Tables<"players">;
@@ -27,10 +28,13 @@ interface Props { tournamentId: string; }
 export default function ResultsTab({ tournamentId }: Props) {
   const { user } = useAuth();
   const [players, setPlayers] = useState<Player[]>([]);
+  const [fase, setFase] = useState<string>("Fase de Grupos");
   const [grupo, setGrupo] = useState("");
   const [rodada, setRodada] = useState("");
   const [results, setResults] = useState<PlayerResult[]>([emptyResult()]);
   const [loading, setLoading] = useState(false);
+
+  const isFaseDeGrupos = fase === "Fase de Grupos";
 
   useEffect(() => {
     supabase.from("players").select("*").eq("tournament_id", tournamentId).order("nome_completo")
@@ -46,7 +50,8 @@ export default function ResultsTab({ tournamentId }: Props) {
   };
 
   const handleSave = async () => {
-    if (!grupo.trim() || !rodada.trim()) { toast.error("Informe o grupo e a rodada"); return; }
+    if (isFaseDeGrupos && !grupo.trim()) { toast.error("Informe o grupo"); return; }
+    if (!rodada.trim()) { toast.error("Informe a rodada"); return; }
     if (results.some(r => !r.player_id || !r.pontos_jogo || !r.pontos_mesa)) {
       toast.error("Preencha todos os campos obrigatórios"); return;
     }
@@ -55,7 +60,8 @@ export default function ResultsTab({ tournamentId }: Props) {
     const toInsert = results.map(r => ({
       tournament_id: tournamentId,
       player_id: r.player_id,
-      grupo: grupo.trim(),
+      fase,
+      grupo: isFaseDeGrupos ? grupo.trim() : fase,
       rodada: parseInt(rodada),
       pontos_jogo: parseInt(r.pontos_jogo),
       pontos_mesa: parseInt(r.pontos_mesa),
@@ -79,11 +85,22 @@ export default function ResultsTab({ tournamentId }: Props) {
     <Card>
       <CardHeader><CardTitle>Registrar Resultados</CardTitle></CardHeader>
       <CardContent className="space-y-6">
-        <div className="grid grid-cols-2 gap-4">
+        <div className={`grid gap-4 ${isFaseDeGrupos ? "grid-cols-3" : "grid-cols-2"}`}>
           <div className="space-y-2">
-            <Label>Grupo</Label>
-            <Input value={grupo} onChange={e => setGrupo(e.target.value)} placeholder="Ex: A" />
+            <Label>Fase</Label>
+            <Select value={fase} onValueChange={setFase}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {FASES.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
+          {isFaseDeGrupos && (
+            <div className="space-y-2">
+              <Label>Grupo</Label>
+              <Input value={grupo} onChange={e => setGrupo(e.target.value)} placeholder="Ex: A" />
+            </div>
+          )}
           <div className="space-y-2">
             <Label>Rodada</Label>
             <Input type="number" min={1} value={rodada} onChange={e => setRodada(e.target.value)} placeholder="Ex: 1" />

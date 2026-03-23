@@ -17,6 +17,7 @@ export type Database = {
       match_results: {
         Row: {
           created_at: string
+          fase: string
           grupo: string
           id: string
           penalidades: string
@@ -29,6 +30,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          fase?: string
           grupo: string
           id?: string
           penalidades?: string
@@ -41,6 +43,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          fase?: string
           grupo?: string
           id?: string
           penalidades?: string

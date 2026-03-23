@@ -1,46 +1,43 @@
 
-## Sistema de Gerenciamento de Torneios
 
-### Autenticação
-- Login simples com email/senha via Supabase Auth
-- Tela de login/registro
+## Adicionar Fases ao Sistema de Torneios
 
-### Banco de Dados (Supabase)
-- **tournaments**: id, nome, data_inicio, created_by
-- **players**: id, tournament_id, nome_completo, nick_playroom, whatsapp, preferencia_horarios, comentario
-- **match_results**: id, tournament_id, player_id, grupo, rodada, pontos_jogo, pontos_mesa, penalidades (texto, default "Sem penalidades")
+O torneio tem múltiplas fases (Fase de Grupos, 16 Avos, Oitavas, Quartas, Semifinal, Final). Cada fase tem suas próprias rodadas. Precisamos adicionar esse conceito ao banco de dados e atualizar o cadastro e a visualização.
 
-### Páginas e Funcionalidades
+### 1. Migração do Banco de Dados
 
-**1. Dashboard / Lista de Torneios**
-- Lista de torneios cadastrados com nome e data
-- Botão para criar novo torneio (nome + data de início)
-- Clicar num torneio abre a página de gerenciamento
+Adicionar coluna `fase` (text, não nula, default `'Fase de Grupos'`) na tabela `match_results`.
 
-**2. Página do Torneio** (abas ou seções)
+### 2. Atualizar Registro de Resultados (`ResultsTab.tsx`)
 
-**Aba Participantes:**
-- Lista dos jogadores inscritos com nome, nick, WhatsApp, preferência de horário
-- Botão "Importar Planilha" que aceita arquivo .xlsx/.csv do Google Forms
-- O sistema lê as colunas (Nome completo, Nick no Playroom, WhatsApp, Preferência de horários, Comentário adicional) e cadastra todos automaticamente
-- Possibilidade de remover jogadores manualmente
+- Adicionar um campo **Fase** (Select) com opções pré-definidas:
+  - Fase de Grupos, 16 Avos, Oitavas de Final, Quartas de Final, Semifinal, Final
+- Layout: Fase e Grupo na primeira linha, Rodada na segunda (ou grid de 3 colunas)
+- O campo "Grupo" só aparece quando a fase é "Fase de Grupos" (nas fases eliminatórias não faz sentido filtrar por grupo)
+- Salvar o valor da fase junto com cada resultado
 
-**Aba Registrar Resultados:**
-- Formulário com: seleção do jogador, grupo, rodada, pontos de jogo, pontos de mesa, penalidades (campo texto opcional)
-- Botão "Adicionar resultado do outro jogador" para registrar os 2 jogadores da mesa no mesmo fluxo
-- Após preencher o 1º jogador, abre campos para o 2º jogador (mesmo grupo e rodada pré-preenchidos)
-- Botão salvar para gravar os dois resultados juntos
+### 3. Atualizar Visualização (`StandingsTab.tsx`)
 
-**Aba Classificação por Rodada:**
-- Filtro por grupo
-- Tabela de classificação ordenada por:
-  1. Pontos de jogo (maior primeiro)
-  2. Pontos de mesa (desempate)
-  3. Jogadores com penalidade vão para o final da classificação
-- Exibição da posição (1º, 2º, 3º...)
-- Botão "Exportar para planilha" que gera arquivo .xlsx com a classificação
+- Adicionar filtro de **Fase** acima do filtro de grupo
+- O filtro de grupo só aparece quando a fase selecionada é "Fase de Grupos"
+- Na aba "Resultados por Rodada", agrupar e exibir a fase de cada resultado
+- A classificação geral e exportação respeitam os filtros de fase + grupo
 
-### Design
-- Interface limpa e funcional com sidebar de navegação
-- Cores neutras, estilo profissional
-- Responsivo para uso em desktop e mobile
+### Fases disponíveis (constante compartilhada)
+```text
+FASES = [
+  "Fase de Grupos",
+  "16 Avos",
+  "Oitavas de Final", 
+  "Quartas de Final",
+  "Semifinal",
+  "Final"
+]
+```
+
+### Fluxo resumido
+```text
+Registro:  [Fase ▼] [Grupo] [Rodada]  →  Jogador 1 + Jogador 2  →  Salvar
+Visualização:  [Fase ▼] [Grupo ▼ (se grupos)]  →  Classificação / Resultados por Rodada
+```
+

@@ -250,7 +250,9 @@ export default function ScheduleTab({ tournamentId }: Props) {
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
                   {players.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.nick_playroom || p.nome_completo}</SelectItem>
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.nick_playroom || p.nome_completo}{p.grupo ? ` (Grupo ${p.grupo})` : ""}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

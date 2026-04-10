@@ -71,6 +71,61 @@ export type Database = {
           },
         ]
       }
+      match_schedule: {
+        Row: {
+          created_at: string
+          data_partida: string
+          grupo: string
+          horario: string
+          id: string
+          player1_id: string
+          player2_id: string
+          tournament_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_partida: string
+          grupo: string
+          horario: string
+          id?: string
+          player1_id: string
+          player2_id: string
+          tournament_id: string
+        }
+        Update: {
+          created_at?: string
+          data_partida?: string
+          grupo?: string
+          horario?: string
+          id?: string
+          player1_id?: string
+          player2_id?: string
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_schedule_player1_id_fkey"
+            columns: ["player1_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_schedule_player2_id_fkey"
+            columns: ["player2_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_schedule_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       players: {
         Row: {
           comentario: string | null

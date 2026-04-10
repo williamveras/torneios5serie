@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Tables } from "@/integrations/supabase/types";
 import PlayersTab from "./tournament/PlayersTab";
 import ResultsTab from "./tournament/ResultsTab";
+import ScheduleTab from "./tournament/ScheduleTab";
 import StandingsTab from "./tournament/StandingsTab";
 
 type Tournament = Tables<"tournaments">;

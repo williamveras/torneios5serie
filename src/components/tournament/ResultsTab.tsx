@@ -41,8 +41,23 @@ export default function ResultsTab({ tournamentId }: Props) {
       .then(({ data }) => { if (data) setPlayers(data); });
   }, [tournamentId]);
 
+  // Auto-fill grupo when player is selected
+  const getPlayerGrupo = (playerId: string): string => {
+    const player = players.find(p => p.id === playerId);
+    return player?.grupo || "";
+  };
+
   const updateResult = (idx: number, field: keyof PlayerResult, value: string) => {
-    setResults(prev => prev.map((r, i) => i === idx ? { ...r, [field]: value } : r));
+    setResults(prev => prev.map((r, i) => {
+      if (i !== idx) return r;
+      const updated = { ...r, [field]: value };
+      // Auto-fill grupo when selecting a player
+      if (field === "player_id" && isFaseDeGrupos) {
+        const playerGrupo = getPlayerGrupo(value);
+        if (playerGrupo) setGrupo(playerGrupo);
+      }
+      return updated;
+    }));
   };
 
   const addSecondPlayer = () => {
@@ -97,7 +112,7 @@ export default function ResultsTab({ tournamentId }: Props) {
           </div>
           {isFaseDeGrupos && (
             <div className="space-y-2">
-              <Label>Grupo</Label>
+              <Label>Grupo {grupo && <span className="text-muted-foreground font-normal">(auto-preenchido)</span>}</Label>
               <Input value={grupo} onChange={e => setGrupo(e.target.value)} placeholder="Ex: A" />
             </div>
           )}
@@ -116,7 +131,10 @@ export default function ResultsTab({ tournamentId }: Props) {
                 <SelectTrigger><SelectValue placeholder="Selecione o jogador" /></SelectTrigger>
                 <SelectContent>
                   {players.map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.nick_playroom || p.nome_completo}</SelectItem>
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.nick_playroom || p.nome_completo}
+                      {p.grupo ? ` (Grupo ${p.grupo})` : ""}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

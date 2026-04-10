@@ -85,9 +85,26 @@ export default function ScheduleTab({ tournamentId }: Props) {
     return p?.nick_playroom || p?.nome_completo || "—";
   }
 
+  // Auto-fill grupo based on selected player
+  function autoFillGrupo(playerId: string) {
+    const player = players.find(p => p.id === playerId);
+    if (player?.grupo) setGrupo(player.grupo);
+  }
+
+  function autoFillEditGrupo(playerId: string) {
+    const player = players.find(p => p.id === playerId);
+    if (player?.grupo) setEditGrupo(player.grupo);
+  }
+
   async function handleSave() {
-    if (!grupo || !player1 || !player2 || !date || !horario) {
+    if (!player1 || !player2 || !date || !horario) {
       toast.error("Preencha todos os campos.");
+      return;
+    }
+    // Auto-determine grupo from players if not set
+    const finalGrupo = grupo || players.find(p => p.id === player1)?.grupo || "";
+    if (!finalGrupo) {
+      toast.error("Selecione o grupo ou defina os grupos dos jogadores.");
       return;
     }
     if (player1 === player2) {

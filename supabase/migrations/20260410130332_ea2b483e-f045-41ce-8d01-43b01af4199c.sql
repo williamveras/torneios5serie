@@ -1,0 +1,1 @@
+ALTER TABLE public.players ADD COLUMN grupo text;

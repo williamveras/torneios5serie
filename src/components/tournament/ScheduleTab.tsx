@@ -352,22 +352,26 @@ export default function ScheduleTab({ tournamentId }: Props) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Jogador 1</Label>
-                <Select value={editPlayer1} onValueChange={setEditPlayer1}>
+                <Select value={editPlayer1} onValueChange={(v) => { setEditPlayer1(v); autoFillEditGrupo(v); }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {players.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>{p.nick_playroom || p.nome_completo}</SelectItem>
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.nick_playroom || p.nome_completo}{p.grupo ? ` (Grupo ${p.grupo})` : ""}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label>Jogador 2</Label>
-                <Select value={editPlayer2} onValueChange={setEditPlayer2}>
+                <Select value={editPlayer2} onValueChange={(v) => { setEditPlayer2(v); autoFillEditGrupo(v); }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {players.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>{p.nick_playroom || p.nome_completo}</SelectItem>
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.nick_playroom || p.nome_completo}{p.grupo ? ` (Grupo ${p.grupo})` : ""}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

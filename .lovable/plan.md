@@ -1,54 +1,63 @@
 
 
-## Nova Aba: Agenda de Partidas
+## Distribuição Automática de Jogadores em Grupos
 
-### Resumo
-Criar uma nova aba "Agenda" no torneio para registrar, visualizar, editar e apagar os dias e horários das partidas, organizados por grupo e data.
+### Situação Atual
+- A tabela `players` **não tem** coluna de grupo — os grupos são digitados manualmente ao registrar resultados e agendar partidas.
+- Isso significa que não há vínculo direto entre jogador e grupo.
 
-### 1. Migração do Banco de Dados
+### Proposta
 
-Nova tabela `match_schedule`:
+**1. Adicionar coluna `grupo` na tabela `players`** (text, nullable)
 
-```sql
-CREATE TABLE public.match_schedule (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  tournament_id uuid NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
-  player1_id uuid NOT NULL REFERENCES players(id) ON DELETE CASCADE,
-  player2_id uuid NOT NULL REFERENCES players(id) ON DELETE CASCADE,
-  grupo text NOT NULL,
-  data_partida date NOT NULL,
-  horario time NOT NULL,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
+Migração SQL para adicionar o campo.
 
-ALTER TABLE public.match_schedule ENABLE ROW LEVEL SECURITY;
--- Políticas: todos autenticados podem SELECT, INSERT, UPDATE, DELETE
+**2. Criar seção "Sortear Grupos" na aba Participantes (`PlayersTab.tsx`)**
+
+- Aparece quando há jogadores cadastrados e ainda sem grupo definido
+- Duas opções:
+  - **Informar manualmente** quantos jogadores por grupo (ex: 4)
+  - **Sugestão automática** — o sistema calcula a melhor divisão (ex: 32 jogadores → 8 grupos de 4; 18 jogadores → 3 grupos de 6)
+- Botão "Sortear" distribui aleatoriamente os jogadores nos grupos (A, B, C...) e salva o `grupo` de cada um no banco
+- Possibilidade de "Refazer Sorteio" caso necessário
+
+**3. Exibir grupo na tabela de jogadores**
+
+- Nova coluna "Grupo" na tabela de participantes
+- Badge visual (ex: "Grupo A") ao lado de cada jogador
+
+**4. Propagar o grupo automaticamente para as outras abas**
+
+- **ResultsTab**: ao selecionar um jogador, o campo "Grupo" é preenchido automaticamente com base no grupo do jogador (sem digitação manual)
+- **ScheduleTab**: ao selecionar jogadores, o grupo é preenchido automaticamente
+- **StandingsTab**: sem mudanças — já filtra por grupo
+
+**5. Algoritmo de sugestão automática**
+
+Lógica simples:
+- Divisores possíveis de 3 a 8 jogadores por grupo
+- Escolhe o divisor que resulta na divisão mais equilibrada (menor resto)
+- Se não houver divisão exata, distribui os jogadores extras um por grupo (ex: 17 jogadores com 4 por grupo → 3 grupos de 4 + 1 grupo de 5)
+
+### Fluxo do Usuário
+```text
+Aba Participantes:
+  [Jogadores por grupo: 4 ▼]  [Sugerir]  [Sortear Grupos]
+
+  Tabela:
+  | Grupo | Nome        | Nick    | WhatsApp | Horários |
+  |  A    | Fulano      | nick1   | ...      | ...      |
+  |  A    | Sicrano     | nick2   | ...      | ...      |
+  |  B    | Beltrano    | nick3   | ...      | ...      |
+
+Aba Resultados:
+  [Jogador: Fulano ▼]  →  Grupo auto-preenchido: "A"
 ```
 
-### 2. Novo Componente `ScheduleTab.tsx`
-
-**Formulário de cadastro:**
-- Select de Grupo (A, B, C...)
-- Select do Jogador 1 e Jogador 2 (exibindo nick)
-- DatePicker para data da partida
-- Input de horário (type="time")
-- Botão Salvar
-
-**Visualização:**
-- Agrupado por Grupo (título "Grupo A", "Grupo B"...)
-- Dentro de cada grupo, agrupado por data com título formatado: "Segunda (23/04)"
-- Cada partida exibida como: "Nick1 e Nick2: 18:00"
-- Ordenado por data e horário crescente
-- Botões de editar (abre formulário preenchido) e apagar (com confirmação) em cada registro
-
-### 3. Integrar no `TournamentPage.tsx`
-
-- Adicionar nova aba "Agenda" entre "Registrar Resultados" e "Classificação"
-- Importar e renderizar `ScheduleTab`
-
-### Detalhes Técnicos
-- Usar `date-fns` com locale `pt-BR` para formatar dias da semana
-- Componente de calendário Shadcn para o DatePicker
-- Dialog para edição inline
-- AlertDialog para confirmação de exclusão
+### Arquivos alterados
+- `supabase/migrations/` — nova migração adicionando `grupo` à tabela `players`
+- `src/components/tournament/PlayersTab.tsx` — UI de sorteio + coluna grupo
+- `src/components/tournament/ResultsTab.tsx` — auto-preencher grupo ao selecionar jogador
+- `src/components/tournament/ScheduleTab.tsx` — auto-preencher grupo ao selecionar jogadores
+- `src/integrations/supabase/types.ts` — será atualizado automaticamente
 

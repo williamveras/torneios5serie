@@ -116,7 +116,7 @@ export default function ScheduleTab({ tournamentId }: Props) {
       tournament_id: tournamentId,
       player1_id: player1,
       player2_id: player2,
-      grupo,
+      grupo: finalGrupo,
       data_partida: format(date, "yyyy-MM-dd"),
       horario,
     });

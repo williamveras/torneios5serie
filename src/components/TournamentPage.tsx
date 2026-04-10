@@ -31,6 +31,7 @@ export default function TournamentPage({ tournament, onBack }: Props) {
           <TabsList className="mb-4">
             <TabsTrigger value="players">Participantes</TabsTrigger>
             <TabsTrigger value="results">Registrar Resultados</TabsTrigger>
+            <TabsTrigger value="schedule">Agenda</TabsTrigger>
             <TabsTrigger value="standings">Classificação</TabsTrigger>
           </TabsList>
 
@@ -39,6 +40,9 @@ export default function TournamentPage({ tournament, onBack }: Props) {
           </TabsContent>
           <TabsContent value="results">
             <ResultsTab tournamentId={tournament.id} />
+          </TabsContent>
+          <TabsContent value="schedule">
+            <ScheduleTab tournamentId={tournament.id} />
           </TabsContent>
           <TabsContent value="standings">
             <StandingsTab tournamentId={tournament.id} />

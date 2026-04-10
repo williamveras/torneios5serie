@@ -85,9 +85,26 @@ export default function ScheduleTab({ tournamentId }: Props) {
     return p?.nick_playroom || p?.nome_completo || "—";
   }
 
+  // Auto-fill grupo based on selected player
+  function autoFillGrupo(playerId: string) {
+    const player = players.find(p => p.id === playerId);
+    if (player?.grupo) setGrupo(player.grupo);
+  }
+
+  function autoFillEditGrupo(playerId: string) {
+    const player = players.find(p => p.id === playerId);
+    if (player?.grupo) setEditGrupo(player.grupo);
+  }
+
   async function handleSave() {
-    if (!grupo || !player1 || !player2 || !date || !horario) {
+    if (!player1 || !player2 || !date || !horario) {
       toast.error("Preencha todos os campos.");
+      return;
+    }
+    // Auto-determine grupo from players if not set
+    const finalGrupo = grupo || players.find(p => p.id === player1)?.grupo || "";
+    if (!finalGrupo) {
+      toast.error("Selecione o grupo ou defina os grupos dos jogadores.");
       return;
     }
     if (player1 === player2) {
@@ -99,7 +116,7 @@ export default function ScheduleTab({ tournamentId }: Props) {
       tournament_id: tournamentId,
       player1_id: player1,
       player2_id: player2,
-      grupo,
+      grupo: finalGrupo,
       data_partida: format(date, "yyyy-MM-dd"),
       horario,
     });
@@ -216,22 +233,26 @@ export default function ScheduleTab({ tournamentId }: Props) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>Jogador 1</Label>
-              <Select value={player1} onValueChange={setPlayer1}>
+              <Select value={player1} onValueChange={(v) => { setPlayer1(v); autoFillGrupo(v); }}>
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
                   {players.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.nick_playroom || p.nome_completo}</SelectItem>
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.nick_playroom || p.nome_completo}{p.grupo ? ` (Grupo ${p.grupo})` : ""}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
               <Label>Jogador 2</Label>
-              <Select value={player2} onValueChange={setPlayer2}>
+              <Select value={player2} onValueChange={(v) => { setPlayer2(v); autoFillGrupo(v); }}>
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
                   {players.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.nick_playroom || p.nome_completo}</SelectItem>
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.nick_playroom || p.nome_completo}{p.grupo ? ` (Grupo ${p.grupo})` : ""}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -331,22 +352,26 @@ export default function ScheduleTab({ tournamentId }: Props) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Jogador 1</Label>
-                <Select value={editPlayer1} onValueChange={setEditPlayer1}>
+                <Select value={editPlayer1} onValueChange={(v) => { setEditPlayer1(v); autoFillEditGrupo(v); }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {players.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>{p.nick_playroom || p.nome_completo}</SelectItem>
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.nick_playroom || p.nome_completo}{p.grupo ? ` (Grupo ${p.grupo})` : ""}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label>Jogador 2</Label>
-                <Select value={editPlayer2} onValueChange={setEditPlayer2}>
+                <Select value={editPlayer2} onValueChange={(v) => { setEditPlayer2(v); autoFillEditGrupo(v); }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {players.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>{p.nick_playroom || p.nome_completo}</SelectItem>
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.nick_playroom || p.nome_completo}{p.grupo ? ` (Grupo ${p.grupo})` : ""}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

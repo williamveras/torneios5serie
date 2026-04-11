@@ -33,7 +33,7 @@ interface Props {
   tournamentId: string;
 }
 
-const GRUPOS = ["A", "B", "C", "D", "E", "F", "G", "H"];
+const GRUPOS = ["1", "2", "3", "4", "5", "6", "7", "8"];
 
 export default function ScheduleTab({ tournamentId }: Props) {
   const [players, setPlayers] = useState<Player[]>([]);

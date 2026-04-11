@@ -35,7 +35,7 @@ function distributeIntoGroups(players: Player[], perGroup: number): Map<string, 
   const map = new Map<string, string>();
   shuffled.forEach((p, i) => {
     const groupIndex = i % numGroups;
-    const groupLetter = String.fromCharCode(65 + groupIndex);
+    const groupLetter = String(groupIndex + 1);
     map.set(p.id, groupLetter);
   });
   return map;

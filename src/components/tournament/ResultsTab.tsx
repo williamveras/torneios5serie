@@ -113,7 +113,7 @@ export default function ResultsTab({ tournamentId }: Props) {
           {isFaseDeGrupos && (
             <div className="space-y-2">
               <Label>Grupo {grupo && <span className="text-muted-foreground font-normal">(auto-preenchido)</span>}</Label>
-              <Input value={grupo} onChange={e => setGrupo(e.target.value)} placeholder="Ex: A" />
+              <Input value={grupo} onChange={e => setGrupo(e.target.value)} placeholder="Ex: 1" />
             </div>
           )}
           <div className="space-y-2">

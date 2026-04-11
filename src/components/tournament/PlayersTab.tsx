@@ -198,41 +198,69 @@ export default function PlayersTab({ tournamentId }: Props) {
           </CardContent>
         </Card>
       ) : (
-        <div className="rounded-lg border bg-background">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-20">Grupo</TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead>Nick</TableHead>
-                <TableHead>WhatsApp</TableHead>
-                <TableHead>Horários</TableHead>
-                <TableHead className="w-12"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {players.map(p => (
-                <TableRow key={p.id}>
-                  <TableCell>
-                    {p.grupo ? (
-                      <Badge variant="secondary">Grupo {p.grupo}</Badge>
-                    ) : (
-                      <span className="text-muted-foreground text-xs">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="font-medium">{p.nome_completo}</TableCell>
-                  <TableCell>{p.nick_playroom || "—"}</TableCell>
-                  <TableCell>{p.whatsapp || "—"}</TableCell>
-                  <TableCell className="max-w-[200px] truncate">{p.preferencia_horarios || "—"}</TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDelete(p.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <div className="space-y-6">
+          {(() => {
+            const grouped = new Map<string, Player[]>();
+            const ungrouped: Player[] = [];
+            players.forEach(p => {
+              if (p.grupo) {
+                const list = grouped.get(p.grupo) || [];
+                list.push(p);
+                grouped.set(p.grupo, list);
+              } else {
+                ungrouped.push(p);
+              }
+            });
+            const sortedGroups = [...grouped.keys()].sort((a, b) => Number(a) - Number(b));
+
+            const renderTable = (list: Player[]) => (
+              <div className="rounded-lg border bg-background">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Nick</TableHead>
+                      <TableHead>WhatsApp</TableHead>
+                      <TableHead>Horários</TableHead>
+                      <TableHead className="w-12"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {list.map(p => (
+                      <TableRow key={p.id}>
+                        <TableCell className="font-medium">{p.nome_completo}</TableCell>
+                        <TableCell>{p.nick_playroom || "—"}</TableCell>
+                        <TableCell>{p.whatsapp || "—"}</TableCell>
+                        <TableCell className="max-w-[200px] truncate">{p.preferencia_horarios || "—"}</TableCell>
+                        <TableCell>
+                          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDelete(p.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            );
+
+            return (
+              <>
+                {sortedGroups.map(g => (
+                  <div key={g}>
+                    <h2 className="text-xl font-bold mb-3">Grupo {g}</h2>
+                    {renderTable(grouped.get(g)!)}
+                  </div>
+                ))}
+                {ungrouped.length > 0 && (
+                  <div>
+                    {sortedGroups.length > 0 && <h2 className="text-xl font-bold mb-3">Sem grupo</h2>}
+                    {renderTable(ungrouped)}
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
       )}
     </div>

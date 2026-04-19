@@ -14,14 +14,23 @@ import type { Tables } from "@/integrations/supabase/types";
 
 type Player = Tables<"players">;
 
+const PENALIDADE_OPCOES = ["Sem penalidades", "W.O", "Digitação na mesa", "Outra"] as const;
+
 interface PlayerResult {
   player_id: string;
   pontos_jogo: string;
   pontos_mesa: string;
-  penalidades: string;
+  penalidade_tipo: string;
+  penalidade_outra: string;
 }
 
-const emptyResult = (): PlayerResult => ({ player_id: "", pontos_jogo: "", pontos_mesa: "", penalidades: "" });
+const emptyResult = (): PlayerResult => ({
+  player_id: "",
+  pontos_jogo: "",
+  pontos_mesa: "",
+  penalidade_tipo: "Sem penalidades",
+  penalidade_outra: "",
+});
 
 interface Props { tournamentId: string; }
 
@@ -41,7 +50,6 @@ export default function ResultsTab({ tournamentId }: Props) {
       .then(({ data }) => { if (data) setPlayers(data); });
   }, [tournamentId]);
 
-  // Auto-fill grupo when player is selected
   const getPlayerGrupo = (playerId: string): string => {
     const player = players.find(p => p.id === playerId);
     return player?.grupo || "";
@@ -51,7 +59,6 @@ export default function ResultsTab({ tournamentId }: Props) {
     setResults(prev => prev.map((r, i) => {
       if (i !== idx) return r;
       const updated = { ...r, [field]: value };
-      // Auto-fill grupo when selecting a player
       if (field === "player_id" && isFaseDeGrupos) {
         const playerGrupo = getPlayerGrupo(value);
         if (playerGrupo) setGrupo(playerGrupo);
@@ -64,12 +71,22 @@ export default function ResultsTab({ tournamentId }: Props) {
     if (results.length < 2) setResults(prev => [...prev, emptyResult()]);
   };
 
+  const resolvePenalidade = (r: PlayerResult): string => {
+    if (r.penalidade_tipo === "Outra") {
+      return r.penalidade_outra.trim() || "Outra";
+    }
+    return r.penalidade_tipo || "Sem penalidades";
+  };
+
   const handleSave = async () => {
-    if (isFaseDeGrupos && !grupo.trim()) { toast.error("Informe o grupo"); return; }
     if (!rodada.trim()) { toast.error("Informe a rodada"); return; }
     if (results.some(r => !r.player_id || !r.pontos_jogo || !r.pontos_mesa)) {
       toast.error("Preencha todos os campos obrigatórios"); return;
     }
+    if (results.some(r => r.penalidade_tipo === "Outra" && !r.penalidade_outra.trim())) {
+      toast.error("Especifique a penalidade 'Outra'"); return;
+    }
+    if (isFaseDeGrupos && !grupo.trim()) { toast.error("Grupo não preenchido — selecione um jogador com grupo"); return; }
 
     setLoading(true);
     const toInsert = results.map(r => ({
@@ -80,7 +97,7 @@ export default function ResultsTab({ tournamentId }: Props) {
       rodada: parseInt(rodada),
       pontos_jogo: parseInt(r.pontos_jogo),
       pontos_mesa: parseInt(r.pontos_mesa),
-      penalidades: r.penalidades.trim() || "Sem penalidades",
+      penalidades: resolvePenalidade(r),
       registered_by: user?.id || null,
     }));
 
@@ -100,7 +117,7 @@ export default function ResultsTab({ tournamentId }: Props) {
     <Card>
       <CardHeader><CardTitle>Registrar Resultados</CardTitle></CardHeader>
       <CardContent className="space-y-6">
-        <div className={`grid gap-4 ${isFaseDeGrupos ? "grid-cols-3" : "grid-cols-2"}`}>
+        <div className="grid gap-4 grid-cols-2">
           <div className="space-y-2">
             <Label>Fase</Label>
             <Select value={fase} onValueChange={setFase}>
@@ -110,12 +127,6 @@ export default function ResultsTab({ tournamentId }: Props) {
               </SelectContent>
             </Select>
           </div>
-          {isFaseDeGrupos && (
-            <div className="space-y-2">
-              <Label>Grupo {grupo && <span className="text-muted-foreground font-normal">(auto-preenchido)</span>}</Label>
-              <Input value={grupo} onChange={e => setGrupo(e.target.value)} placeholder="Ex: 1" />
-            </div>
-          )}
           <div className="space-y-2">
             <Label>Rodada</Label>
             <Input type="number" min={1} value={rodada} onChange={e => setRodada(e.target.value)} placeholder="Ex: 1" />
@@ -151,10 +162,31 @@ export default function ResultsTab({ tournamentId }: Props) {
             </div>
             <div className="space-y-2">
               <Label>Penalidades <span className="text-muted-foreground font-normal">(opcional)</span></Label>
-              <Textarea value={r.penalidades} onChange={e => updateResult(idx, "penalidades", e.target.value)} placeholder="Deixe vazio para 'Sem penalidades'" rows={2} />
+              <Select value={r.penalidade_tipo} onValueChange={v => updateResult(idx, "penalidade_tipo", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {PENALIDADE_OPCOES.map(op => <SelectItem key={op} value={op}>{op}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              {r.penalidade_tipo === "Outra" && (
+                <Textarea
+                  className="mt-2"
+                  value={r.penalidade_outra}
+                  onChange={e => updateResult(idx, "penalidade_outra", e.target.value)}
+                  placeholder="Especifique a penalidade"
+                  rows={2}
+                />
+              )}
             </div>
           </div>
         ))}
+
+        {isFaseDeGrupos && (
+          <div className="space-y-2">
+            <Label>Grupo {grupo && <span className="text-muted-foreground font-normal">(auto-preenchido)</span>}</Label>
+            <Input value={grupo} onChange={e => setGrupo(e.target.value)} placeholder="Selecione um jogador para preencher" />
+          </div>
+        )}
 
         <div className="flex gap-3">
           {results.length < 2 && (

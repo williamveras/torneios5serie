@@ -74,7 +74,7 @@ export default function ScheduleTab({ tournamentId }: Props) {
   const [editGrupo, setEditGrupo] = useState("");
   const [editPlayer1, setEditPlayer1] = useState("");
   const [editPlayer2, setEditPlayer2] = useState("");
-  const [editDate, setEditDate] = useState<Date>();
+  const [editDateInput, setEditDateInput] = useState("");
   const [editHorario, setEditHorario] = useState("");
 
   // Delete state
@@ -121,11 +121,15 @@ export default function ScheduleTab({ tournamentId }: Props) {
   }
 
   async function handleSave() {
-    if (!player1 || !player2 || !date || !horario) {
+    if (!player1 || !player2 || !dateInput || !horario) {
       toast.error("Preencha todos os campos.");
       return;
     }
-    // Auto-determine grupo from players if not set
+    const isoDate = parseDateInput(dateInput);
+    if (!isoDate) {
+      toast.error("Data inválida. Use o formato DD/MM.");
+      return;
+    }
     const finalGrupo = grupo || players.find(p => p.id === player1)?.grupo || "";
     if (!finalGrupo) {
       toast.error("Selecione o grupo ou defina os grupos dos jogadores.");
@@ -141,7 +145,7 @@ export default function ScheduleTab({ tournamentId }: Props) {
       player1_id: player1,
       player2_id: player2,
       grupo: finalGrupo,
-      data_partida: format(date, "yyyy-MM-dd"),
+      data_partida: isoDate,
       horario,
     });
     setLoading(false);
@@ -151,7 +155,7 @@ export default function ScheduleTab({ tournamentId }: Props) {
       toast.success("Partida agendada!");
       setPlayer1("");
       setPlayer2("");
-      setDate(undefined);
+      setDateInput("");
       setHorario("");
       fetchSchedules();
     }
@@ -162,8 +166,8 @@ export default function ScheduleTab({ tournamentId }: Props) {
     setEditGrupo(s.grupo);
     setEditPlayer1(s.player1_id);
     setEditPlayer2(s.player2_id);
-    setEditDate(parseISO(s.data_partida));
-    setEditHorario(s.horario.slice(0, 5)); // "HH:mm"
+    setEditDateInput(isoToDDMM(s.data_partida));
+    setEditHorario(s.horario.slice(0, 5));
   }
 
   async function handleUpdate() {

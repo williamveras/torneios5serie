@@ -119,17 +119,17 @@ export default function ResultsTab({ tournamentId }: Props) {
       <CardContent className="space-y-6">
         <div className="grid gap-4 grid-cols-2">
           <div className="space-y-2">
-            <Label>Fase</Label>
+            <Label htmlFor="fase-select">Fase</Label>
             <Select value={fase} onValueChange={setFase}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger id="fase-select" aria-label="Fase"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {FASES.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Rodada</Label>
-            <Input type="number" min={1} value={rodada} onChange={e => setRodada(e.target.value)} placeholder="Ex: 1" />
+            <Label htmlFor="rodada-input">Rodada</Label>
+            <Input id="rodada-input" type="number" min={1} value={rodada} onChange={e => setRodada(e.target.value)} placeholder="Ex: 1" />
           </div>
         </div>
 
@@ -137,9 +137,9 @@ export default function ResultsTab({ tournamentId }: Props) {
           <div key={idx} className="p-4 border rounded-lg space-y-4 bg-muted/30">
             <p className="text-sm font-medium text-muted-foreground">Jogador {idx + 1}</p>
             <div className="space-y-2">
-              <Label>Jogador</Label>
+              <Label htmlFor={`jogador-${idx}`}>Jogador</Label>
               <Select value={r.player_id} onValueChange={v => updateResult(idx, "player_id", v)}>
-                <SelectTrigger><SelectValue placeholder="Selecione o jogador" /></SelectTrigger>
+                <SelectTrigger id={`jogador-${idx}`} aria-label={`Jogador ${idx + 1}`}><SelectValue placeholder="Selecione o jogador" /></SelectTrigger>
                 <SelectContent>
                   {players.map(p => (
                     <SelectItem key={p.id} value={p.id}>
@@ -152,30 +152,34 @@ export default function ResultsTab({ tournamentId }: Props) {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Pontos de Jogo</Label>
-                <Input type="number" min={0} value={r.pontos_jogo} onChange={e => updateResult(idx, "pontos_jogo", e.target.value)} />
+                <Label htmlFor={`pontos-vitoria-${idx}`}>Pontos de Vitória</Label>
+                <Input id={`pontos-vitoria-${idx}`} type="number" min={0} value={r.pontos_jogo} onChange={e => updateResult(idx, "pontos_jogo", e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>Pontos de Mesa</Label>
-                <Input type="number" min={0} value={r.pontos_mesa} onChange={e => updateResult(idx, "pontos_mesa", e.target.value)} />
+                <Label htmlFor={`pontos-mesa-${idx}`}>Pontos de Mesa</Label>
+                <Input id={`pontos-mesa-${idx}`} type="number" min={0} value={r.pontos_mesa} onChange={e => updateResult(idx, "pontos_mesa", e.target.value)} />
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Penalidades <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+              <Label htmlFor={`penalidade-${idx}`}>Penalidades <span className="text-muted-foreground font-normal">(opcional)</span></Label>
               <Select value={r.penalidade_tipo} onValueChange={v => updateResult(idx, "penalidade_tipo", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger id={`penalidade-${idx}`} aria-label={`Penalidade do jogador ${idx + 1}`}><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {PENALIDADE_OPCOES.map(op => <SelectItem key={op} value={op}>{op}</SelectItem>)}
                 </SelectContent>
               </Select>
               {r.penalidade_tipo === "Outra" && (
-                <Textarea
-                  className="mt-2"
-                  value={r.penalidade_outra}
-                  onChange={e => updateResult(idx, "penalidade_outra", e.target.value)}
-                  placeholder="Especifique a penalidade"
-                  rows={2}
-                />
+                <>
+                  <Label htmlFor={`penalidade-outra-${idx}`} className="sr-only">Especifique a penalidade</Label>
+                  <Textarea
+                    id={`penalidade-outra-${idx}`}
+                    className="mt-2"
+                    value={r.penalidade_outra}
+                    onChange={e => updateResult(idx, "penalidade_outra", e.target.value)}
+                    placeholder="Especifique a penalidade"
+                    rows={2}
+                  />
+                </>
               )}
             </div>
           </div>
@@ -183,8 +187,8 @@ export default function ResultsTab({ tournamentId }: Props) {
 
         {isFaseDeGrupos && (
           <div className="space-y-2">
-            <Label>Grupo {grupo && <span className="text-muted-foreground font-normal">(auto-preenchido)</span>}</Label>
-            <Input value={grupo ? `Grupo ${grupo}` : ""} readOnly placeholder="Selecione um jogador para preencher" className="bg-muted" />
+            <Label htmlFor="grupo-input">Grupo {grupo && <span className="text-muted-foreground font-normal">(auto-preenchido)</span>}</Label>
+            <Input id="grupo-input" value={grupo ? `Grupo ${grupo}` : ""} readOnly placeholder="Selecione um jogador para preencher" className="bg-muted" />
           </div>
         )}
 

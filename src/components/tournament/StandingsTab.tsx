@@ -110,7 +110,7 @@ export default function StandingsTab({ tournamentId }: Props) {
     const data = standings.map(s => ({
       "Posição": s.position,
       "Nick": s.nick || s.playerName,
-      "Pts Jogo": s.pontosJogo,
+      "Pts Vitória": s.pontosJogo,
       "Pts Mesa": s.pontosMesa,
       "Penalidades": s.penalidades,
     }));
@@ -125,9 +125,9 @@ export default function StandingsTab({ tournamentId }: Props) {
     <div className="space-y-4">
       <div className="flex items-end gap-4 flex-wrap">
         <div className="space-y-2">
-          <Label>Fase</Label>
+          <Label htmlFor="standings-fase">Fase</Label>
           <Select value={selectedFase} onValueChange={v => { setSelectedFase(v); setSelectedGroup("__all__"); }}>
-            <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger id="standings-fase" aria-label="Fase" className="w-[200px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               {(availableFases.length > 0 ? availableFases : FASES).map(f => (
                 <SelectItem key={f} value={f}>{f}</SelectItem>
@@ -137,9 +137,9 @@ export default function StandingsTab({ tournamentId }: Props) {
         </div>
         {isFaseDeGrupos && (
           <div className="space-y-2">
-            <Label>Grupo</Label>
+            <Label htmlFor="standings-grupo">Grupo</Label>
             <Select value={selectedGroup} onValueChange={setSelectedGroup}>
-              <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger id="standings-grupo" aria-label="Grupo" className="w-[180px]"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="__all__">Todos os grupos</SelectItem>
                 {groups.map(g => <SelectItem key={g} value={g}>Grupo {g}</SelectItem>)}
@@ -175,7 +175,7 @@ export default function StandingsTab({ tournamentId }: Props) {
                   <TableRow>
                     <TableHead className="w-16">#</TableHead>
                     <TableHead>Nick</TableHead>
-                    <TableHead className="text-right">Pts Jogo</TableHead>
+                    <TableHead className="text-right">Pts Vitória</TableHead>
                     <TableHead className="text-right">Pts Mesa</TableHead>
                     <TableHead>Penalidades</TableHead>
                   </TableRow>
@@ -208,7 +208,7 @@ export default function StandingsTab({ tournamentId }: Props) {
                           <TableRow>
                             <TableHead>Nick</TableHead>
                             {isFaseDeGrupos && <TableHead>Grupo</TableHead>}
-                            <TableHead className="text-right">Pts Jogo</TableHead>
+                            <TableHead className="text-right">Pts Vitória</TableHead>
                             <TableHead className="text-right">Pts Mesa</TableHead>
                             <TableHead>Penalidades</TableHead>
                             <TableHead>Registrado por</TableHead>

@@ -293,14 +293,13 @@ export default function ScheduleTab({ tournamentId }: Props) {
 
           <div>
             <Label>Grupo</Label>
-            <Select value={grupo} onValueChange={setGrupo}>
-              <SelectTrigger><SelectValue placeholder="Preenchido automaticamente ao escolher o jogador" /></SelectTrigger>
-              <SelectContent>
-                {GRUPOS.map((g) => (
-                  <SelectItem key={g} value={g}>Grupo {g}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Input
+              type="text"
+              value={grupo ? `Grupo ${grupo}` : ""}
+              readOnly
+              placeholder="Preenchido automaticamente ao escolher o jogador"
+              className="bg-muted"
+            />
           </div>
 
           <Button onClick={handleSave} disabled={loading} className="w-full">
@@ -404,14 +403,13 @@ export default function ScheduleTab({ tournamentId }: Props) {
             </div>
             <div>
               <Label>Grupo</Label>
-              <Select value={editGrupo} onValueChange={setEditGrupo}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {GRUPOS.map((g) => (
-                    <SelectItem key={g} value={g}>Grupo {g}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                type="text"
+                value={editGrupo ? `Grupo ${editGrupo}` : ""}
+                readOnly
+                placeholder="Preenchido automaticamente ao escolher o jogador"
+                className="bg-muted"
+              />
             </div>
           </div>
           <DialogFooter>

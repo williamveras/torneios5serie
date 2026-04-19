@@ -184,7 +184,7 @@ export default function ResultsTab({ tournamentId }: Props) {
         {isFaseDeGrupos && (
           <div className="space-y-2">
             <Label>Grupo {grupo && <span className="text-muted-foreground font-normal">(auto-preenchido)</span>}</Label>
-            <Input value={grupo} onChange={e => setGrupo(e.target.value)} placeholder="Selecione um jogador para preencher" />
+            <Input value={grupo ? `Grupo ${grupo}` : ""} readOnly placeholder="Selecione um jogador para preencher" className="bg-muted" />
           </div>
         )}
 

@@ -171,9 +171,14 @@ export default function ScheduleTab({ tournamentId }: Props) {
   }
 
   async function handleUpdate() {
-    if (!editItem || !editGrupo || !editPlayer1 || !editPlayer2 || !editDate || !editHorario) return;
+    if (!editItem || !editGrupo || !editPlayer1 || !editPlayer2 || !editDateInput || !editHorario) return;
     if (editPlayer1 === editPlayer2) {
       toast.error("Selecione dois jogadores diferentes.");
+      return;
+    }
+    const isoDate = parseDateInput(editDateInput);
+    if (!isoDate) {
+      toast.error("Data inválida. Use o formato DD/MM.");
       return;
     }
     setLoading(true);
@@ -183,7 +188,7 @@ export default function ScheduleTab({ tournamentId }: Props) {
         grupo: editGrupo,
         player1_id: editPlayer1,
         player2_id: editPlayer2,
-        data_partida: format(editDate, "yyyy-MM-dd"),
+        data_partida: isoDate,
         horario: editHorario,
       })
       .eq("id", editItem.id);

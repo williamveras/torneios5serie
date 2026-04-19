@@ -247,24 +247,6 @@ export default function ScheduleTab({ tournamentId }: Props) {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label>Grupo</Label>
-              <Select value={grupo} onValueChange={setGrupo}>
-                <SelectTrigger><SelectValue placeholder="Selecione o grupo" /></SelectTrigger>
-                <SelectContent>
-                  {GRUPOS.map((g) => (
-                    <SelectItem key={g} value={g}>Grupo {g}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Horário</Label>
-              <Input type="time" value={horario} onChange={(e) => setHorario(e.target.value)} />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
               <Label>Jogador 1</Label>
               <Select value={player1} onValueChange={(v) => { setPlayer1(v); autoFillGrupo(v); }}>
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
@@ -292,28 +274,33 @@ export default function ScheduleTab({ tournamentId }: Props) {
             </div>
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label>Data da Partida</Label>
+              <Input
+                type="text"
+                inputMode="numeric"
+                placeholder="DD/MM"
+                value={dateInput}
+                onChange={(e) => setDateInput(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Horário</Label>
+              <Input type="time" value={horario} onChange={(e) => setHorario(e.target.value)} />
+            </div>
+          </div>
+
           <div>
-            <Label>Data da Partida</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, "dd/MM/yyyy") : "Selecione a data"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  locale={ptBR}
-                  className="p-3 pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
+            <Label>Grupo</Label>
+            <Select value={grupo} onValueChange={setGrupo}>
+              <SelectTrigger><SelectValue placeholder="Preenchido automaticamente ao escolher o jogador" /></SelectTrigger>
+              <SelectContent>
+                {GRUPOS.map((g) => (
+                  <SelectItem key={g} value={g}>Grupo {g}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <Button onClick={handleSave} disabled={loading} className="w-full">

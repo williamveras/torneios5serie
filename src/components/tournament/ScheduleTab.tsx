@@ -65,7 +65,7 @@ export default function ScheduleTab({ tournamentId }: Props) {
   const [grupo, setGrupo] = useState("");
   const [player1, setPlayer1] = useState("");
   const [player2, setPlayer2] = useState("");
-  const [date, setDate] = useState<Date>();
+  const [dateInput, setDateInput] = useState("");
   const [horario, setHorario] = useState("");
   const [loading, setLoading] = useState(false);
 

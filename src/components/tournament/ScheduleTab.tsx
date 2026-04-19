@@ -57,7 +57,7 @@ interface Props {
   tournamentId: string;
 }
 
-const GRUPOS = ["1", "2", "3", "4", "5", "6", "7", "8"];
+const GRUPOS = Array.from({ length: 30 }, (_, i) => String(i + 1));
 
 export default function ScheduleTab({ tournamentId }: Props) {
   const [players, setPlayers] = useState<Player[]>([]);

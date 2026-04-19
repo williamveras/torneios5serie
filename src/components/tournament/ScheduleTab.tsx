@@ -7,14 +7,38 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { cn } from "@/lib/utils";
 import type { Tables } from "@/integrations/supabase/types";
+
+// Parse "DD/MM" or "DD/MM/YYYY" to "YYYY-MM-DD". Returns null if invalid.
+function parseDateInput(input: string): string | null {
+  const trimmed = input.trim();
+  const match = trimmed.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/);
+  if (!match) return null;
+  const day = parseInt(match[1], 10);
+  const month = parseInt(match[2], 10);
+  let year: number;
+  if (match[3]) {
+    year = parseInt(match[3], 10);
+    if (year < 100) year += 2000;
+  } else {
+    year = new Date().getFullYear();
+  }
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  const d = new Date(year, month - 1, day);
+  if (d.getFullYear() !== year || d.getMonth() !== month - 1 || d.getDate() !== day) return null;
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function isoToDDMM(iso: string): string {
+  const d = parseISO(iso);
+  const currentYear = new Date().getFullYear();
+  const dd = format(d, "dd/MM");
+  return d.getFullYear() === currentYear ? dd : format(d, "dd/MM/yyyy");
+}
 
 type Player = Tables<"players">;
 
@@ -41,7 +65,7 @@ export default function ScheduleTab({ tournamentId }: Props) {
   const [grupo, setGrupo] = useState("");
   const [player1, setPlayer1] = useState("");
   const [player2, setPlayer2] = useState("");
-  const [date, setDate] = useState<Date>();
+  const [dateInput, setDateInput] = useState("");
   const [horario, setHorario] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -50,7 +74,7 @@ export default function ScheduleTab({ tournamentId }: Props) {
   const [editGrupo, setEditGrupo] = useState("");
   const [editPlayer1, setEditPlayer1] = useState("");
   const [editPlayer2, setEditPlayer2] = useState("");
-  const [editDate, setEditDate] = useState<Date>();
+  const [editDateInput, setEditDateInput] = useState("");
   const [editHorario, setEditHorario] = useState("");
 
   // Delete state
@@ -97,11 +121,15 @@ export default function ScheduleTab({ tournamentId }: Props) {
   }
 
   async function handleSave() {
-    if (!player1 || !player2 || !date || !horario) {
+    if (!player1 || !player2 || !dateInput || !horario) {
       toast.error("Preencha todos os campos.");
       return;
     }
-    // Auto-determine grupo from players if not set
+    const isoDate = parseDateInput(dateInput);
+    if (!isoDate) {
+      toast.error("Data inválida. Use o formato DD/MM.");
+      return;
+    }
     const finalGrupo = grupo || players.find(p => p.id === player1)?.grupo || "";
     if (!finalGrupo) {
       toast.error("Selecione o grupo ou defina os grupos dos jogadores.");
@@ -117,7 +145,7 @@ export default function ScheduleTab({ tournamentId }: Props) {
       player1_id: player1,
       player2_id: player2,
       grupo: finalGrupo,
-      data_partida: format(date, "yyyy-MM-dd"),
+      data_partida: isoDate,
       horario,
     });
     setLoading(false);
@@ -127,7 +155,7 @@ export default function ScheduleTab({ tournamentId }: Props) {
       toast.success("Partida agendada!");
       setPlayer1("");
       setPlayer2("");
-      setDate(undefined);
+      setDateInput("");
       setHorario("");
       fetchSchedules();
     }
@@ -138,14 +166,19 @@ export default function ScheduleTab({ tournamentId }: Props) {
     setEditGrupo(s.grupo);
     setEditPlayer1(s.player1_id);
     setEditPlayer2(s.player2_id);
-    setEditDate(parseISO(s.data_partida));
-    setEditHorario(s.horario.slice(0, 5)); // "HH:mm"
+    setEditDateInput(isoToDDMM(s.data_partida));
+    setEditHorario(s.horario.slice(0, 5));
   }
 
   async function handleUpdate() {
-    if (!editItem || !editGrupo || !editPlayer1 || !editPlayer2 || !editDate || !editHorario) return;
+    if (!editItem || !editGrupo || !editPlayer1 || !editPlayer2 || !editDateInput || !editHorario) return;
     if (editPlayer1 === editPlayer2) {
       toast.error("Selecione dois jogadores diferentes.");
+      return;
+    }
+    const isoDate = parseDateInput(editDateInput);
+    if (!isoDate) {
+      toast.error("Data inválida. Use o formato DD/MM.");
       return;
     }
     setLoading(true);
@@ -155,7 +188,7 @@ export default function ScheduleTab({ tournamentId }: Props) {
         grupo: editGrupo,
         player1_id: editPlayer1,
         player2_id: editPlayer2,
-        data_partida: format(editDate, "yyyy-MM-dd"),
+        data_partida: isoDate,
         horario: editHorario,
       })
       .eq("id", editItem.id);
@@ -214,24 +247,6 @@ export default function ScheduleTab({ tournamentId }: Props) {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label>Grupo</Label>
-              <Select value={grupo} onValueChange={setGrupo}>
-                <SelectTrigger><SelectValue placeholder="Selecione o grupo" /></SelectTrigger>
-                <SelectContent>
-                  {GRUPOS.map((g) => (
-                    <SelectItem key={g} value={g}>Grupo {g}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Horário</Label>
-              <Input type="time" value={horario} onChange={(e) => setHorario(e.target.value)} />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
               <Label>Jogador 1</Label>
               <Select value={player1} onValueChange={(v) => { setPlayer1(v); autoFillGrupo(v); }}>
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
@@ -259,28 +274,33 @@ export default function ScheduleTab({ tournamentId }: Props) {
             </div>
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label>Data da Partida</Label>
+              <Input
+                type="text"
+                inputMode="numeric"
+                placeholder="DD/MM"
+                value={dateInput}
+                onChange={(e) => setDateInput(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Horário</Label>
+              <Input type="time" value={horario} onChange={(e) => setHorario(e.target.value)} />
+            </div>
+          </div>
+
           <div>
-            <Label>Data da Partida</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, "dd/MM/yyyy") : "Selecione a data"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  locale={ptBR}
-                  className="p-3 pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
+            <Label>Grupo</Label>
+            <Select value={grupo} onValueChange={setGrupo}>
+              <SelectTrigger><SelectValue placeholder="Preenchido automaticamente ao escolher o jogador" /></SelectTrigger>
+              <SelectContent>
+                {GRUPOS.map((g) => (
+                  <SelectItem key={g} value={g}>Grupo {g}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <Button onClick={handleSave} disabled={loading} className="w-full">
@@ -338,17 +358,6 @@ export default function ScheduleTab({ tournamentId }: Props) {
             <DialogTitle>Editar Partida</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label>Grupo</Label>
-              <Select value={editGrupo} onValueChange={setEditGrupo}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {GRUPOS.map((g) => (
-                    <SelectItem key={g} value={g}>Grupo {g}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Jogador 1</Label>
@@ -377,23 +386,32 @@ export default function ScheduleTab({ tournamentId }: Props) {
                 </Select>
               </div>
             </div>
-            <div>
-              <Label>Data</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !editDate && "text-muted-foreground")}>
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {editDate ? format(editDate, "dd/MM/yyyy") : "Selecione"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={editDate} onSelect={setEditDate} locale={ptBR} className="p-3 pointer-events-auto" />
-                </PopoverContent>
-              </Popover>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Data</Label>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="DD/MM"
+                  value={editDateInput}
+                  onChange={(e) => setEditDateInput(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Horário</Label>
+                <Input type="time" value={editHorario} onChange={(e) => setEditHorario(e.target.value)} />
+              </div>
             </div>
             <div>
-              <Label>Horário</Label>
-              <Input type="time" value={editHorario} onChange={(e) => setEditHorario(e.target.value)} />
+              <Label>Grupo</Label>
+              <Select value={editGrupo} onValueChange={setEditGrupo}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {GRUPOS.map((g) => (
+                    <SelectItem key={g} value={g}>Grupo {g}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>

@@ -158,8 +158,9 @@ export default function PlayersTab({ tournamentId }: Props) {
             <p className="text-sm font-medium">Distribuição de Grupos</p>
             <div className="flex items-end gap-3 flex-wrap">
               <div className="space-y-1">
-                <Label className="text-xs">Jogadores por grupo</Label>
+                <Label htmlFor="per-group-input" className="text-xs">Jogadores por grupo</Label>
                 <Input
+                  id="per-group-input"
                   type="number"
                   min={2}
                   max={players.length}

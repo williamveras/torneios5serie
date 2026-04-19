@@ -247,9 +247,9 @@ export default function ScheduleTab({ tournamentId }: Props) {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label>Jogador 1</Label>
+              <Label htmlFor="schedule-player1">Jogador 1</Label>
               <Select value={player1} onValueChange={(v) => { setPlayer1(v); autoFillGrupo(v); }}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectTrigger id="schedule-player1" aria-label="Jogador 1"><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
                   {players.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
@@ -260,9 +260,9 @@ export default function ScheduleTab({ tournamentId }: Props) {
               </Select>
             </div>
             <div>
-              <Label>Jogador 2</Label>
+              <Label htmlFor="schedule-player2">Jogador 2</Label>
               <Select value={player2} onValueChange={(v) => { setPlayer2(v); autoFillGrupo(v); }}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectTrigger id="schedule-player2" aria-label="Jogador 2"><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
                   {players.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
@@ -276,8 +276,9 @@ export default function ScheduleTab({ tournamentId }: Props) {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label>Data da Partida</Label>
+              <Label htmlFor="schedule-date">Data da Partida</Label>
               <Input
+                id="schedule-date"
                 type="text"
                 inputMode="numeric"
                 placeholder="DD/MM"
@@ -286,14 +287,15 @@ export default function ScheduleTab({ tournamentId }: Props) {
               />
             </div>
             <div>
-              <Label>Horário</Label>
-              <Input type="time" value={horario} onChange={(e) => setHorario(e.target.value)} />
+              <Label htmlFor="schedule-time">Horário</Label>
+              <Input id="schedule-time" type="time" value={horario} onChange={(e) => setHorario(e.target.value)} />
             </div>
           </div>
 
           <div>
-            <Label>Grupo</Label>
+            <Label htmlFor="schedule-grupo">Grupo</Label>
             <Input
+              id="schedule-grupo"
               type="text"
               value={grupo ? `Grupo ${grupo}` : ""}
               readOnly
@@ -359,9 +361,9 @@ export default function ScheduleTab({ tournamentId }: Props) {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Jogador 1</Label>
+                <Label htmlFor="edit-schedule-player1">Jogador 1</Label>
                 <Select value={editPlayer1} onValueChange={(v) => { setEditPlayer1(v); autoFillEditGrupo(v); }}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="edit-schedule-player1" aria-label="Jogador 1"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {players.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
@@ -372,9 +374,9 @@ export default function ScheduleTab({ tournamentId }: Props) {
                 </Select>
               </div>
               <div>
-                <Label>Jogador 2</Label>
+                <Label htmlFor="edit-schedule-player2">Jogador 2</Label>
                 <Select value={editPlayer2} onValueChange={(v) => { setEditPlayer2(v); autoFillEditGrupo(v); }}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="edit-schedule-player2" aria-label="Jogador 2"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {players.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
@@ -387,8 +389,9 @@ export default function ScheduleTab({ tournamentId }: Props) {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Data</Label>
+                <Label htmlFor="edit-schedule-date">Data</Label>
                 <Input
+                  id="edit-schedule-date"
                   type="text"
                   inputMode="numeric"
                   placeholder="DD/MM"
@@ -397,13 +400,14 @@ export default function ScheduleTab({ tournamentId }: Props) {
                 />
               </div>
               <div>
-                <Label>Horário</Label>
-                <Input type="time" value={editHorario} onChange={(e) => setEditHorario(e.target.value)} />
+                <Label htmlFor="edit-schedule-time">Horário</Label>
+                <Input id="edit-schedule-time" type="time" value={editHorario} onChange={(e) => setEditHorario(e.target.value)} />
               </div>
             </div>
             <div>
-              <Label>Grupo</Label>
+              <Label htmlFor="edit-schedule-grupo">Grupo</Label>
               <Input
+                id="edit-schedule-grupo"
                 type="text"
                 value={editGrupo ? `Grupo ${editGrupo}` : ""}
                 readOnly

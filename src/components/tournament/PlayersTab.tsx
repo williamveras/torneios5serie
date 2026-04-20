@@ -73,6 +73,14 @@ export default function PlayersTab({ tournamentId }: Props) {
       return key ? String(row[key] ?? "").trim() : "";
     };
 
+    const norm = (s: string | null | undefined) => (s || "").trim().toLowerCase();
+    const existingNomes = new Set(players.map(p => norm(p.nome_completo)));
+    const existingNicks = new Set(players.map(p => norm(p.nick_playroom)).filter(Boolean));
+
+    const seenNomes = new Set<string>();
+    const seenNicks = new Set<string>();
+    let skipped = 0;
+
     const playersToInsert = rows.map(row => ({
       tournament_id: tournamentId,
       nome_completo: findCol(row, ["nome"]) || Object.values(row)[0]?.toString() || "Sem nome",
@@ -80,13 +88,28 @@ export default function PlayersTab({ tournamentId }: Props) {
       whatsapp: findCol(row, ["whatsapp", "telefone", "celular", "ddd"]) || null,
       preferencia_horarios: findCol(row, ["horário", "horario", "preferência", "preferencia"]) || null,
       comentario: findCol(row, ["comentário", "comentario", "adicional", "observação"]) || null,
-    }));
+    })).filter(p => {
+      const nome = norm(p.nome_completo);
+      const nick = norm(p.nick_playroom);
+      const isDupDb = existingNomes.has(nome) || (nick && existingNicks.has(nick));
+      const isDupFile = seenNomes.has(nome) || (nick && seenNicks.has(nick));
+      if (isDupDb || isDupFile) { skipped++; return false; }
+      seenNomes.add(nome);
+      if (nick) seenNicks.add(nick);
+      return true;
+    });
+
+    if (playersToInsert.length === 0) {
+      toast.info(`Nenhum jogador novo. ${skipped} duplicata(s) ignorada(s).`);
+      if (fileRef.current) fileRef.current.value = "";
+      return;
+    }
 
     const { error } = await supabase.from("players").insert(playersToInsert);
     if (error) {
       toast.error("Erro ao importar jogadores");
     } else {
-      toast.success(`${playersToInsert.length} jogadores importados!`);
+      toast.success(`${playersToInsert.length} jogador(es) importado(s)!${skipped > 0 ? ` ${skipped} duplicata(s) ignorada(s).` : ""}`);
       fetchPlayers();
     }
     if (fileRef.current) fileRef.current.value = "";

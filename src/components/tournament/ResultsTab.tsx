@@ -68,7 +68,7 @@ export default function ResultsTab({ tournamentId }: Props) {
   };
 
   const addSecondPlayer = () => {
-    if (results.length < 2) setResults(prev => [...prev, emptyResult()]);
+    if (results.length < 2) setResults(prev => [...prev, { ...emptyResult(), pontos_jogo: "0" }]);
   };
 
   const resolvePenalidade = (r: PlayerResult): string => {

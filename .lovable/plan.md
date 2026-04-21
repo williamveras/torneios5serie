@@ -1,63 +1,55 @@
 
 
-## Distribuição Automática de Jogadores em Grupos
+## Adicionar "Segunda Fase" e "Terceira Fase" antes de 16 Avos
 
-### Situação Atual
-- A tabela `players` **não tem** coluna de grupo — os grupos são digitados manualmente ao registrar resultados e agendar partidas.
-- Isso significa que não há vínculo direto entre jogador e grupo.
+A partir de **16 Avos** mantemos a nomenclatura padrão (16 Avos, Oitavas, Quartas, Semifinal, Final). Para torneios maiores, como o do regulamento (128 → 64 → 32 antes de chegar em 16 Avos), adicionamos duas fases intermediárias com nomes genéricos.
 
-### Proposta
+### Nova ordem de fases
 
-**1. Adicionar coluna `grupo` na tabela `players`** (text, nullable)
-
-Migração SQL para adicionar o campo.
-
-**2. Criar seção "Sortear Grupos" na aba Participantes (`PlayersTab.tsx`)**
-
-- Aparece quando há jogadores cadastrados e ainda sem grupo definido
-- Duas opções:
-  - **Informar manualmente** quantos jogadores por grupo (ex: 4)
-  - **Sugestão automática** — o sistema calcula a melhor divisão (ex: 32 jogadores → 8 grupos de 4; 18 jogadores → 3 grupos de 6)
-- Botão "Sortear" distribui aleatoriamente os jogadores nos grupos (A, B, C...) e salva o `grupo` de cada um no banco
-- Possibilidade de "Refazer Sorteio" caso necessário
-
-**3. Exibir grupo na tabela de jogadores**
-
-- Nova coluna "Grupo" na tabela de participantes
-- Badge visual (ex: "Grupo A") ao lado de cada jogador
-
-**4. Propagar o grupo automaticamente para as outras abas**
-
-- **ResultsTab**: ao selecionar um jogador, o campo "Grupo" é preenchido automaticamente com base no grupo do jogador (sem digitação manual)
-- **ScheduleTab**: ao selecionar jogadores, o grupo é preenchido automaticamente
-- **StandingsTab**: sem mudanças — já filtra por grupo
-
-**5. Algoritmo de sugestão automática**
-
-Lógica simples:
-- Divisores possíveis de 3 a 8 jogadores por grupo
-- Escolhe o divisor que resulta na divisão mais equilibrada (menor resto)
-- Se não houver divisão exata, distribui os jogadores extras um por grupo (ex: 17 jogadores com 4 por grupo → 3 grupos de 4 + 1 grupo de 5)
-
-### Fluxo do Usuário
 ```text
-Aba Participantes:
-  [Jogadores por grupo: 4 ▼]  [Sugerir]  [Sortear Grupos]
-
-  Tabela:
-  | Grupo | Nome        | Nick    | WhatsApp | Horários |
-  |  A    | Fulano      | nick1   | ...      | ...      |
-  |  A    | Sicrano     | nick2   | ...      | ...      |
-  |  B    | Beltrano    | nick3   | ...      | ...      |
-
-Aba Resultados:
-  [Jogador: Fulano ▼]  →  Grupo auto-preenchido: "A"
+Fase de Grupos
+Segunda Fase        ← nova
+Terceira Fase       ← nova
+16 Avos
+Oitavas de Final
+Quartas de Final
+Semifinal
+Final
 ```
 
-### Arquivos alterados
-- `supabase/migrations/` — nova migração adicionando `grupo` à tabela `players`
-- `src/components/tournament/PlayersTab.tsx` — UI de sorteio + coluna grupo
-- `src/components/tournament/ResultsTab.tsx` — auto-preencher grupo ao selecionar jogador
-- `src/components/tournament/ScheduleTab.tsx` — auto-preencher grupo ao selecionar jogadores
-- `src/integrations/supabase/types.ts` — será atualizado automaticamente
+Mapeamento para o torneio do regulamento:
+
+```text
+Fase de Grupos  → 176 → classificam 128
+Segunda Fase    → 128 → 64
+Terceira Fase   →  64 → 32
+16 Avos         →  32 → 16
+Oitavas         →  16 → 8
+Quartas         →   8 → 4
+Semifinal       →   4 → 2
+Final           →   2 → 1
+```
+
+Em torneios menores, basta pular para a fase desejada — o sistema só lista no filtro as fases que têm dados.
+
+### O que muda
+
+**1. `src/lib/constants.ts`**
+Inserir `"Segunda Fase"` e `"Terceira Fase"` no array `FASES` entre `"Fase de Grupos"` e `"16 Avos"`. Como `FASES` é a única fonte da verdade, todos os componentes que a importam ganham as novas opções automaticamente:
+
+- `ResultsTab` — select de "Fase" no formulário de registro de resultados.
+- `StandingsTab` — select de "Fase" na Classificação (aba Classificação Geral e Resultados por Rodada). A lógica de `availableFases` já filtra por `FASES.filter(f => fases.includes(f))`, então a ordem correta no dropdown é preservada e as novas fases aparecem assim que houver registros.
+
+**2. Verificação de propagação**
+Confirmo que nenhum outro arquivo tem a lista de fases hard-coded (ex: `ScheduleTab`, exportação `.xlsx`). Se houver algum lugar usando string literal de fase, faço o ajuste para consumir `FASES`.
+
+**3. Memória do projeto**
+Atualizo `mem://features/tournament-structure` para refletir a nova ordem de 8 fases e a regra do regulamento (5 primeiros de cada grupo + 18 melhores sextos avançam, eliminatórias podem começar com qualquer quantidade de jogadores conforme o torneio).
+
+### Não muda
+
+- Schema do banco — coluna `fase` em `match_results` é `text` livre, aceita os novos rótulos sem migração.
+- Dados existentes — nenhum rótulo é renomeado.
+- Lógica de grupos — continua exclusiva de "Fase de Grupos".
+- RLS, exportação `.xlsx`, fluxo de agendamento e participantes.
 

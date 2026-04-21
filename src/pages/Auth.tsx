@@ -28,11 +28,14 @@ export default function Auth() {
         navigate("/");
       }
     } else {
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { nome: nome.trim() } },
+      });
       if (error) {
         toast.error(error.message);
-      } else if (data.user) {
-        await supabase.from("profiles").insert({ user_id: data.user.id, nome: nome.trim() });
+      } else {
         toast.success("Conta criada! Verifique seu email para confirmar.");
       }
     }

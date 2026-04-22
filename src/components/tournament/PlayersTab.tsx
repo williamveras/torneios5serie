@@ -3,18 +3,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Upload, Trash2, Users, Shuffle, Lightbulb } from "lucide-react";
+import { Upload, Trash2, Users, Shuffle, Lightbulb, MoreHorizontal, Pencil, CalendarPlus } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Player = Tables<"players">;
 
-interface Props { tournamentId: string; }
+interface Props {
+  tournamentId: string;
+  onScheduleMatch?: (playerId: string) => void;
+}
 
 function suggestGroupSize(total: number): number {
   if (total <= 3) return total;
@@ -42,11 +46,23 @@ function distributeIntoGroups(players: Player[], perGroup: number): Map<string, 
   return map;
 }
 
-export default function PlayersTab({ tournamentId }: Props) {
+export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
   const [players, setPlayers] = useState<Player[]>([]);
   const [perGroup, setPerGroup] = useState<string>("4");
   const [sorting, setSorting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Edit dialog state
+  const [editPlayer, setEditPlayer] = useState<Player | null>(null);
+  const [editNome, setEditNome] = useState("");
+  const [editNick, setEditNick] = useState("");
+  const [editWhats, setEditWhats] = useState("");
+  const [editHorarios, setEditHorarios] = useState("");
+  const [editGrupo, setEditGrupo] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  // Delete confirmation
+  const [deletePlayer, setDeletePlayer] = useState<Player | null>(null);
 
   const fetchPlayers = async () => {
     const { data } = await supabase.from("players").select("*").eq("tournament_id", tournamentId).order("grupo").order("nome_completo");
@@ -115,10 +131,42 @@ export default function PlayersTab({ tournamentId }: Props) {
     if (fileRef.current) fileRef.current.value = "";
   };
 
-  const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("players").delete().eq("id", id);
+  const handleDelete = async () => {
+    if (!deletePlayer) return;
+    const { error } = await supabase.from("players").delete().eq("id", deletePlayer.id);
     if (error) toast.error("Erro ao remover jogador");
-    else fetchPlayers();
+    else { toast.success("Jogador removido"); fetchPlayers(); }
+    setDeletePlayer(null);
+  };
+
+  const openEdit = (p: Player) => {
+    setEditPlayer(p);
+    setEditNome(p.nome_completo);
+    setEditNick(p.nick_playroom || "");
+    setEditWhats(p.whatsapp || "");
+    setEditHorarios(p.preferencia_horarios || "");
+    setEditGrupo(p.grupo || "");
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editPlayer) return;
+    if (!editNome.trim()) { toast.error("Nome é obrigatório"); return; }
+    setSavingEdit(true);
+    const { error } = await supabase.from("players").update({
+      nome_completo: editNome.trim(),
+      nick_playroom: editNick.trim() || null,
+      whatsapp: editWhats.trim() || null,
+      preferencia_horarios: editHorarios.trim() || null,
+      grupo: editGrupo.trim() || null,
+    }).eq("id", editPlayer.id);
+    setSavingEdit(false);
+    if (error) {
+      toast.error("Erro ao salvar: " + error.message);
+    } else {
+      toast.success("Jogador atualizado");
+      setEditPlayer(null);
+      fetchPlayers();
+    }
   };
 
   const handleSuggest = () => {
@@ -135,7 +183,6 @@ export default function PlayersTab({ tournamentId }: Props) {
     setSorting(true);
     const distribution = distributeIntoGroups(players, size);
 
-    // Update each player's grupo
     const updates = Array.from(distribution.entries()).map(([id, grupo]) =>
       supabase.from("players").update({ grupo }).eq("id", id)
     );
@@ -247,7 +294,7 @@ export default function PlayersTab({ tournamentId }: Props) {
                       <TableHead>Nick</TableHead>
                       <TableHead>WhatsApp</TableHead>
                       <TableHead>Horários</TableHead>
-                      <TableHead className="w-12"></TableHead>
+                      <TableHead className="w-24 text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -257,28 +304,29 @@ export default function PlayersTab({ tournamentId }: Props) {
                         <TableCell>{p.nick_playroom || "—"}</TableCell>
                         <TableCell>{p.whatsapp || "—"}</TableCell>
                         <TableCell className="max-w-[200px] truncate">{p.preferencia_horarios || "—"}</TableCell>
-                        <TableCell>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" aria-label={`Remover ${p.nome_completo}`}>
-                                <Trash2 className="h-4 w-4" />
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm" aria-label={`Opções de ${p.nome_completo}`}>
+                                Opções <MoreHorizontal className="h-4 w-4 ml-1" />
                               </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Remover participante?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Tem certeza que deseja remover <strong>{p.nome_completo}</strong>? Esta ação não pode ser desfeita.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDelete(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                  Remover
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="bg-popover z-50">
+                              <DropdownMenuItem onClick={() => openEdit(p)}>
+                                <Pencil className="h-4 w-4 mr-2" /> Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => onScheduleMatch?.(p.id)}>
+                                <CalendarPlus className="h-4 w-4 mr-2" /> Agendar partida
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => setDeletePlayer(p)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" /> Remover
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -306,6 +354,59 @@ export default function PlayersTab({ tournamentId }: Props) {
           })()}
         </div>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editPlayer} onOpenChange={(open) => !open && setEditPlayer(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Participante</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="edit-nome">Nome completo</Label>
+              <Input id="edit-nome" value={editNome} onChange={e => setEditNome(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="edit-nick">Nick no Playroom</Label>
+              <Input id="edit-nick" value={editNick} onChange={e => setEditNick(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="edit-whats">WhatsApp</Label>
+              <Input id="edit-whats" value={editWhats} onChange={e => setEditWhats(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="edit-horarios">Preferência de horários</Label>
+              <Input id="edit-horarios" value={editHorarios} onChange={e => setEditHorarios(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="edit-grupo">Grupo</Label>
+              <Input id="edit-grupo" value={editGrupo} onChange={e => setEditGrupo(e.target.value)} placeholder="Ex: 1, 2, 3..." />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditPlayer(null)}>Cancelar</Button>
+            <Button onClick={handleSaveEdit} disabled={savingEdit}>{savingEdit ? "Salvando..." : "Salvar"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deletePlayer} onOpenChange={(open) => !open && setDeletePlayer(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover participante?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover <strong>{deletePlayer?.nome_completo}</strong>? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

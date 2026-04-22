@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Trash2, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -55,11 +55,13 @@ interface Schedule {
 
 interface Props {
   tournamentId: string;
+  prefillPlayerId?: string | null;
+  onPrefillConsumed?: () => void;
 }
 
 const GRUPOS = Array.from({ length: 30 }, (_, i) => String(i + 1));
 
-export default function ScheduleTab({ tournamentId }: Props) {
+export default function ScheduleTab({ tournamentId, prefillPlayerId, onPrefillConsumed }: Props) {
   const [players, setPlayers] = useState<Player[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [grupo, setGrupo] = useState("");
@@ -84,6 +86,18 @@ export default function ScheduleTab({ tournamentId }: Props) {
     fetchPlayers();
     fetchSchedules();
   }, [tournamentId]);
+
+  // Pre-fill player1 when navigating from PlayersTab
+  useEffect(() => {
+    if (prefillPlayerId && players.length > 0) {
+      setPlayer1(prefillPlayerId);
+      const p = players.find((pl) => pl.id === prefillPlayerId);
+      if (p?.grupo) setGrupo(p.grupo);
+      onPrefillConsumed?.();
+      // Smooth scroll to top so user sees the form
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [prefillPlayerId, players, onPrefillConsumed]);
 
   async function fetchPlayers() {
     const { data } = await supabase
@@ -334,8 +348,8 @@ export default function ScheduleTab({ tournamentId }: Props) {
                             {getPlayerName(s.player1_id)} e {getPlayerName(s.player2_id)}: <strong>{s.horario.slice(0, 5)}</strong>
                           </span>
                           <div className="flex gap-1">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(s)}>
-                              <Pencil className="h-3.5 w-3.5" />
+                            <Button variant="outline" size="sm" className="h-7" onClick={() => openEdit(s)}>
+                              <CalendarClock className="h-3.5 w-3.5 mr-1" /> Realocar
                             </Button>
                             <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(s.id)}>
                               <Trash2 className="h-3.5 w-3.5" />
@@ -356,7 +370,7 @@ export default function ScheduleTab({ tournamentId }: Props) {
       <Dialog open={!!editItem} onOpenChange={(open) => !open && setEditItem(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Editar Partida</DialogTitle>
+            <DialogTitle>Realocar Partida</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">

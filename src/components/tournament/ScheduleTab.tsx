@@ -56,6 +56,8 @@ interface Schedule {
 interface Props {
   tournamentId: string;
   prefillPlayerId?: string | null;
+  prefillPlayer2Id?: string | null;
+  prefillGrupo?: string | null;
   onPrefillConsumed?: () => void;
 }
 

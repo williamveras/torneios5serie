@@ -1,5 +1,7 @@
 export const FASES = [
   "Fase de Grupos",
+  "Segunda Fase",
+  "Terceira Fase",
   "16 Avos",
   "Oitavas de Final",
   "Quartas de Final",

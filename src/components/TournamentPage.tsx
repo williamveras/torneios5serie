@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,6 +16,14 @@ interface Props {
 }
 
 export default function TournamentPage({ tournament, onBack }: Props) {
+  const [activeTab, setActiveTab] = useState("players");
+  const [prefillPlayerId, setPrefillPlayerId] = useState<string | null>(null);
+
+  const handleScheduleForPlayer = (playerId: string) => {
+    setPrefillPlayerId(playerId);
+    setActiveTab("schedule");
+  };
+
   return (
     <div className="min-h-screen bg-muted/30">
       <header className="border-b bg-background">
@@ -27,7 +36,7 @@ export default function TournamentPage({ tournament, onBack }: Props) {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-6">
-        <Tabs defaultValue="players">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4">
             <TabsTrigger value="players">Participantes</TabsTrigger>
             <TabsTrigger value="results">Registrar Resultados</TabsTrigger>
@@ -36,13 +45,17 @@ export default function TournamentPage({ tournament, onBack }: Props) {
           </TabsList>
 
           <TabsContent value="players">
-            <PlayersTab tournamentId={tournament.id} />
+            <PlayersTab tournamentId={tournament.id} onScheduleMatch={handleScheduleForPlayer} />
           </TabsContent>
           <TabsContent value="results">
             <ResultsTab tournamentId={tournament.id} />
           </TabsContent>
           <TabsContent value="schedule">
-            <ScheduleTab tournamentId={tournament.id} />
+            <ScheduleTab
+              tournamentId={tournament.id}
+              prefillPlayerId={prefillPlayerId}
+              onPrefillConsumed={() => setPrefillPlayerId(null)}
+            />
           </TabsContent>
           <TabsContent value="standings">
             <StandingsTab tournamentId={tournament.id} />

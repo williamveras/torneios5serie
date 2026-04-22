@@ -63,7 +63,7 @@ interface Props {
 
 const GRUPOS = Array.from({ length: 30 }, (_, i) => String(i + 1));
 
-export default function ScheduleTab({ tournamentId, prefillPlayerId, onPrefillConsumed }: Props) {
+export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlayer2Id, prefillGrupo, onPrefillConsumed }: Props) {
   const [players, setPlayers] = useState<Player[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [grupo, setGrupo] = useState("");
@@ -89,17 +89,21 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, onPrefillCo
     fetchSchedules();
   }, [tournamentId]);
 
-  // Pre-fill player1 when navigating from PlayersTab
+  // Pre-fill from PlayersTab or MatchupsTab
   useEffect(() => {
-    if (prefillPlayerId && players.length > 0) {
-      setPlayer1(prefillPlayerId);
-      const p = players.find((pl) => pl.id === prefillPlayerId);
-      if (p?.grupo) setGrupo(p.grupo);
+    if ((prefillPlayerId || prefillPlayer2Id || prefillGrupo) && players.length > 0) {
+      if (prefillPlayerId) setPlayer1(prefillPlayerId);
+      if (prefillPlayer2Id) setPlayer2(prefillPlayer2Id);
+      if (prefillGrupo) {
+        setGrupo(prefillGrupo);
+      } else if (prefillPlayerId) {
+        const p = players.find((pl) => pl.id === prefillPlayerId);
+        if (p?.grupo) setGrupo(p.grupo);
+      }
       onPrefillConsumed?.();
-      // Smooth scroll to top so user sees the form
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
-  }, [prefillPlayerId, players, onPrefillConsumed]);
+  }, [prefillPlayerId, prefillPlayer2Id, prefillGrupo, players, onPrefillConsumed]);
 
   async function fetchPlayers() {
     const { data } = await supabase

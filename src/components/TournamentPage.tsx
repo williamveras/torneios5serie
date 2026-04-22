@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Tables } from "@/integrations/supabase/types";
 import PlayersTab from "./tournament/PlayersTab";
+import MatchupsTab from "./tournament/MatchupsTab";
 import ResultsTab from "./tournament/ResultsTab";
 import ScheduleTab from "./tournament/ScheduleTab";
 import StandingsTab from "./tournament/StandingsTab";
@@ -18,10 +19,27 @@ interface Props {
 export default function TournamentPage({ tournament, onBack }: Props) {
   const [activeTab, setActiveTab] = useState("players");
   const [prefillPlayerId, setPrefillPlayerId] = useState<string | null>(null);
+  const [prefillPlayer2Id, setPrefillPlayer2Id] = useState<string | null>(null);
+  const [prefillGrupo, setPrefillGrupo] = useState<string | null>(null);
 
   const handleScheduleForPlayer = (playerId: string) => {
     setPrefillPlayerId(playerId);
+    setPrefillPlayer2Id(null);
+    setPrefillGrupo(null);
     setActiveTab("schedule");
+  };
+
+  const handleScheduleMatchup = (player1Id: string, player2Id: string, grupo: string) => {
+    setPrefillPlayerId(player1Id);
+    setPrefillPlayer2Id(player2Id);
+    setPrefillGrupo(grupo);
+    setActiveTab("schedule");
+  };
+
+  const consumePrefill = () => {
+    setPrefillPlayerId(null);
+    setPrefillPlayer2Id(null);
+    setPrefillGrupo(null);
   };
 
   return (
@@ -37,8 +55,9 @@ export default function TournamentPage({ tournament, onBack }: Props) {
 
       <main className="max-w-5xl mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-4">
+          <TabsList className="mb-4 flex-wrap h-auto">
             <TabsTrigger value="players">Participantes</TabsTrigger>
+            <TabsTrigger value="matchups">Confrontos</TabsTrigger>
             <TabsTrigger value="results">Registrar Resultados</TabsTrigger>
             <TabsTrigger value="schedule">Agenda</TabsTrigger>
             <TabsTrigger value="standings">Classificação</TabsTrigger>
@@ -47,6 +66,9 @@ export default function TournamentPage({ tournament, onBack }: Props) {
           <TabsContent value="players">
             <PlayersTab tournamentId={tournament.id} onScheduleMatch={handleScheduleForPlayer} />
           </TabsContent>
+          <TabsContent value="matchups">
+            <MatchupsTab tournamentId={tournament.id} onScheduleMatchup={handleScheduleMatchup} />
+          </TabsContent>
           <TabsContent value="results">
             <ResultsTab tournamentId={tournament.id} />
           </TabsContent>
@@ -54,7 +76,9 @@ export default function TournamentPage({ tournament, onBack }: Props) {
             <ScheduleTab
               tournamentId={tournament.id}
               prefillPlayerId={prefillPlayerId}
-              onPrefillConsumed={() => setPrefillPlayerId(null)}
+              prefillPlayer2Id={prefillPlayer2Id}
+              prefillGrupo={prefillGrupo}
+              onPrefillConsumed={consumePrefill}
             />
           </TabsContent>
           <TabsContent value="standings">

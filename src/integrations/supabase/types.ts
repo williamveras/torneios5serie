@@ -126,6 +126,39 @@ export type Database = {
           },
         ]
       }
+      matchups: {
+        Row: {
+          created_at: string
+          fase: string
+          grupo: string
+          id: string
+          player1_id: string
+          player2_id: string
+          rodada: number | null
+          tournament_id: string
+        }
+        Insert: {
+          created_at?: string
+          fase?: string
+          grupo: string
+          id?: string
+          player1_id: string
+          player2_id: string
+          rodada?: number | null
+          tournament_id: string
+        }
+        Update: {
+          created_at?: string
+          fase?: string
+          grupo?: string
+          id?: string
+          player1_id?: string
+          player2_id?: string
+          rodada?: number | null
+          tournament_id?: string
+        }
+        Relationships: []
+      }
       players: {
         Row: {
           comentario: string | null

@@ -55,6 +55,8 @@ interface Schedule {
 
 interface Props {
   tournamentId: string;
+  prefillPlayerId?: string | null;
+  onPrefillConsumed?: () => void;
 }
 
 const GRUPOS = Array.from({ length: 30 }, (_, i) => String(i + 1));

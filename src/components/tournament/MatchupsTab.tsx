@@ -473,11 +473,11 @@ function DraftRow({
 }) {
   const isBye = !d.player2_id;
   return (
-    <div className={`flex items-center justify-between py-1.5 px-3 rounded-md ${isBye ? "bg-yellow-500/10" : "bg-background"}`}>
+    <div className={`flex items-center justify-between py-1.5 px-3 rounded-md ${isBye ? "bg-accent/40 border border-dashed" : "bg-background"}`}>
       <span className="text-sm">
         {getPlayerName(d.player1_id)}{" "}
         {isBye ? (
-          <span className="text-yellow-700 dark:text-yellow-400 font-medium">— BYE</span>
+          <span className="text-muted-foreground font-medium">— BYE</span>
         ) : (
           <>
             <span className="text-muted-foreground">vs</span> {getPlayerName(d.player2_id!)}

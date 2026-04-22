@@ -317,7 +317,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
             <Input
               id="schedule-grupo"
               type="text"
-              value={grupo ? `Grupo ${grupo}` : ""}
+              value={grupo ? (/^\d+$/.test(grupo) ? `Grupo ${grupo}` : grupo) : ""}
               readOnly
               placeholder="Preenchido automaticamente ao escolher o jogador"
               className="bg-muted"

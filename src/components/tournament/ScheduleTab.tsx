@@ -370,7 +370,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, onPrefillCo
       <Dialog open={!!editItem} onOpenChange={(open) => !open && setEditItem(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Editar Partida</DialogTitle>
+            <DialogTitle>Realocar Partida</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">

@@ -87,6 +87,18 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, onPrefillCo
     fetchSchedules();
   }, [tournamentId]);
 
+  // Pre-fill player1 when navigating from PlayersTab
+  useEffect(() => {
+    if (prefillPlayerId && players.length > 0) {
+      setPlayer1(prefillPlayerId);
+      const p = players.find((pl) => pl.id === prefillPlayerId);
+      if (p?.grupo) setGrupo(p.grupo);
+      onPrefillConsumed?.();
+      // Smooth scroll to top so user sees the form
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [prefillPlayerId, players, onPrefillConsumed]);
+
   async function fetchPlayers() {
     const { data } = await supabase
       .from("players")

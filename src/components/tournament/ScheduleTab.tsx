@@ -61,7 +61,7 @@ interface Props {
 
 const GRUPOS = Array.from({ length: 30 }, (_, i) => String(i + 1));
 
-export default function ScheduleTab({ tournamentId }: Props) {
+export default function ScheduleTab({ tournamentId, prefillPlayerId, onPrefillConsumed }: Props) {
   const [players, setPlayers] = useState<Player[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [grupo, setGrupo] = useState("");
@@ -336,8 +336,8 @@ export default function ScheduleTab({ tournamentId }: Props) {
                             {getPlayerName(s.player1_id)} e {getPlayerName(s.player2_id)}: <strong>{s.horario.slice(0, 5)}</strong>
                           </span>
                           <div className="flex gap-1">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(s)}>
-                              <Pencil className="h-3.5 w-3.5" />
+                            <Button variant="outline" size="sm" className="h-7" onClick={() => openEdit(s)}>
+                              <CalendarClock className="h-3.5 w-3.5 mr-1" /> Realocar
                             </Button>
                             <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(s.id)}>
                               <Trash2 className="h-3.5 w-3.5" />

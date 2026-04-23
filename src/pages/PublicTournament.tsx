@@ -45,7 +45,7 @@ export default function PublicTournament() {
       if (cancelled) return;
       if (!t.data) { setNotFound(true); setLoading(false); return; }
       setTournament(t.data);
-      setPlayers((p.data as PlayerLite[]) || []);
+      setPlayers(((p.data as unknown) as PlayerLite[]) || []);
       setResults(r.data || []);
       setSchedules(s.data || []);
       setPhaseStatuses(ps.data || []);

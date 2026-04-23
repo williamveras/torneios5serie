@@ -1,55 +1,60 @@
 
 
-## Adicionar "Segunda Fase" e "Terceira Fase" antes de 16 Avos
+## Página pública para jogadores
 
-A partir de **16 Avos** mantemos a nomenclatura padrão (16 Avos, Oitavas, Quartas, Semifinal, Final). Para torneios maiores, como o do regulamento (128 → 64 → 32 antes de chegar em 16 Avos), adicionamos duas fases intermediárias com nomes genéricos.
+Uma rota pública (sem login) onde participantes acompanham resultados, classificação e agenda do torneio em tempo real, com controle de "fase concluída" para evitar interpretações erradas de classificações parciais.
 
-### Nova ordem de fases
+### Rota e acesso
 
-```text
-Fase de Grupos
-Segunda Fase        ← nova
-Terceira Fase       ← nova
-16 Avos
-Oitavas de Final
-Quartas de Final
-Semifinal
-Final
-```
+- **URL pública**: `/p/:tournamentId` (ex: `https://torneios5serie.lovable.app/p/<id>`).
+- Sem autenticação. Você compartilha o link com os jogadores.
+- Botão **"Compartilhar link público"** no topo da `TournamentPage` (admin), copia a URL para a área de transferência.
 
-Mapeamento para o torneio do regulamento:
+### O que o jogador vê
 
-```text
-Fase de Grupos  → 176 → classificam 128
-Segunda Fase    → 128 → 64
-Terceira Fase   →  64 → 32
-16 Avos         →  32 → 16
-Oitavas         →  16 → 8
-Quartas         →   8 → 4
-Semifinal       →   4 → 2
-Final           →   2 → 1
-```
+Layout simples (header com nome do torneio + 3 abas), sem sidebar, mobile-first:
 
-Em torneios menores, basta pular para a fase desejada — o sistema só lista no filtro as fases que têm dados.
+1. **Agenda** — lista de partidas agrupadas por data, mostrando horário, fase/grupo e os dois jogadores (nick com fallback para nome). Mesmo formato visual da `ScheduleTab` atual, mas só leitura.
+2. **Resultados por Rodada** — agrupado por Fase → Rodada, mostrando jogador, pontos vitória, pontos mesa e penalidades. Idêntico à aba "Resultados por Rodada" da `StandingsTab`, somente leitura.
+3. **Classificação** — tabela ordenada (mesma lógica de desempate já existente), com seletor de Fase e Grupo.
 
-### O que muda
+### Controle de "fase concluída" (parte central do pedido)
 
-**1. `src/lib/constants.ts`**
-Inserir `"Segunda Fase"` e `"Terceira Fase"` no array `FASES` entre `"Fase de Grupos"` e `"16 Avos"`. Como `FASES` é a única fonte da verdade, todos os componentes que a importam ganham as novas opções automaticamente:
+Você escolheu a opção mais simples: **mostrar sempre, com aviso quando estiver em andamento**. Para isso:
 
-- `ResultsTab` — select de "Fase" no formulário de registro de resultados.
-- `StandingsTab` — select de "Fase" na Classificação (aba Classificação Geral e Resultados por Rodada). A lógica de `availableFases` já filtra por `FASES.filter(f => fases.includes(f))`, então a ordem correta no dropdown é preservada e as novas fases aparecem assim que houver registros.
+- **Nova tabela `phase_status`** (`tournament_id`, `fase`, `status` = `'em_andamento' | 'concluida'`, `updated_at`). Default = `em_andamento` quando há resultados sem marcação.
+- **Novo controle no admin**, dentro da `StandingsTab`: ao lado do seletor de Fase, um botão toggle **"Marcar fase como concluída"** / **"Reabrir fase"**. Só visível para usuários autenticados.
+- **Na página pública**:
+  - Se `status = em_andamento`: banner amarelo bem visível no topo da Classificação e dos Resultados daquela fase com o texto:
+    > ⚠️ **Fase em andamento** — esta classificação é parcial e pode mudar até o encerramento da fase.
+  - Se `status = concluida`: banner verde discreto:
+    > ✅ **Fase encerrada** — classificação oficial.
 
-**2. Verificação de propagação**
-Confirmo que nenhum outro arquivo tem a lista de fases hard-coded (ex: `ScheduleTab`, exportação `.xlsx`). Se houver algum lugar usando string literal de fase, faço o ajuste para consumir `FASES`.
+Assim você nunca precisa "esconder" dados (mais simples de operar), mas a comunicação é inequívoca.
 
-**3. Memória do projeto**
-Atualizo `mem://features/tournament-structure` para refletir a nova ordem de 8 fases e a regra do regulamento (5 primeiros de cada grupo + 18 melhores sextos avançam, eliminatórias podem começar com qualquer quantidade de jogadores conforme o torneio).
+### Detalhes técnicos
 
-### Não muda
+**Banco**
+- Migração: criar tabela `phase_status` com unique `(tournament_id, fase)`, RLS:
+  - SELECT: público (`USING (true)` para `anon` + `authenticated`) — necessário para a página pública ler.
+  - INSERT/UPDATE/DELETE: só `authenticated`.
+- Adicionar policies SELECT públicas (`anon`) em `players`, `match_results`, `match_schedule`, `tournaments` — hoje só `authenticated` enxerga. Isso é seguro: nenhuma dessas tabelas tem dado sensível (só nick, nome, horário público de jogo). WhatsApp e e-mail dos jogadores **não** serão expostos — a página pública seleciona só as colunas necessárias (`id`, `nome_completo`, `nick_playroom`, `grupo`).
 
-- Schema do banco — coluna `fase` em `match_results` é `text` livre, aceita os novos rótulos sem migração.
-- Dados existentes — nenhum rótulo é renomeado.
-- Lógica de grupos — continua exclusiva de "Fase de Grupos".
-- RLS, exportação `.xlsx`, fluxo de agendamento e participantes.
+> Observação de privacidade: a coluna `whatsapp` em `players` continua protegida porque o cliente público nunca a solicita, mas RLS não filtra por coluna. Para garantia extra, a página pública usa uma **view** `players_public` (`security_invoker=on`) expondo só id/nome/nick/grupo, e consulta sempre a view. Assim mesmo se alguém tentar `SELECT *` direto na tabela via API pública, continua sem acesso ao WhatsApp.
+
+**Frontend**
+- Nova rota em `App.tsx`: `<Route path="/p/:tournamentId" element={<PublicTournament />} />`.
+- Novo arquivo `src/pages/PublicTournament.tsx` com 3 abas (Tabs do shadcn).
+- Componentes auxiliares dentro da pasta `src/components/public/`:
+  - `PublicSchedule.tsx`
+  - `PublicResults.tsx`
+  - `PublicStandings.tsx` (recebe `phaseStatus` e renderiza o banner)
+- Reaproveita a lógica de cálculo de classificação extraída para um util `src/lib/standings.ts` (refator pequeno em `StandingsTab` para importar do mesmo lugar — evita duplicação).
+- Botão "Compartilhar link público" em `TournamentPage.tsx` (header) usando `navigator.clipboard` + toast.
+- Toggle "Marcar fase como concluída" em `StandingsTab.tsx` (lê/escreve `phase_status`).
+
+**Sem alterações**
+- Fluxo de admin (Participantes, Confrontos, Resultados, Agenda) permanece igual.
+- Schema dos players/results/schedule não muda.
+- RLS de escrita continua restrito a `authenticated`.
 

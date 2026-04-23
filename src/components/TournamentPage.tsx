@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import PlayersTab from "./tournament/PlayersTab";
 import MatchupsTab from "./tournament/MatchupsTab";
@@ -42,14 +43,27 @@ export default function TournamentPage({ tournament, onBack }: Props) {
     setPrefillGrupo(null);
   };
 
+  const handleSharePublicLink = async () => {
+    const url = `${window.location.origin}/p/${tournament.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link público copiado!", { description: url });
+    } catch {
+      toast.error("Não foi possível copiar", { description: url });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-muted/30">
       <header className="border-b bg-background">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={onBack}><ArrowLeft className="h-4 w-4" /></Button>
-          <div>
-            <h1 className="font-semibold leading-tight">{tournament.nome}</h1>
+          <div className="flex-1 min-w-0">
+            <h1 className="font-semibold leading-tight truncate">{tournament.nome}</h1>
           </div>
+          <Button variant="outline" size="sm" onClick={handleSharePublicLink}>
+            <Share2 className="h-4 w-4 mr-1" /> Compartilhar link público
+          </Button>
         </div>
       </header>
 

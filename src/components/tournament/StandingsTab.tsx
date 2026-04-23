@@ -6,7 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, BarChart3 } from "lucide-react";
+import { Download, BarChart3, Lock, Unlock } from "lucide-react";
+import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { FASES } from "@/lib/constants";
 import type { Tables } from "@/integrations/supabase/types";
@@ -31,10 +32,17 @@ export default function StandingsTab({ tournamentId }: Props) {
   const [results, setResults] = useState<MatchResult[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [phaseStatuses, setPhaseStatuses] = useState<Tables<"phase_status">[]>([]);
   const [selectedFase, setSelectedFase] = useState<string>("Fase de Grupos");
   const [selectedGroup, setSelectedGroup] = useState<string>("__all__");
 
   const isFaseDeGrupos = selectedFase === "Fase de Grupos";
+
+  const loadPhaseStatuses = () => {
+    supabase.from("phase_status").select("*").eq("tournament_id", tournamentId).then(({ data }) => {
+      if (data) setPhaseStatuses(data);
+    });
+  };
 
   useEffect(() => {
     Promise.all([
@@ -46,7 +54,27 @@ export default function StandingsTab({ tournamentId }: Props) {
       if (p.data) setPlayers(p.data);
       if (pr.data) setProfiles(pr.data);
     });
+    loadPhaseStatuses();
   }, [tournamentId]);
+
+  const currentPhaseStatus = phaseStatuses.find(p => p.fase === selectedFase)?.status || "em_andamento";
+  const isConcluded = currentPhaseStatus === "concluida";
+
+  const togglePhaseStatus = async () => {
+    const newStatus = isConcluded ? "em_andamento" : "concluida";
+    const existing = phaseStatuses.find(p => p.fase === selectedFase);
+    if (existing) {
+      const { error } = await supabase.from("phase_status").update({ status: newStatus }).eq("id", existing.id);
+      if (error) { toast.error("Erro ao atualizar fase"); return; }
+    } else {
+      const { error } = await supabase.from("phase_status").insert({
+        tournament_id: tournamentId, fase: selectedFase, status: newStatus,
+      });
+      if (error) { toast.error("Erro ao atualizar fase"); return; }
+    }
+    toast.success(newStatus === "concluida" ? "Fase marcada como concluída" : "Fase reaberta");
+    loadPhaseStatuses();
+  };
 
   const getPlayerNick = (id: string) => players.find(p => p.id === id)?.nick_playroom || "";
   const getPlayerName = (id: string) => players.find(p => p.id === id)?.nome_completo || "Desconhecido";
@@ -147,6 +175,13 @@ export default function StandingsTab({ tournamentId }: Props) {
             </Select>
           </div>
         )}
+        <Button
+          variant={isConcluded ? "outline" : "default"}
+          onClick={togglePhaseStatus}
+          size="sm"
+        >
+          {isConcluded ? <><Unlock className="h-4 w-4 mr-1" /> Reabrir fase</> : <><Lock className="h-4 w-4 mr-1" /> Marcar fase como concluída</>}
+        </Button>
         {standings.length > 0 && (
           <Button variant="outline" onClick={exportToXlsx}>
             <Download className="h-4 w-4 mr-1" /> Exportar Planilha

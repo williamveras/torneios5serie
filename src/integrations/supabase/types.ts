@@ -63,6 +63,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "match_results_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "match_results_tournament_id_fkey"
             columns: ["tournament_id"]
             isOneToOne: false
@@ -111,10 +118,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "match_schedule_player1_id_fkey"
+            columns: ["player1_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "match_schedule_player2_id_fkey"
             columns: ["player2_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_schedule_player2_id_fkey"
+            columns: ["player2_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
             referencedColumns: ["id"]
           },
           {
@@ -156,6 +177,33 @@ export type Database = {
           player2_id?: string
           rodada?: number | null
           tournament_id?: string
+        }
+        Relationships: []
+      }
+      phase_status: {
+        Row: {
+          created_at: string
+          fase: string
+          id: string
+          status: string
+          tournament_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          fase: string
+          id?: string
+          status?: string
+          tournament_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          fase?: string
+          id?: string
+          status?: string
+          tournament_id?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -253,7 +301,41 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      players_public: {
+        Row: {
+          created_at: string | null
+          grupo: string | null
+          id: string | null
+          nick_playroom: string | null
+          nome_completo: string | null
+          tournament_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          grupo?: string | null
+          id?: string | null
+          nick_playroom?: string | null
+          nome_completo?: string | null
+          tournament_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          grupo?: string | null
+          id?: string | null
+          nick_playroom?: string | null
+          nome_completo?: string | null
+          tournament_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "players_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       [_ in never]: never

@@ -16,7 +16,11 @@ interface Props {
   players: PlayerLite[];
 }
 
-const displayName = (p?: PlayerLite) => p?.nick_playroom?.trim() || p?.nome_completo || "Desconhecido";
+const displayName = (p?: PlayerLite) => {
+  if (!p) return "Jogador desconhecido";
+  const nick = p.nick_playroom?.trim();
+  return nick ? `${p.nome_completo} (${nick})` : p.nome_completo;
+};
 
 const formatDate = (iso: string) => {
   try {

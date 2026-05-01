@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, CheckCircle2, BarChart3 } from "lucide-react";
 import { FASES } from "@/lib/constants";
@@ -32,9 +31,11 @@ export default function PublicResults({ results, players, phaseStatuses }: Props
     return m;
   }, [players]);
 
-  const displayName = (id: string) => {
+  const fullName = (id: string) => {
     const p = playerMap.get(id);
-    return p?.nick_playroom?.trim() || p?.nome_completo || "Desconhecido";
+    if (!p) return "Jogador desconhecido";
+    const nick = p.nick_playroom?.trim();
+    return nick ? `${p.nome_completo} (${nick})` : p.nome_completo;
   };
 
   const availableFases = useMemo(() => {
@@ -71,14 +72,14 @@ export default function PublicResults({ results, players, phaseStatuses }: Props
 
       {filtered.length > 0 && (
         isInProgress ? (
-          <Alert className="border-yellow-500/50 bg-yellow-500/10">
+          <Alert className="border-yellow-500/50 bg-yellow-500/10" role="status">
             <AlertTriangle className="h-4 w-4 text-yellow-600" />
             <AlertDescription>
               <strong>Fase em andamento</strong> — os resultados abaixo são parciais e podem mudar até o encerramento da fase.
             </AlertDescription>
           </Alert>
         ) : (
-          <Alert className="border-green-500/50 bg-green-500/10">
+          <Alert className="border-green-500/50 bg-green-500/10" role="status">
             <CheckCircle2 className="h-4 w-4 text-green-600" />
             <AlertDescription>
               <strong>Fase encerrada</strong> — resultados oficiais.
@@ -90,7 +91,7 @@ export default function PublicResults({ results, players, phaseStatuses }: Props
       {filtered.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            <BarChart3 className="h-10 w-10 mx-auto mb-3 opacity-40" />
+            <BarChart3 className="h-10 w-10 mx-auto mb-3 opacity-40" aria-hidden="true" />
             <p>Nenhum resultado registrado para esta fase.</p>
           </CardContent>
         </Card>
@@ -99,37 +100,44 @@ export default function PublicResults({ results, players, phaseStatuses }: Props
           {rounds.map(round => {
             const roundResults = filtered.filter(r => r.rodada === round);
             return (
-              <Card key={round}>
-                <CardContent className="pt-4">
-                  <h3 className="font-semibold mb-3">Rodada {round}</h3>
-                  <div className="rounded-lg border overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Nick</TableHead>
-                          {isFaseDeGrupos && <TableHead>Grupo</TableHead>}
-                          <TableHead className="text-right">Pts Vitória</TableHead>
-                          <TableHead className="text-right">Pts Mesa</TableHead>
-                          <TableHead>Penalidades</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {roundResults.map(r => (
-                          <TableRow key={r.id}>
-                            <TableCell className="font-medium">{displayName(r.player_id)}</TableCell>
-                            {isFaseDeGrupos && <TableCell>{r.grupo}</TableCell>}
-                            <TableCell className="text-right tabular-nums">{r.pontos_jogo}</TableCell>
-                            <TableCell className="text-right tabular-nums">{r.pontos_mesa}</TableCell>
-                            <TableCell className={r.penalidades !== "Sem penalidades" ? "text-destructive" : "text-muted-foreground"}>
-                              {r.penalidades}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
+              <section key={round} aria-labelledby={`rodada-${round}`}>
+                <Card>
+                  <CardContent className="pt-4">
+                    <h3 id={`rodada-${round}`} className="font-semibold mb-3 text-lg">
+                      Rodada {round}
+                    </h3>
+                    <ul className="space-y-3" aria-label={`Resultados da rodada ${round}`}>
+                      {roundResults.map(r => {
+                        const penalidade = r.penalidades !== "Sem penalidades";
+                        return (
+                          <li
+                            key={r.id}
+                            className="rounded-md border bg-muted/30 p-3"
+                          >
+                            <p className="font-medium">
+                              <span className="sr-only">Jogador: </span>
+                              {fullName(r.player_id)}
+                            </p>
+                            {isFaseDeGrupos && (
+                              <p className="text-sm text-muted-foreground">
+                                Grupo {r.grupo}
+                              </p>
+                            )}
+                            <p className="text-sm mt-1">
+                              <span>Pontos de vitória: <strong>{r.pontos_jogo}</strong>.</span>
+                              {" "}
+                              <span>Pontos de mesa: <strong>{r.pontos_mesa}</strong>.</span>
+                            </p>
+                            <p className={`text-sm ${penalidade ? "text-destructive" : "text-muted-foreground"}`}>
+                              Penalidades: {r.penalidades}.
+                            </p>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </CardContent>
+                </Card>
+              </section>
             );
           })}
         </div>

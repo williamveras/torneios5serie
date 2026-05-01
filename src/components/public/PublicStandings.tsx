@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, CheckCircle2, BarChart3 } from "lucide-react";
 import { FASES } from "@/lib/constants";
@@ -36,7 +35,7 @@ export default function PublicStandings({ results, players, phaseStatuses }: Pro
     return m;
   }, [players]);
 
-  const getPlayerName = (id: string) => playerMap.get(id)?.nome_completo || "Desconhecido";
+  const getPlayerName = (id: string) => playerMap.get(id)?.nome_completo || "Jogador desconhecido";
   const getPlayerNick = (id: string) => playerMap.get(id)?.nick_playroom || "";
 
   const availableFases = useMemo(() => {
@@ -94,14 +93,14 @@ export default function PublicStandings({ results, players, phaseStatuses }: Pro
 
       {standings.length > 0 && (
         isInProgress ? (
-          <Alert className="border-yellow-500/50 bg-yellow-500/10">
+          <Alert className="border-yellow-500/50 bg-yellow-500/10" role="status">
             <AlertTriangle className="h-4 w-4 text-yellow-600" />
             <AlertDescription>
               <strong>Fase em andamento</strong> — esta classificação é parcial e pode mudar até o encerramento da fase.
             </AlertDescription>
           </Alert>
         ) : (
-          <Alert className="border-green-500/50 bg-green-500/10">
+          <Alert className="border-green-500/50 bg-green-500/10" role="status">
             <CheckCircle2 className="h-4 w-4 text-green-600" />
             <AlertDescription>
               <strong>Fase encerrada</strong> — classificação oficial.
@@ -113,37 +112,43 @@ export default function PublicStandings({ results, players, phaseStatuses }: Pro
       {standings.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            <BarChart3 className="h-10 w-10 mx-auto mb-3 opacity-40" />
+            <BarChart3 className="h-10 w-10 mx-auto mb-3 opacity-40" aria-hidden="true" />
             <p>Nenhum resultado registrado para esta fase.</p>
           </CardContent>
         </Card>
       ) : (
-        <div className="rounded-lg border bg-background overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-16">#</TableHead>
-                <TableHead>Nick</TableHead>
-                <TableHead className="text-right">Pts Vitória</TableHead>
-                <TableHead className="text-right">Pts Mesa</TableHead>
-                <TableHead>Penalidades</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {standings.map(s => (
-                <TableRow key={s.playerId} className={s.hasPenalty ? "bg-destructive/5" : ""}>
-                  <TableCell className="font-bold tabular-nums">{s.position}º</TableCell>
-                  <TableCell className="font-medium">{s.nick || s.playerName}</TableCell>
-                  <TableCell className="text-right tabular-nums">{s.pontosJogo}</TableCell>
-                  <TableCell className="text-right tabular-nums">{s.pontosMesa}</TableCell>
-                  <TableCell className={s.hasPenalty ? "text-destructive" : "text-muted-foreground"}>
-                    {s.penalidades}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <ol
+          className="space-y-2"
+          aria-label={`Classificação — ${selectedFase}${isFaseDeGrupos && selectedGroup !== "__all__" ? `, grupo ${selectedGroup}` : ""}`}
+        >
+          {standings.map(s => {
+            const displayName = s.nick ? `${s.playerName} (${s.nick})` : s.playerName;
+            return (
+              <li
+                key={s.playerId}
+                className={`rounded-md border bg-background p-3 flex items-start gap-3 ${s.hasPenalty ? "bg-destructive/5" : ""}`}
+              >
+                <div
+                  className="font-bold tabular-nums text-lg min-w-[2.5rem]"
+                  aria-label={`Posição ${s.position}`}
+                >
+                  {s.position}º
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium">{displayName}</p>
+                  <p className="text-sm mt-0.5">
+                    <span>Pontos de vitória: <strong>{s.pontosJogo}</strong>.</span>
+                    {" "}
+                    <span>Pontos de mesa: <strong>{s.pontosMesa}</strong>.</span>
+                  </p>
+                  <p className={`text-sm ${s.hasPenalty ? "text-destructive" : "text-muted-foreground"}`}>
+                    Penalidades: {s.penalidades}.
+                  </p>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
       )}
     </div>
   );

@@ -338,7 +338,16 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      get_players_public: {
+        Args: { _tournament_id: string }
+        Returns: {
+          grupo: string
+          id: string
+          nick_playroom: string
+          nome_completo: string
+          tournament_id: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

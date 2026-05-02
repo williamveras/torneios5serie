@@ -116,7 +116,7 @@ export default function PublicResults({ results, players, phaseStatuses }: Props
                             className="rounded-md border bg-muted/30 p-3"
                           >
                             <p className="font-medium">
-                              <span className="sr-only">Jogador: </span>{playerName}
+                              <span className="sr-only">Jogador:&nbsp;</span>{playerName}
                             </p>
                             {isFaseDeGrupos && (
                               <p className="text-sm text-muted-foreground">
@@ -124,9 +124,10 @@ export default function PublicResults({ results, players, phaseStatuses }: Props
                               </p>
                             )}
                             <p className="text-sm mt-1">
-                              <span>Pontos de vitória: <strong>{r.pontos_jogo}</strong>.</span>
-                              {" "}
-                              <span>Pontos de mesa: <strong>{r.pontos_mesa}</strong>.</span>
+                              Pontos de vitória: <strong>{r.pontos_jogo}</strong>.
+                            </p>
+                            <p className="text-sm">
+                              Pontos de mesa: <strong>{r.pontos_mesa}</strong>.
                             </p>
                             <p className={`text-sm ${penalidade ? "text-destructive" : "text-muted-foreground"}`}>
                               Penalidades: {r.penalidades}.

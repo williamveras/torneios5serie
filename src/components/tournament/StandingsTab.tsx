@@ -140,6 +140,7 @@ export default function StandingsTab({ tournamentId }: Props) {
     const data = standings.map(s => ({
       "Posição": s.position,
       "Nick": s.nick || s.playerName,
+      "Grupo": s.grupo || "",
       "Pts Vitória": s.pontosJogo,
       "Pts Mesa": s.pontosMesa,
       "Penalidades": s.penalidades,

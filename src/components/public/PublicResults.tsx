@@ -35,7 +35,7 @@ export default function PublicResults({ results, players, phaseStatuses }: Props
     const p = playerMap.get(id);
     if (!p) return "Jogador desconhecido";
     const nick = p.nick_playroom?.trim();
-    return nick ? `${p.nome_completo} (${nick})` : p.nome_completo;
+    return nick || p.nome_completo;
   };
 
   const availableFases = useMemo(() => {

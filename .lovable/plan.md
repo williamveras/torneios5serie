@@ -1,60 +1,50 @@
+## Objetivo
 
+Simplificar a tela de Classificação (administrativa e pública) removendo a sub-aba de "Resultados por Rodada" e exibir a Classificação Geral organizada por grupos. Quando a fase não tiver grupos definidos, exibir apenas uma lista única, sem rótulo de grupo.
 
-## Página pública para jogadores
+## Mudanças
 
-Uma rota pública (sem login) onde participantes acompanham resultados, classificação e agenda do torneio em tempo real, com controle de "fase concluída" para evitar interpretações erradas de classificações parciais.
+### 1. Aba Classificação (admin) — `src/components/tournament/StandingsTab.tsx`
 
-### Rota e acesso
+- Remover o componente `Tabs`/`TabsList`/`TabsContent` e a seção "Resultados por Rodada".
+- Manter apenas a tabela da Classificação Geral (mesmas regras atuais: ordenação por penalidades → pontos de vitória → pontos de mesa; mesmas colunas).
+- Remover o filtro "Grupo" do topo (Select de grupo) — não é mais necessário, pois os grupos serão exibidos como seções.
+- Manter o filtro "Fase", o botão "Marcar/Reabrir fase" e o botão "Exportar Planilha".
+- Agrupar os `standings` por `grupo`:
+  - Se houver pelo menos um grupo definido (valor não vazio) nos resultados da fase selecionada: renderizar uma seção por grupo, com título "Grupo X", e dentro de cada seção a tabela de classificação daquele grupo (posições recalculadas dentro do grupo, 1º, 2º, 3º…).
+  - Se nenhum resultado da fase tiver grupo (ou todos vierem vazios): renderizar uma única tabela, sem rótulo de grupo, com posições gerais.
+- Ordenação dos grupos: alfanumérica natural (1, 2, …, 10, 11) — manter o `.sort()` já existente, mas com comparador numérico quando aplicável.
+- Exportação XLSX:
+  - Manter a coluna "Grupo" (já adicionada).
+  - Quando houver grupos, gerar **uma aba por grupo** dentro do mesmo arquivo (`Grupo 1`, `Grupo 2`, …) + uma aba "Geral" com todos juntos.
+  - Quando não houver grupos, gerar apenas uma aba "Classificação" sem a coluna "Grupo".
+- Remover o estado `selectedGroup` e a lógica `isFaseDeGrupos` que dependia dele para o filtro.
 
-- **URL pública**: `/p/:tournamentId` (ex: `https://torneios5serie.lovable.app/p/<id>`).
-- Sem autenticação. Você compartilha o link com os jogadores.
-- Botão **"Compartilhar link público"** no topo da `TournamentPage` (admin), copia a URL para a área de transferência.
+### 2. Página pública — Classificação — `src/components/public/PublicStandings.tsx`
 
-### O que o jogador vê
+Aplicar exatamente a mesma lógica visual:
+- Remover o Select de "Grupo".
+- Quando houver grupos na fase selecionada: exibir múltiplas listas (`<ol>`), uma por grupo, cada uma com seu cabeçalho "Grupo X" (`<h3>` para acessibilidade) e posições 1º…Nº dentro do grupo. O `aria-label` da lista deve incluir o nome do grupo.
+- Quando não houver grupos: exibir uma única lista, sem cabeçalho de grupo, com posições gerais.
+- Manter os Alerts de "Fase em andamento" / "Fase encerrada" e o estado vazio.
 
-Layout simples (header com nome do torneio + 3 abas), sem sidebar, mobile-first:
+### 3. Página pública — Resultados — `src/components/public/PublicResults.tsx`
 
-1. **Agenda** — lista de partidas agrupadas por data, mostrando horário, fase/grupo e os dois jogadores (nick com fallback para nome). Mesmo formato visual da `ScheduleTab` atual, mas só leitura.
-2. **Resultados por Rodada** — agrupado por Fase → Rodada, mostrando jogador, pontos vitória, pontos mesa e penalidades. Idêntico à aba "Resultados por Rodada" da `StandingsTab`, somente leitura.
-3. **Classificação** — tabela ordenada (mesma lógica de desempate já existente), com seletor de Fase e Grupo.
-
-### Controle de "fase concluída" (parte central do pedido)
-
-Você escolheu a opção mais simples: **mostrar sempre, com aviso quando estiver em andamento**. Para isso:
-
-- **Nova tabela `phase_status`** (`tournament_id`, `fase`, `status` = `'em_andamento' | 'concluida'`, `updated_at`). Default = `em_andamento` quando há resultados sem marcação.
-- **Novo controle no admin**, dentro da `StandingsTab`: ao lado do seletor de Fase, um botão toggle **"Marcar fase como concluída"** / **"Reabrir fase"**. Só visível para usuários autenticados.
-- **Na página pública**:
-  - Se `status = em_andamento`: banner amarelo bem visível no topo da Classificação e dos Resultados daquela fase com o texto:
-    > ⚠️ **Fase em andamento** — esta classificação é parcial e pode mudar até o encerramento da fase.
-  - Se `status = concluida`: banner verde discreto:
-    > ✅ **Fase encerrada** — classificação oficial.
-
-Assim você nunca precisa "esconder" dados (mais simples de operar), mas a comunicação é inequívoca.
+O usuário pediu "tanto na parte administrativa como na exibição pública para os jogadores". A aba pública equivalente à classificação é `PublicStandings`. A aba `PublicResults` (lista de resultados por rodada) **não será alterada** — ela é informativa de cada rodada, não é classificação. Confirmar com o usuário caso esse não seja o entendimento.
 
 ### Detalhes técnicos
 
-**Banco**
-- Migração: criar tabela `phase_status` com unique `(tournament_id, fase)`, RLS:
-  - SELECT: público (`USING (true)` para `anon` + `authenticated`) — necessário para a página pública ler.
-  - INSERT/UPDATE/DELETE: só `authenticated`.
-- Adicionar policies SELECT públicas (`anon`) em `players`, `match_results`, `match_schedule`, `tournaments` — hoje só `authenticated` enxerga. Isso é seguro: nenhuma dessas tabelas tem dado sensível (só nick, nome, horário público de jogo). WhatsApp e e-mail dos jogadores **não** serão expostos — a página pública seleciona só as colunas necessárias (`id`, `nome_completo`, `nick_playroom`, `grupo`).
+- Detecção de "fase sem grupos": `results.every(r => !r.grupo || r.grupo.trim() === "")` na fase filtrada. Como a coluna `grupo` é `NOT NULL`, na prática isso significa string vazia ou um marcador. Tratar string vazia como "sem grupo".
+- Reaproveitar `computeStandings` em `src/lib/standings.ts` aplicando-o por subconjunto (por grupo) — não precisa mudar a função.
+- Posições são recalculadas **dentro de cada grupo** (cada grupo começa do 1º).
 
-> Observação de privacidade: a coluna `whatsapp` em `players` continua protegida porque o cliente público nunca a solicita, mas RLS não filtra por coluna. Para garantia extra, a página pública usa uma **view** `players_public` (`security_invoker=on`) expondo só id/nome/nick/grupo, e consulta sempre a view. Assim mesmo se alguém tentar `SELECT *` direto na tabela via API pública, continua sem acesso ao WhatsApp.
+## Arquivos afetados
 
-**Frontend**
-- Nova rota em `App.tsx`: `<Route path="/p/:tournamentId" element={<PublicTournament />} />`.
-- Novo arquivo `src/pages/PublicTournament.tsx` com 3 abas (Tabs do shadcn).
-- Componentes auxiliares dentro da pasta `src/components/public/`:
-  - `PublicSchedule.tsx`
-  - `PublicResults.tsx`
-  - `PublicStandings.tsx` (recebe `phaseStatus` e renderiza o banner)
-- Reaproveita a lógica de cálculo de classificação extraída para um util `src/lib/standings.ts` (refator pequeno em `StandingsTab` para importar do mesmo lugar — evita duplicação).
-- Botão "Compartilhar link público" em `TournamentPage.tsx` (header) usando `navigator.clipboard` + toast.
-- Toggle "Marcar fase como concluída" em `StandingsTab.tsx` (lê/escreve `phase_status`).
+- `src/components/tournament/StandingsTab.tsx` (refatorar)
+- `src/components/public/PublicStandings.tsx` (refatorar)
+- `src/lib/standings.ts` (sem mudança, reutilizar)
 
-**Sem alterações**
-- Fluxo de admin (Participantes, Confrontos, Resultados, Agenda) permanece igual.
-- Schema dos players/results/schedule não muda.
-- RLS de escrita continua restrito a `authenticated`.
+## Fora de escopo
 
+- Nenhuma migração de banco.
+- Nenhuma mudança no registro de resultados, agenda, confrontos ou exibição da aba pública "Resultados".

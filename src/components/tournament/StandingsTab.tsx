@@ -103,16 +103,17 @@ export default function StandingsTab({ tournamentId }: Props) {
   const rounds = useMemo(() => [...new Set(filteredResults.map(r => r.rodada))].sort((a, b) => a - b), [filteredResults]);
 
   const standings = useMemo(() => {
-    const agg = new Map<string, { pontosJogo: number; pontosMesa: number; penalties: string[] }>();
+    const agg = new Map<string, { pontosJogo: number; pontosMesa: number; penalties: string[]; grupo: string }>();
     for (const r of filteredResults) {
-      const prev = agg.get(r.player_id) || { pontosJogo: 0, pontosMesa: 0, penalties: [] };
+      const prev = agg.get(r.player_id) || { pontosJogo: 0, pontosMesa: 0, penalties: [], grupo: r.grupo };
       prev.pontosJogo += r.pontos_jogo;
       prev.pontosMesa += r.pontos_mesa;
       if (r.penalidades !== "Sem penalidades") prev.penalties.push(r.penalidades);
+      if (!prev.grupo) prev.grupo = r.grupo;
       agg.set(r.player_id, prev);
     }
 
-    const rows: StandingRow[] = [];
+    const rows: (StandingRow & { grupo: string })[] = [];
     for (const [playerId, data] of agg) {
       rows.push({
         position: 0,
@@ -122,6 +123,7 @@ export default function StandingsTab({ tournamentId }: Props) {
         pontosMesa: data.pontosMesa,
         penalidades: data.penalties.length > 0 ? data.penalties.join("; ") : "Sem penalidades",
         hasPenalty: data.penalties.length > 0,
+        grupo: data.grupo,
       });
     }
 
@@ -138,6 +140,7 @@ export default function StandingsTab({ tournamentId }: Props) {
     const data = standings.map(s => ({
       "Posição": s.position,
       "Nick": s.nick || s.playerName,
+      "Grupo": s.grupo || "",
       "Pts Vitória": s.pontosJogo,
       "Pts Mesa": s.pontosMesa,
       "Penalidades": s.penalidades,

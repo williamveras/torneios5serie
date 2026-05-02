@@ -122,7 +122,7 @@ export default function PublicStandings({ results, players, phaseStatuses }: Pro
           aria-label={`Classificação — ${selectedFase}${isFaseDeGrupos && selectedGroup !== "__all__" ? `, grupo ${selectedGroup}` : ""}`}
         >
           {standings.map(s => {
-            const displayName = s.nick ? `${s.playerName} (${s.nick})` : s.playerName;
+            const displayName = s.nick || s.playerName;
             return (
               <li
                 key={s.playerId}

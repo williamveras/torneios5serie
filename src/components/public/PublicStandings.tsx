@@ -23,11 +23,16 @@ interface Props {
   phaseStatuses: PhaseStatus[];
 }
 
+const naturalGroupSort = (a: string, b: string) => {
+  const na = Number(a), nb = Number(b);
+  if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
+  return a.localeCompare(b);
+};
+
+const hasGroup = (g: string | null | undefined) => !!g && g.trim() !== "";
+
 export default function PublicStandings({ results, players, phaseStatuses }: Props) {
   const [selectedFase, setSelectedFase] = useState<string>("Fase de Grupos");
-  const [selectedGroup, setSelectedGroup] = useState<string>("__all__");
-
-  const isFaseDeGrupos = selectedFase === "Fase de Grupos";
 
   const playerMap = useMemo(() => {
     const m = new Map<string, PlayerLite>();
@@ -48,27 +53,41 @@ export default function PublicStandings({ results, players, phaseStatuses }: Pro
     [results, selectedFase],
   );
 
-  const groups = useMemo(() => [...new Set(filteredByFase.map(r => r.grupo))].sort(), [filteredByFase]);
+  const hasAnyGroup = useMemo(() => filteredByFase.some(r => hasGroup(r.grupo)), [filteredByFase]);
 
-  const filtered = useMemo(() => {
-    if (!isFaseDeGrupos || selectedGroup === "__all__") return filteredByFase;
-    return filteredByFase.filter(r => r.grupo === selectedGroup);
-  }, [filteredByFase, selectedGroup, isFaseDeGrupos]);
-
-  const standings = useMemo(
-    () => computeStandings(filtered, getPlayerName, getPlayerNick),
-    [filtered, players],
+  const groups = useMemo(
+    () => [...new Set(filteredByFase.filter(r => hasGroup(r.grupo)).map(r => r.grupo))].sort(naturalGroupSort),
+    [filteredByFase],
   );
 
+  const sections = useMemo(() => {
+    if (!hasAnyGroup) {
+      return [{
+        grupo: "",
+        rows: computeStandings(filteredByFase, getPlayerName, getPlayerNick),
+      }];
+    }
+    return groups.map(g => ({
+      grupo: g,
+      rows: computeStandings(
+        filteredByFase.filter(r => r.grupo === g),
+        getPlayerName,
+        getPlayerNick,
+      ),
+    }));
+  }, [filteredByFase, groups, hasAnyGroup, players]);
+
+  const totalRows = sections.reduce((acc, s) => acc + s.rows.length, 0);
+
   const phaseStatus = phaseStatuses.find(p => p.fase === selectedFase)?.status || "em_andamento";
-  const isInProgress = phaseStatus === "em_andamento" && standings.length > 0;
+  const isInProgress = phaseStatus === "em_andamento" && totalRows > 0;
 
   return (
     <div className="space-y-4">
       <div className="flex items-end gap-4 flex-wrap">
         <div className="space-y-2">
           <Label htmlFor="public-fase">Fase</Label>
-          <Select value={selectedFase} onValueChange={v => { setSelectedFase(v); setSelectedGroup("__all__"); }}>
+          <Select value={selectedFase} onValueChange={setSelectedFase}>
             <SelectTrigger id="public-fase" className="w-[200px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               {(availableFases.length > 0 ? availableFases : FASES).map(f => (
@@ -77,21 +96,9 @@ export default function PublicStandings({ results, players, phaseStatuses }: Pro
             </SelectContent>
           </Select>
         </div>
-        {isFaseDeGrupos && groups.length > 0 && (
-          <div className="space-y-2">
-            <Label htmlFor="public-grupo">Grupo</Label>
-            <Select value={selectedGroup} onValueChange={setSelectedGroup}>
-              <SelectTrigger id="public-grupo" className="w-[180px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__all__">Todos os grupos</SelectItem>
-                {groups.map(g => <SelectItem key={g} value={g}>Grupo {g}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
       </div>
 
-      {standings.length > 0 && (
+      {totalRows > 0 && (
         isInProgress ? (
           <Alert className="border-yellow-500/50 bg-yellow-500/10" role="status">
             <AlertTriangle className="h-4 w-4 text-yellow-600" />
@@ -109,7 +116,7 @@ export default function PublicStandings({ results, players, phaseStatuses }: Pro
         )
       )}
 
-      {standings.length === 0 ? (
+      {totalRows === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             <BarChart3 className="h-10 w-10 mx-auto mb-3 opacity-40" aria-hidden="true" />
@@ -117,38 +124,54 @@ export default function PublicStandings({ results, players, phaseStatuses }: Pro
           </CardContent>
         </Card>
       ) : (
-        <ol
-          className="space-y-2"
-          aria-label={`Classificação — ${selectedFase}${isFaseDeGrupos && selectedGroup !== "__all__" ? `, grupo ${selectedGroup}` : ""}`}
-        >
-          {standings.map(s => {
-            const displayName = s.nick || s.playerName;
-            return (
-              <li
-                key={s.playerId}
-                className={`rounded-md border bg-background p-3 flex items-start gap-3 ${s.hasPenalty ? "bg-destructive/5" : ""}`}
+        <div className="space-y-6">
+          {sections.map(sec => (
+            <section key={sec.grupo || "__no_group__"} aria-labelledby={`pub-group-${sec.grupo || "geral"}`}>
+              {hasAnyGroup && (
+                <h3 id={`pub-group-${sec.grupo}`} className="font-semibold text-lg mb-2">
+                  Grupo {sec.grupo}
+                </h3>
+              )}
+              <ol
+                className="space-y-2"
+                aria-label={
+                  hasAnyGroup
+                    ? `Classificação — ${selectedFase}, grupo ${sec.grupo}`
+                    : `Classificação — ${selectedFase}`
+                }
               >
-                <div
-                  className="font-bold tabular-nums text-lg min-w-[2.5rem]"
-                  aria-label={`Posição ${s.position}`}
-                >
-                  {s.position}º
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium">{displayName}</p>
-                  <p className="text-sm mt-0.5">
-                    <span>Pontos de vitória: <strong>{s.pontosJogo}</strong>.</span>
-                    {" "}
-                    <span>Pontos de mesa: <strong>{s.pontosMesa}</strong>.</span>
-                  </p>
-                  <p className={`text-sm ${s.hasPenalty ? "text-destructive" : "text-muted-foreground"}`}>
-                    Penalidades: {s.penalidades}.
-                  </p>
-                </div>
-              </li>
-            );
-          })}
-        </ol>
+                {sec.rows.map(s => {
+                  const displayName = s.nick || s.playerName;
+                  return (
+                    <li
+                      key={s.playerId}
+                      className={`rounded-md border bg-background p-3 flex items-start gap-3 ${s.hasPenalty ? "bg-destructive/5" : ""}`}
+                    >
+                      <div
+                        className="font-bold tabular-nums text-lg min-w-[2.5rem]"
+                        aria-label={`Posição ${s.position}`}
+                      >
+                        {s.position}º
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium">{displayName}</p>
+                        <p className="text-sm mt-0.5">
+                          <span>Pontos de vitória: <strong>{s.pontosJogo}</strong>.</span>
+                        </p>
+                        <p className="text-sm">
+                          <span>Pontos de mesa: <strong>{s.pontosMesa}</strong>.</span>
+                        </p>
+                        <p className={`text-sm ${s.hasPenalty ? "text-destructive" : "text-muted-foreground"}`}>
+                          Penalidades: {s.penalidades}.
+                        </p>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            </section>
+          ))}
+        </div>
       )}
     </div>
   );

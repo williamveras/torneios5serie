@@ -115,8 +115,8 @@ export default function PublicResults({ results, players, phaseStatuses }: Props
                             key={r.id}
                             className="rounded-md border bg-muted/30 p-3"
                           >
-                            <p className="font-medium" aria-label={`Jogador: ${playerName}`}>
-                              <span aria-hidden="true">{playerName}</span>
+                            <p className="font-medium">
+                              <span className="sr-only">Jogador: </span>{playerName}
                             </p>
                             {isFaseDeGrupos && (
                               <p className="text-sm text-muted-foreground">

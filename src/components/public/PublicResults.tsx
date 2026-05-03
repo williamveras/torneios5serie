@@ -262,9 +262,9 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
                                 {tituloConfronto}
                               </h3>
                               <p className="text-sm text-muted-foreground mt-1">
-                                Jogo moderado por: <span className="font-medium text-foreground">{moderatorName(c.registered_by)}</span>
-                                <span className="mx-2" aria-hidden="true">·</span>
-                                <span>postado às {horaPostagem}</span>
+                                Jogo moderado por <span className="font-medium text-foreground">{moderatorName(c.registered_by)}</span>.
+                                {" "}
+                                <span>Postado às {horaPostagem}.</span>
                               </p>
                             </header>
                             <ul className="space-y-2">

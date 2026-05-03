@@ -126,9 +126,9 @@ export default function PublicStandings({ results, players, phaseStatuses }: Pro
       ) : (
         <div className="space-y-6">
           {sections.map(sec => (
-            <section key={sec.grupo || "__no_group__"} aria-labelledby={`pub-group-${sec.grupo || "geral"}`}>
+            <section key={sec.grupo || "__no_group__"}>
               {hasAnyGroup && (
-                <h3 id={`pub-group-${sec.grupo}`} className="font-semibold text-lg mb-2">
+                <h3 className="font-semibold text-lg mb-2">
                   Grupo {sec.grupo}
                 </h3>
               )}
@@ -136,7 +136,7 @@ export default function PublicStandings({ results, players, phaseStatuses }: Pro
                 className="space-y-2"
                 aria-label={
                   hasAnyGroup
-                    ? `Classificação — ${selectedFase}, grupo ${sec.grupo}`
+                    ? `Classificação do grupo ${sec.grupo}`
                     : `Classificação — ${selectedFase}`
                 }
               >

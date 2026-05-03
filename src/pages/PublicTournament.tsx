@@ -92,21 +92,21 @@ export default function PublicTournament() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-6">
-        <Tabs defaultValue="schedule">
+        <Tabs defaultValue="results">
           <TabsList className="mb-4 flex-wrap h-auto">
-            <TabsTrigger value="schedule">Agenda</TabsTrigger>
             <TabsTrigger value="results">Resultados</TabsTrigger>
             <TabsTrigger value="standings">Classificação</TabsTrigger>
+            <TabsTrigger value="schedule">Agenda</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="schedule">
-            <PublicSchedule schedules={schedules} players={players} />
-          </TabsContent>
           <TabsContent value="results">
             <PublicResults results={results} players={players} phaseStatuses={phaseStatuses} />
           </TabsContent>
           <TabsContent value="standings">
             <PublicStandings results={results} players={players} phaseStatuses={phaseStatuses} />
+          </TabsContent>
+          <TabsContent value="schedule">
+            <PublicSchedule schedules={schedules} players={players} />
           </TabsContent>
         </Tabs>
       </main>

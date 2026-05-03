@@ -168,6 +168,11 @@ export default function PublicResults({ results, players, phaseStatuses }: Props
                           <span className="text-xs text-yellow-600">Registro avulso</span>
                         )}
                       </header>
+                      {!incompleto && (
+                        <p className="text-base font-semibold mb-3" aria-hidden="true">
+                          {fullName(c.players[0].player_id)} <span className="text-muted-foreground font-normal">x</span> {fullName(c.players[1].player_id)}
+                        </p>
+                      )}
                       <ul className="space-y-2">
                         {c.players.map(r => {
                           const penalidade = r.penalidades !== "Sem penalidades";
@@ -181,14 +186,13 @@ export default function PublicResults({ results, players, phaseStatuses }: Props
                                 {fullName(r.player_id)}
                               </p>
                               <p className="text-sm mt-1">
-                                Pontos de vitória: <strong>{r.pontos_jogo}</strong>.
+                                <strong>{r.pontos_jogo}</strong> ponto{r.pontos_jogo === 1 ? "" : "s"} de vitória, <strong>{r.pontos_mesa}</strong> ponto{r.pontos_mesa === 1 ? "" : "s"} de mesa neste confronto.
                               </p>
-                              <p className="text-sm">
-                                Pontos de mesa: <strong>{r.pontos_mesa}</strong>.
-                              </p>
-                              <p className={`text-sm ${penalidade ? "text-destructive" : "text-muted-foreground"}`}>
-                                Penalidades: {r.penalidades}.
-                              </p>
+                              {penalidade && (
+                                <p className="text-sm text-destructive">
+                                  Penalidades: {r.penalidades}.
+                                </p>
+                              )}
                             </li>
                           );
                         })}

@@ -22,6 +22,29 @@ interface Props {
   phaseStatuses: PhaseStatus[];
 }
 
+interface Confronto {
+  key: string;
+  created_at: string;
+  fase: string;
+  grupo: string;
+  rodada: number;
+  players: MatchResult[];
+}
+
+const formatDateTime = (iso: string) => {
+  try {
+    const d = new Date(iso);
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mi = String(d.getMinutes()).padStart(2, "0");
+    return `${dd}/${mm}/${yyyy} às ${hh}:${mi}`;
+  } catch {
+    return iso;
+  }
+};
+
 export default function PublicResults({ results, players, phaseStatuses }: Props) {
   const [selectedFase, setSelectedFase] = useState<string>("Fase de Grupos");
 
@@ -49,7 +72,30 @@ export default function PublicResults({ results, players, phaseStatuses }: Props
   );
 
   const isFaseDeGrupos = selectedFase === "Fase de Grupos";
-  const rounds = useMemo(() => [...new Set(filtered.map(r => r.rodada))].sort((a, b) => a - b), [filtered]);
+
+  const confrontos = useMemo<Confronto[]>(() => {
+    const map = new Map<string, Confronto>();
+    for (const r of filtered) {
+      const fase = r.fase || "Fase de Grupos";
+      const key = `${r.created_at}|${fase}|${r.grupo}|${r.rodada}`;
+      const existing = map.get(key);
+      if (existing) {
+        existing.players.push(r);
+      } else {
+        map.set(key, {
+          key,
+          created_at: r.created_at,
+          fase,
+          grupo: r.grupo,
+          rodada: r.rodada,
+          players: [r],
+        });
+      }
+    }
+    return Array.from(map.values()).sort((a, b) =>
+      b.created_at.localeCompare(a.created_at),
+    );
+  }, [filtered]);
 
   const phaseStatus = phaseStatuses.find(p => p.fase === selectedFase)?.status || "em_andamento";
   const isInProgress = phaseStatus === "em_andamento" && filtered.length > 0;
@@ -88,7 +134,7 @@ export default function PublicResults({ results, players, phaseStatuses }: Props
         )
       )}
 
-      {filtered.length === 0 ? (
+      {confrontos.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             <BarChart3 className="h-10 w-10 mx-auto mb-3 opacity-40" aria-hidden="true" />
@@ -96,52 +142,64 @@ export default function PublicResults({ results, players, phaseStatuses }: Props
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
-          {rounds.map(round => {
-            const roundResults = filtered.filter(r => r.rodada === round);
+        <ol className="space-y-3 list-none p-0" aria-label={`Confrontos registrados — ${selectedFase}`}>
+          {confrontos.map(c => {
+            const incompleto = c.players.length < 2;
+            const ariaLabel =
+              `Confronto${isFaseDeGrupos ? `, Grupo ${c.grupo}` : ""}, Rodada ${c.rodada}, postado em ${formatDateTime(c.created_at)}`;
             return (
-              <section key={round} aria-labelledby={`rodada-${round}`}>
-                <Card>
-                  <CardContent className="pt-4">
-                    <h3 id={`rodada-${round}`} className="font-semibold mb-3 text-lg">
-                      Rodada {round}
-                    </h3>
-                    <ul className="space-y-3">
-                      {roundResults.map(r => {
-                        const penalidade = r.penalidades !== "Sem penalidades";
-                        const playerName = fullName(r.player_id);
-                        return (
-                          <li
-                            key={r.id}
-                            className="rounded-md border bg-muted/30 p-3"
-                          >
-                            <p className="font-medium">
-                              <span className="sr-only">Jogador:&nbsp;</span>{playerName}
-                            </p>
-                            {isFaseDeGrupos && (
-                              <p className="text-sm text-muted-foreground">
-                                Grupo {r.grupo}
+              <li key={c.key}>
+                <article aria-label={ariaLabel}>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <header className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground mb-3">
+                        <span className="font-medium text-foreground">
+                          {formatDateTime(c.created_at)}
+                        </span>
+                        {isFaseDeGrupos && (
+                          <span className="px-2 py-0.5 rounded bg-secondary text-secondary-foreground text-xs">
+                            Grupo {c.grupo}
+                          </span>
+                        )}
+                        <span className="px-2 py-0.5 rounded bg-muted text-xs">
+                          Rodada {c.rodada}
+                        </span>
+                        {incompleto && (
+                          <span className="text-xs text-yellow-600">Registro avulso</span>
+                        )}
+                      </header>
+                      <ul className="space-y-2">
+                        {c.players.map(r => {
+                          const penalidade = r.penalidades !== "Sem penalidades";
+                          return (
+                            <li
+                              key={r.id}
+                              className="rounded-md border bg-muted/30 p-3"
+                            >
+                              <p className="font-medium">
+                                <span className="sr-only">Jogador:&nbsp;</span>
+                                {fullName(r.player_id)}
                               </p>
-                            )}
-                            <p className="text-sm mt-1">
-                              Pontos de vitória: <strong>{r.pontos_jogo}</strong>.
-                            </p>
-                            <p className="text-sm">
-                              Pontos de mesa: <strong>{r.pontos_mesa}</strong>.
-                            </p>
-                            <p className={`text-sm ${penalidade ? "text-destructive" : "text-muted-foreground"}`}>
-                              Penalidades: {r.penalidades}.
-                            </p>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </CardContent>
-                </Card>
-              </section>
+                              <p className="text-sm mt-1">
+                                Pontos de vitória: <strong>{r.pontos_jogo}</strong>.
+                              </p>
+                              <p className="text-sm">
+                                Pontos de mesa: <strong>{r.pontos_mesa}</strong>.
+                              </p>
+                              <p className={`text-sm ${penalidade ? "text-destructive" : "text-muted-foreground"}`}>
+                                Penalidades: {r.penalidades}.
+                              </p>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                </article>
+              </li>
             );
           })}
-        </div>
+        </ol>
       )}
     </div>
   );

@@ -338,6 +338,13 @@ export type Database = {
       }
     }
     Functions: {
+      get_moderators_public: {
+        Args: { _tournament_id: string }
+        Returns: {
+          nome: string
+          user_id: string
+        }[]
+      }
       get_players_public: {
         Args: { _tournament_id: string }
         Returns: {

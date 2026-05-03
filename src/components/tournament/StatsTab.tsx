@@ -16,6 +16,7 @@ interface Props { tournamentId: string; }
 export default function StatsTab({ tournamentId }: Props) {
   const [results, setResults] = useState<MatchResult[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewerOpen, setViewerOpen] = useState(false);
 
   useEffect(() => {
     setLoading(true);

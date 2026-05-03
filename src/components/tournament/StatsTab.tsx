@@ -110,6 +110,14 @@ export default function StatsTab({ tournamentId }: Props) {
           );
         })
       )}
+
+      <div className="flex justify-center pt-2">
+        <Button variant="outline" onClick={() => setViewerOpen(true)}>
+          <ListChecks className="h-4 w-4 mr-2" /> Visualizar registros
+        </Button>
+      </div>
+
+      <RegistrosViewer tournamentId={tournamentId} open={viewerOpen} onOpenChange={setViewerOpen} />
     </div>
   );
 }

@@ -20,6 +20,11 @@ interface PlayerLite {
   nick_playroom: string | null;
 }
 
+interface ModeratorLite {
+  user_id: string;
+  nome: string;
+}
+
 export default function PublicTournament() {
   const { tournamentId } = useParams<{ tournamentId: string }>();
   const [tournament, setTournament] = useState<Tournament | null>(null);
@@ -27,6 +32,7 @@ export default function PublicTournament() {
   const [results, setResults] = useState<MatchResult[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [phaseStatuses, setPhaseStatuses] = useState<PhaseStatus[]>([]);
+  const [moderators, setModerators] = useState<ModeratorLite[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -41,7 +47,8 @@ export default function PublicTournament() {
       supabase.from("match_results").select("*").eq("tournament_id", tournamentId),
       supabase.from("match_schedule").select("*").eq("tournament_id", tournamentId),
       supabase.from("phase_status").select("*").eq("tournament_id", tournamentId),
-    ]).then(([t, p, r, s, ps]) => {
+      (supabase as any).rpc("get_moderators_public", { _tournament_id: tournamentId }),
+    ]).then(([t, p, r, s, ps, m]) => {
       if (cancelled) return;
       if (!t.data) { setNotFound(true); setLoading(false); return; }
       setTournament(t.data);
@@ -49,6 +56,7 @@ export default function PublicTournament() {
       setResults(r.data || []);
       setSchedules(s.data || []);
       setPhaseStatuses(ps.data || []);
+      setModerators(((m.data as unknown) as ModeratorLite[]) || []);
       setLoading(false);
     });
 
@@ -100,7 +108,7 @@ export default function PublicTournament() {
           </TabsList>
 
           <TabsContent value="results">
-            <PublicResults results={results} players={players} phaseStatuses={phaseStatuses} />
+            <PublicResults results={results} players={players} phaseStatuses={phaseStatuses} moderators={moderators} />
           </TabsContent>
           <TabsContent value="standings">
             <PublicStandings results={results} players={players} phaseStatuses={phaseStatuses} />

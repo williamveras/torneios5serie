@@ -16,10 +16,16 @@ interface PlayerLite {
   nick_playroom: string | null;
 }
 
+interface ModeratorLite {
+  user_id: string;
+  nome: string;
+}
+
 interface Props {
   results: MatchResult[];
   players: PlayerLite[];
   phaseStatuses: PhaseStatus[];
+  moderators: ModeratorLite[];
 }
 
 interface Confronto {
@@ -28,24 +34,34 @@ interface Confronto {
   fase: string;
   grupo: string;
   rodada: number;
+  registered_by: string | null;
   players: MatchResult[];
 }
 
-const formatDateTime = (iso: string) => {
-  try {
-    const d = new Date(iso);
-    const dd = String(d.getDate()).padStart(2, "0");
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const yyyy = d.getFullYear();
-    const hh = String(d.getHours()).padStart(2, "0");
-    const mi = String(d.getMinutes()).padStart(2, "0");
-    return `${dd}/${mm}/${yyyy} às ${hh}:${mi}`;
-  } catch {
-    return iso;
-  }
+const WEEKDAYS = [
+  "domingo",
+  "segunda",
+  "terça",
+  "quarta",
+  "quinta",
+  "sexta",
+  "sábado",
+];
+
+const formatTime = (d: Date) =>
+  `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+
+const formatDayKey = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+const formatDayLabel = (d: Date) => {
+  const weekday = WEEKDAYS[d.getDay()];
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  return `Jogos de ${weekday} (${dd}/${mm})`;
 };
 
-export default function PublicResults({ results, players, phaseStatuses }: Props) {
+export default function PublicResults({ results, players, phaseStatuses, moderators }: Props) {
   const [selectedFase, setSelectedFase] = useState<string>("Fase de Grupos");
 
   const playerMap = useMemo(() => {
@@ -54,11 +70,22 @@ export default function PublicResults({ results, players, phaseStatuses }: Props
     return m;
   }, [players]);
 
-  const fullName = (id: string) => {
+  const moderatorMap = useMemo(() => {
+    const m = new Map<string, string>();
+    moderators.forEach(mod => m.set(mod.user_id, mod.nome));
+    return m;
+  }, [moderators]);
+
+  const displayName = (id: string) => {
     const p = playerMap.get(id);
     if (!p) return "Jogador desconhecido";
     const nick = p.nick_playroom?.trim();
     return nick || p.nome_completo;
+  };
+
+  const moderatorName = (uid: string | null) => {
+    if (!uid) return "Não informado";
+    return moderatorMap.get(uid) || "Usuário desconhecido";
   };
 
   const availableFases = useMemo(() => {
@@ -73,6 +100,7 @@ export default function PublicResults({ results, players, phaseStatuses }: Props
 
   const isFaseDeGrupos = selectedFase === "Fase de Grupos";
 
+  // Group results into confrontos (pairs per registration)
   const confrontos = useMemo<Confronto[]>(() => {
     const map = new Map<string, Confronto>();
     for (const r of filtered) {
@@ -88,6 +116,7 @@ export default function PublicResults({ results, players, phaseStatuses }: Props
           fase,
           grupo: r.grupo,
           rodada: r.rodada,
+          registered_by: r.registered_by,
           players: [r],
         });
       }
@@ -96,6 +125,22 @@ export default function PublicResults({ results, players, phaseStatuses }: Props
       b.created_at.localeCompare(a.created_at),
     );
   }, [filtered]);
+
+  // Group confrontos by day (most recent day first, most recent confronto first)
+  const dias = useMemo(() => {
+    const map = new Map<string, { key: string; date: Date; confrontos: Confronto[] }>();
+    for (const c of confrontos) {
+      const d = new Date(c.created_at);
+      const k = formatDayKey(d);
+      const existing = map.get(k);
+      if (existing) {
+        existing.confrontos.push(c);
+      } else {
+        map.set(k, { key: k, date: d, confrontos: [c] });
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => b.key.localeCompare(a.key));
+  }, [confrontos]);
 
   const phaseStatus = phaseStatuses.find(p => p.fase === selectedFase)?.status || "em_andamento";
   const isInProgress = phaseStatus === "em_andamento" && filtered.length > 0;
@@ -134,7 +179,7 @@ export default function PublicResults({ results, players, phaseStatuses }: Props
         )
       )}
 
-      {confrontos.length === 0 ? (
+      {dias.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             <BarChart3 className="h-10 w-10 mx-auto mb-3 opacity-40" aria-hidden="true" />
@@ -142,68 +187,79 @@ export default function PublicResults({ results, players, phaseStatuses }: Props
           </CardContent>
         </Card>
       ) : (
-        <ol className="space-y-3 list-none p-0" aria-label={`Confrontos registrados — ${selectedFase}`}>
-          {confrontos.map(c => {
-            const incompleto = c.players.length < 2;
-            const ariaLabel =
-              `Confronto${isFaseDeGrupos ? `, Grupo ${c.grupo}` : ""}, Rodada ${c.rodada}, postado em ${formatDateTime(c.created_at)}`;
-            return (
-              <li key={c.key}>
-                <article aria-label={ariaLabel}>
-                  <Card>
-                    <CardContent className="pt-4">
-                      <header className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground mb-3">
-                        <span className="font-medium text-foreground">
-                          {formatDateTime(c.created_at)}
-                        </span>
-                        {isFaseDeGrupos && (
-                          <span className="px-2 py-0.5 rounded bg-secondary text-secondary-foreground text-xs">
-                            Grupo {c.grupo}
-                          </span>
-                        )}
-                        <span className="px-2 py-0.5 rounded bg-muted text-xs">
-                          Rodada {c.rodada}
-                        </span>
-                        {incompleto && (
-                          <span className="text-xs text-yellow-600">Registro avulso</span>
-                        )}
-                      </header>
-                      {!incompleto && (
-                        <p className="text-base font-semibold mb-3" aria-hidden="true">
-                          {fullName(c.players[0].player_id)} <span className="text-muted-foreground font-normal">x</span> {fullName(c.players[1].player_id)}
-                        </p>
-                      )}
-                      <ul className="space-y-2">
-                        {c.players.map(r => {
-                          const penalidade = r.penalidades !== "Sem penalidades";
-                          return (
-                            <li
-                              key={r.id}
-                              className="rounded-md border bg-muted/30 p-3"
-                            >
-                              <p className="font-medium">
-                                <span className="sr-only">Jogador:&nbsp;</span>
-                                {fullName(r.player_id)}
+        <div className="space-y-8">
+          {dias.map(dia => (
+            <section key={dia.key} aria-labelledby={`dia-${dia.key}`}>
+              <h2
+                id={`dia-${dia.key}`}
+                className="text-lg font-semibold mb-3 pb-2 border-b"
+              >
+                {formatDayLabel(dia.date)}
+              </h2>
+              <ol className="space-y-3 list-none p-0">
+                {dia.confrontos.map(c => {
+                  const incompleto = c.players.length < 2;
+                  const p1 = c.players[0];
+                  const p2 = c.players[1];
+                  const nome1 = displayName(p1.player_id);
+                  const nome2 = p2 ? displayName(p2.player_id) : null;
+                  const localizacao = isFaseDeGrupos
+                    ? `rodada ${c.rodada}, grupo ${c.grupo}`
+                    : `rodada ${c.rodada}`;
+                  const tituloConfronto = incompleto
+                    ? `${nome1} (registro avulso) — ${localizacao}`
+                    : `${nome1} x ${nome2}, ${localizacao}`;
+                  const horaPostagem = formatTime(new Date(c.created_at));
+
+                  return (
+                    <li key={c.key}>
+                      <article aria-label={`Confronto ${tituloConfronto}, postado às ${horaPostagem}`}>
+                        <Card>
+                          <CardContent className="pt-4">
+                            <header className="mb-3">
+                              <h3 className="text-base font-semibold">
+                                {tituloConfronto}
+                              </h3>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Jogo moderado por: <span className="font-medium text-foreground">{moderatorName(c.registered_by)}</span>
+                                <span className="mx-2" aria-hidden="true">·</span>
+                                <span>postado às {horaPostagem}</span>
                               </p>
-                              <p className="text-sm mt-1">
-                                <strong>{r.pontos_jogo}</strong> ponto{r.pontos_jogo === 1 ? "" : "s"} de vitória, <strong>{r.pontos_mesa}</strong> ponto{r.pontos_mesa === 1 ? "" : "s"} de mesa neste confronto.
-                              </p>
-                              {penalidade && (
-                                <p className="text-sm text-destructive">
-                                  Penalidades: {r.penalidades}.
-                                </p>
-                              )}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </CardContent>
-                  </Card>
-                </article>
-              </li>
-            );
-          })}
-        </ol>
+                            </header>
+                            <ul className="space-y-2">
+                              {c.players.map(r => {
+                                const penalidade = r.penalidades !== "Sem penalidades";
+                                return (
+                                  <li
+                                    key={r.id}
+                                    className="rounded-md border bg-muted/30 p-3"
+                                  >
+                                    <p className="font-medium">
+                                      <span className="sr-only">Jogador:&nbsp;</span>
+                                      {displayName(r.player_id)}
+                                    </p>
+                                    <p className="text-sm mt-1">
+                                      <strong>{r.pontos_jogo}</strong> ponto{r.pontos_jogo === 1 ? "" : "s"} de vitória, <strong>{r.pontos_mesa}</strong> ponto{r.pontos_mesa === 1 ? "" : "s"} de mesa neste confronto.
+                                    </p>
+                                    {penalidade && (
+                                      <p className="text-sm text-destructive">
+                                        Penalidades: {r.penalidades}.
+                                      </p>
+                                    )}
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </CardContent>
+                        </Card>
+                      </article>
+                    </li>
+                  );
+                })}
+              </ol>
+            </section>
+          ))}
+        </div>
       )}
     </div>
   );

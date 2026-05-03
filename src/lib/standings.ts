@@ -42,9 +42,13 @@ export function computeStandings(
   }
 
   rows.sort((a, b) => {
-    if (a.hasPenalty !== b.hasPenalty) return a.hasPenalty ? 1 : -1;
+    // 1º critério: pontos de vitória (desc)
     if (a.pontosJogo !== b.pontosJogo) return b.pontosJogo - a.pontosJogo;
-    return b.pontosMesa - a.pontosMesa;
+    // 2º critério: pontos de mesa (desc)
+    if (a.pontosMesa !== b.pontosMesa) return b.pontosMesa - a.pontosMesa;
+    // Desempate: quem não tem penalidades fica na frente
+    if (a.hasPenalty !== b.hasPenalty) return a.hasPenalty ? 1 : -1;
+    return 0;
   });
   rows.forEach((r, i) => { r.position = i + 1; });
   return rows;

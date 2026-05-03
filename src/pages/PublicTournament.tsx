@@ -108,7 +108,7 @@ export default function PublicTournament() {
           </TabsList>
 
           <TabsContent value="results">
-            <PublicResults results={results} players={players} phaseStatuses={phaseStatuses} />
+            <PublicResults results={results} players={players} phaseStatuses={phaseStatuses} moderators={moderators} />
           </TabsContent>
           <TabsContent value="standings">
             <PublicStandings results={results} players={players} phaseStatuses={phaseStatuses} />

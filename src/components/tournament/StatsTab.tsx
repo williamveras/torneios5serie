@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, Loader2 } from "lucide-react";
+import { BarChart3, ListChecks, Loader2 } from "lucide-react";
 import { FASES } from "@/lib/constants";
 import type { Tables } from "@/integrations/supabase/types";
+import RegistrosViewer from "./RegistrosViewer";
 
 type MatchResult = Tables<"match_results">;
 
@@ -14,6 +16,7 @@ interface Props { tournamentId: string; }
 export default function StatsTab({ tournamentId }: Props) {
   const [results, setResults] = useState<MatchResult[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewerOpen, setViewerOpen] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -107,6 +110,14 @@ export default function StatsTab({ tournamentId }: Props) {
           );
         })
       )}
+
+      <div className="flex justify-center pt-2">
+        <Button variant="outline" onClick={() => setViewerOpen(true)}>
+          <ListChecks className="h-4 w-4 mr-2" /> Visualizar registros
+        </Button>
+      </div>
+
+      <RegistrosViewer tournamentId={tournamentId} open={viewerOpen} onOpenChange={setViewerOpen} />
     </div>
   );
 }

@@ -48,17 +48,58 @@ const WEEKDAYS = [
   "sábado",
 ];
 
-const formatTime = (d: Date) =>
-  `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+const TZ = "America/Sao_Paulo";
 
-const formatDayKey = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+// Returns parts in Brasília timezone for a given Date
+const brasiliaParts = (d: Date) => {
+  const fmt = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    weekday: "short",
+    hour12: false,
+  });
+  const parts = fmt.formatToParts(d);
+  const get = (t: string) => parts.find(p => p.type === t)?.value ?? "";
+  return {
+    year: get("year"),
+    month: get("month"),
+    day: get("day"),
+    hour: get("hour"),
+    minute: get("minute"),
+    // Use getDay via a normalized date string to derive weekday index reliably
+  };
+};
+
+// Get weekday index (0=domingo..6=sábado) in Brasília timezone
+const brasiliaWeekday = (d: Date) => {
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone: TZ,
+    weekday: "short",
+  });
+  const map: Record<string, number> = {
+    Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
+  };
+  return map[fmt.format(d)] ?? 0;
+};
+
+const formatTime = (d: Date) => {
+  const p = brasiliaParts(d);
+  return `${p.hour}:${p.minute}`;
+};
+
+const formatDayKey = (d: Date) => {
+  const p = brasiliaParts(d);
+  return `${p.year}-${p.month}-${p.day}`;
+};
 
 const formatDayLabel = (d: Date) => {
-  const weekday = WEEKDAYS[d.getDay()];
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  return `Jogos de ${weekday} (${dd}/${mm})`;
+  const p = brasiliaParts(d);
+  const weekday = WEEKDAYS[brasiliaWeekday(d)];
+  return `Jogos de ${weekday} (${p.day}/${p.month})`;
 };
 
 export default function PublicResults({ results, players, phaseStatuses, moderators }: Props) {

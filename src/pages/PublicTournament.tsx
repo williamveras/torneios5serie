@@ -20,6 +20,11 @@ interface PlayerLite {
   nick_playroom: string | null;
 }
 
+interface ModeratorLite {
+  user_id: string;
+  nome: string;
+}
+
 export default function PublicTournament() {
   const { tournamentId } = useParams<{ tournamentId: string }>();
   const [tournament, setTournament] = useState<Tournament | null>(null);

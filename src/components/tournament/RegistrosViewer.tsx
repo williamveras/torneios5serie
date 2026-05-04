@@ -135,6 +135,16 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
     return groups;
   }, [results]);
 
+  const availableRounds = useMemo(
+    () => [...new Set(confrontos.map(c => c.rodada))].sort((a, b) => a - b),
+    [confrontos],
+  );
+
+  const filteredConfrontos = useMemo(
+    () => filterRound === "all" ? confrontos : confrontos.filter(c => String(c.rodada) === filterRound),
+    [confrontos, filterRound],
+  );
+
   const confrontoTitle = (c: Confronto) => {
     if (c.results.length === 2) {
       return `${playerName(c.results[0].player_id)} × ${playerName(c.results[1].player_id)}`;

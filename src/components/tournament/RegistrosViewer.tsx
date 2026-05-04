@@ -56,6 +56,7 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
   const [editRodada, setEditRodada] = useState("");
   const [editPlayers, setEditPlayers] = useState<PlayerEditForm[]>([]);
   const [saving, setSaving] = useState(false);
+  const [filterRound, setFilterRound] = useState<string>("all");
 
   const load = async () => {
     setLoading(true);

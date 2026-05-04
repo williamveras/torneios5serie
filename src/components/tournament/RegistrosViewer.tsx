@@ -240,12 +240,6 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
             <DialogTitle>Registros de confrontos</DialogTitle>
           </DialogHeader>
 
-          {loading ? (
-            <div className="py-12 text-center text-muted-foreground">
-              <Loader2 className="h-8 w-8 mx-auto animate-spin opacity-50" />
-            </div>
-          ) : confrontos.length === 0 ? (
-            <p className="py-8 text-center text-muted-foreground">Nenhum registro ainda.</p>
           {!loading && confrontos.length > 0 && (
             <div className="flex items-end gap-3 flex-wrap">
               <div className="space-y-2">

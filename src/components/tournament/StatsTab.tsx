@@ -6,20 +6,15 @@ import { BarChart3, ListChecks, Loader2 } from "lucide-react";
 import { FASES } from "@/lib/constants";
 import type { Tables } from "@/integrations/supabase/types";
 import RegistrosViewer from "./RegistrosViewer";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type MatchResult = Tables<"match_results">;
 
 interface Props { tournamentId: string; }
 
-// Cada partida gera 2 linhas em match_results (uma por jogador).
-// Total de partidas = linhas / 2.
 export default function StatsTab({ tournamentId }: Props) {
   const [results, setResults] = useState<MatchResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewerOpen, setViewerOpen] = useState(false);
-  const [selectedRound, setSelectedRound] = useState<string>("all");
 
   useEffect(() => {
     setLoading(true);
@@ -27,28 +22,18 @@ export default function StatsTab({ tournamentId }: Props) {
       .then(({ data }) => { setResults(data || []); setLoading(false); });
   }, [tournamentId]);
 
-  const availableRounds = useMemo(
-    () => [...new Set(results.map(r => r.rodada))].sort((a, b) => a - b),
-    [results],
-  );
-
-  const filteredResults = useMemo(
-    () => selectedRound === "all" ? results : results.filter(r => String(r.rodada) === selectedRound),
-    [results, selectedRound],
-  );
-
-  const totalGames = Math.floor(filteredResults.length / 2);
+  const totalGames = Math.floor(results.length / 2);
 
   const byFase = useMemo(() => {
     const map = new Map<string, MatchResult[]>();
-    for (const r of filteredResults) {
+    for (const r of results) {
       const fase = r.fase || "Fase de Grupos";
       const arr = map.get(fase) || [];
       arr.push(r);
       map.set(fase, arr);
     }
     return FASES.filter(f => map.has(f)).map(f => ({ fase: f, items: map.get(f)! }));
-  }, [filteredResults]);
+  }, [results]);
 
   if (loading) {
     return (
@@ -60,20 +45,6 @@ export default function StatsTab({ tournamentId }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-end gap-3 flex-wrap">
-        <div className="space-y-2">
-          <Label htmlFor="stats-round">Filtrar por rodada</Label>
-          <Select value={selectedRound} onValueChange={setSelectedRound}>
-            <SelectTrigger id="stats-round" className="w-[200px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as rodadas</SelectItem>
-              {availableRounds.map(r => (
-                <SelectItem key={r} value={String(r)}>Rodada {r}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
 
       <Card>
         <CardHeader className="pb-3">

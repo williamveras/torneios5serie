@@ -19,6 +19,7 @@ export default function StatsTab({ tournamentId }: Props) {
   const [results, setResults] = useState<MatchResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewerOpen, setViewerOpen] = useState(false);
+  const [selectedRound, setSelectedRound] = useState<string>("all");
 
   useEffect(() => {
     setLoading(true);

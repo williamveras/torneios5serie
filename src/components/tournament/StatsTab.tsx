@@ -6,6 +6,8 @@ import { BarChart3, ListChecks, Loader2 } from "lucide-react";
 import { FASES } from "@/lib/constants";
 import type { Tables } from "@/integrations/supabase/types";
 import RegistrosViewer from "./RegistrosViewer";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type MatchResult = Tables<"match_results">;
 

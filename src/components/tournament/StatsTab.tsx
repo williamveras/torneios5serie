@@ -27,19 +27,28 @@ export default function StatsTab({ tournamentId }: Props) {
       .then(({ data }) => { setResults(data || []); setLoading(false); });
   }, [tournamentId]);
 
-  const totalGames = Math.floor(results.length / 2);
+  const availableRounds = useMemo(
+    () => [...new Set(results.map(r => r.rodada))].sort((a, b) => a - b),
+    [results],
+  );
+
+  const filteredResults = useMemo(
+    () => selectedRound === "all" ? results : results.filter(r => String(r.rodada) === selectedRound),
+    [results, selectedRound],
+  );
+
+  const totalGames = Math.floor(filteredResults.length / 2);
 
   const byFase = useMemo(() => {
     const map = new Map<string, MatchResult[]>();
-    for (const r of results) {
+    for (const r of filteredResults) {
       const fase = r.fase || "Fase de Grupos";
       const arr = map.get(fase) || [];
       arr.push(r);
       map.set(fase, arr);
     }
-    // ordenar pela ordem oficial
     return FASES.filter(f => map.has(f)).map(f => ({ fase: f, items: map.get(f)! }));
-  }, [results]);
+  }, [filteredResults]);
 
   if (loading) {
     return (

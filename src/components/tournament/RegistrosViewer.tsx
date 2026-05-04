@@ -56,6 +56,7 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
   const [editRodada, setEditRodada] = useState("");
   const [editPlayers, setEditPlayers] = useState<PlayerEditForm[]>([]);
   const [saving, setSaving] = useState(false);
+  const [filterRound, setFilterRound] = useState<string>("all");
 
   const load = async () => {
     setLoading(true);
@@ -133,6 +134,16 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
     groups.sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
     return groups;
   }, [results]);
+
+  const availableRounds = useMemo(
+    () => [...new Set(confrontos.map(c => c.rodada))].sort((a, b) => a - b),
+    [confrontos],
+  );
+
+  const filteredConfrontos = useMemo(
+    () => filterRound === "all" ? confrontos : confrontos.filter(c => String(c.rodada) === filterRound),
+    [confrontos, filterRound],
+  );
 
   const confrontoTitle = (c: Confronto) => {
     if (c.results.length === 2) {
@@ -229,15 +240,37 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
             <DialogTitle>Registros de confrontos</DialogTitle>
           </DialogHeader>
 
+          {!loading && confrontos.length > 0 && (
+            <div className="flex items-end gap-3 flex-wrap">
+              <div className="space-y-2">
+                <Label htmlFor="viewer-round">Filtrar por rodada</Label>
+                <Select value={filterRound} onValueChange={setFilterRound}>
+                  <SelectTrigger id="viewer-round" className="w-[200px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as rodadas</SelectItem>
+                    {availableRounds.map(r => (
+                      <SelectItem key={r} value={String(r)}>Rodada {r}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="text-xs text-muted-foreground pb-2">
+                {filteredConfrontos.length} {filteredConfrontos.length === 1 ? "confronto" : "confrontos"}
+              </div>
+            </div>
+          )}
+
           {loading ? (
             <div className="py-12 text-center text-muted-foreground">
               <Loader2 className="h-8 w-8 mx-auto animate-spin opacity-50" />
             </div>
           ) : confrontos.length === 0 ? (
             <p className="py-8 text-center text-muted-foreground">Nenhum registro ainda.</p>
+          ) : filteredConfrontos.length === 0 ? (
+            <p className="py-8 text-center text-muted-foreground">Nenhum confronto nesta rodada.</p>
           ) : (
             <ul className="space-y-2">
-              {confrontos.map(c => (
+              {filteredConfrontos.map(c => (
                 <li key={c.key} className="p-3 border rounded-md bg-muted/30 flex flex-col sm:flex-row sm:items-center gap-3">
                   <div className="flex-1 min-w-0 text-sm">
                     <div className="font-medium">{confrontoTitle(c)}</div>

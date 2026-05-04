@@ -60,6 +60,21 @@ export default function StatsTab({ tournamentId }: Props) {
 
   return (
     <div className="space-y-4">
+      <div className="flex items-end gap-3 flex-wrap">
+        <div className="space-y-2">
+          <Label htmlFor="stats-round">Filtrar por rodada</Label>
+          <Select value={selectedRound} onValueChange={setSelectedRound}>
+            <SelectTrigger id="stats-round" className="w-[200px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as rodadas</SelectItem>
+              {availableRounds.map(r => (
+                <SelectItem key={r} value={String(r)}>Rodada {r}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">

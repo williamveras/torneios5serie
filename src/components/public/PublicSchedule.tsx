@@ -132,7 +132,7 @@ export default function PublicSchedule({ schedules, players, matchups }: Props) 
                     </div>
                     <div className="flex-1 text-sm">
                       <span className="font-medium">{displayName(playerMap.get(s.player1_id))}</span>
-                      <span className="text-muted-foreground mx-2">vs</span>
+                      <span className="text-muted-foreground mx-2">x</span>
                       <span className="font-medium">{displayName(playerMap.get(s.player2_id))}</span>
                     </div>
                   </div>

@@ -13,6 +13,7 @@ type Tournament = Tables<"tournaments">;
 type MatchResult = Tables<"match_results">;
 type Schedule = Tables<"match_schedule">;
 type PhaseStatus = Tables<"phase_status">;
+type Matchup = Tables<"matchups">;
 
 interface PlayerLite {
   id: string;
@@ -31,6 +32,7 @@ export default function PublicTournament() {
   const [players, setPlayers] = useState<PlayerLite[]>([]);
   const [results, setResults] = useState<MatchResult[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [matchups, setMatchups] = useState<Matchup[]>([]);
   const [phaseStatuses, setPhaseStatuses] = useState<PhaseStatus[]>([]);
   const [moderators, setModerators] = useState<ModeratorLite[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,7 +50,8 @@ export default function PublicTournament() {
       supabase.from("match_schedule").select("*").eq("tournament_id", tournamentId),
       supabase.from("phase_status").select("*").eq("tournament_id", tournamentId),
       (supabase as any).rpc("get_moderators_public", { _tournament_id: tournamentId }),
-    ]).then(([t, p, r, s, ps, m]) => {
+      supabase.from("matchups").select("*").eq("tournament_id", tournamentId),
+    ]).then(([t, p, r, s, ps, m, mu]) => {
       if (cancelled) return;
       if (!t.data) { setNotFound(true); setLoading(false); return; }
       setTournament(t.data);
@@ -57,6 +60,7 @@ export default function PublicTournament() {
       setSchedules(s.data || []);
       setPhaseStatuses(ps.data || []);
       setModerators(((m.data as unknown) as ModeratorLite[]) || []);
+      setMatchups(mu.data || []);
       setLoading(false);
     });
 
@@ -104,7 +108,7 @@ export default function PublicTournament() {
           <TabsList className="mb-4 flex-wrap h-auto">
             <TabsTrigger value="results">Resultados</TabsTrigger>
             <TabsTrigger value="standings">Classificação</TabsTrigger>
-            <TabsTrigger value="schedule">Agenda</TabsTrigger>
+            <TabsTrigger value="schedule">Confrontos</TabsTrigger>
           </TabsList>
 
           <TabsContent value="results">
@@ -114,7 +118,7 @@ export default function PublicTournament() {
             <PublicStandings results={results} players={players} phaseStatuses={phaseStatuses} />
           </TabsContent>
           <TabsContent value="schedule">
-            <PublicSchedule schedules={schedules} players={players} />
+            <PublicSchedule schedules={schedules} players={players} matchups={matchups} />
           </TabsContent>
         </Tabs>
       </main>

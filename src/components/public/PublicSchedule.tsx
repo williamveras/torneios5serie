@@ -4,6 +4,7 @@ import { CalendarDays, Clock } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Schedule = Tables<"match_schedule">;
+type Matchup = Tables<"matchups">;
 
 interface PlayerLite {
   id: string;
@@ -14,6 +15,7 @@ interface PlayerLite {
 interface Props {
   schedules: Schedule[];
   players: PlayerLite[];
+  matchups: Matchup[];
 }
 
 const displayName = (p?: PlayerLite) => {
@@ -34,16 +36,58 @@ const formatGroupLabel = (grupo: string) => {
   return grupo;
 };
 
-export default function PublicSchedule({ schedules, players }: Props) {
+// Today in São Paulo timezone (YYYY-MM-DD)
+const todaySaoPauloISO = () => {
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric", month: "2-digit", day: "2-digit",
+  });
+  return fmt.format(new Date()); // YYYY-MM-DD
+};
+
+export default function PublicSchedule({ schedules, players, matchups }: Props) {
   const playerMap = useMemo(() => {
     const m = new Map<string, PlayerLite>();
     players.forEach(p => m.set(p.id, p));
     return m;
   }, [players]);
 
+  // Determine current (latest) round from matchups
+  const currentRound = useMemo(() => {
+    const rounds = matchups.map(m => m.rodada).filter((r): r is number => r != null);
+    if (rounds.length === 0) return null;
+    return Math.max(...rounds);
+  }, [matchups]);
+
+  // Set of (sorted player-pair) keys belonging to the current round
+  const currentRoundPairs = useMemo(() => {
+    if (currentRound == null) return null;
+    const set = new Set<string>();
+    matchups.filter(m => m.rodada === currentRound).forEach(m => {
+      const key = [m.player1_id, m.player2_id].sort().join("|");
+      set.add(key);
+    });
+    return set;
+  }, [matchups, currentRound]);
+
+  const today = todaySaoPauloISO();
+
+  const filteredSchedules = useMemo(() => {
+    return schedules.filter(s => {
+      // Hide past dates (date < today, São Paulo)
+      if (s.data_partida < today) return false;
+      // Only show matches that belong to the current round
+      if (currentRoundPairs) {
+        const key = [s.player1_id, s.player2_id].sort().join("|");
+        if (!currentRoundPairs.has(key)) return false;
+      }
+      return true;
+    });
+  }, [schedules, today, currentRoundPairs]);
+
   const grouped = useMemo(() => {
     const map = new Map<string, Schedule[]>();
-    const sorted = [...schedules].sort((a, b) => {
+    const sorted = [...filteredSchedules].sort((a, b) => {
       if (a.data_partida !== b.data_partida) return a.data_partida.localeCompare(b.data_partida);
       return a.horario.localeCompare(b.horario);
     });
@@ -53,47 +97,51 @@ export default function PublicSchedule({ schedules, players }: Props) {
       map.set(s.data_partida, arr);
     }
     return Array.from(map.entries());
-  }, [schedules]);
+  }, [filteredSchedules]);
 
-  if (schedules.length === 0) {
-    return (
-      <Card>
-        <CardContent className="py-12 text-center text-muted-foreground">
-          <CalendarDays className="h-10 w-10 mx-auto mb-3 opacity-40" />
-          <p>Nenhuma partida agendada ainda.</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const description = currentRound != null
+    ? `Seguem abaixo os confrontos da rodada ${currentRound} e seus respectivos horários.`
+    : "Seguem abaixo os confrontos e seus respectivos horários.";
 
   return (
     <div className="space-y-4">
-      {grouped.map(([date, items]) => (
-        <Card key={date}>
-          <CardContent className="pt-4">
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <CalendarDays className="h-4 w-4" /> {formatDate(date)}
-            </h3>
-            <div className="space-y-2">
-              {items.map(s => (
-                <div key={s.id} className="flex items-center gap-3 p-3 rounded-md border bg-muted/30">
-                  <div className="flex items-center gap-1 text-sm font-medium tabular-nums min-w-[60px]">
-                    <Clock className="h-3.5 w-3.5" /> {s.horario.slice(0, 5)}
-                  </div>
-                  <div className="text-xs px-2 py-0.5 rounded bg-secondary text-secondary-foreground">
-                    {formatGroupLabel(s.grupo)}
-                  </div>
-                  <div className="flex-1 text-sm">
-                    <span className="font-medium">{displayName(playerMap.get(s.player1_id))}</span>
-                    <span className="text-muted-foreground mx-2">vs</span>
-                    <span className="font-medium">{displayName(playerMap.get(s.player2_id))}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+      <p className="text-sm text-muted-foreground">{description}</p>
+
+      {grouped.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            <CalendarDays className="h-10 w-10 mx-auto mb-3 opacity-40" />
+            <p>Nenhum confronto pendente para exibir.</p>
           </CardContent>
         </Card>
-      ))}
+      ) : (
+        grouped.map(([date, items]) => (
+          <Card key={date}>
+            <CardContent className="pt-4">
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <CalendarDays className="h-4 w-4" /> {formatDate(date)}
+              </h3>
+              <div className="space-y-2">
+                {items.map(s => (
+                  <div key={s.id} className="flex items-center gap-3 p-3 rounded-md border bg-muted/30">
+                    <div className="flex items-center gap-1 text-sm font-medium tabular-nums min-w-[60px]">
+                      <Clock className="h-3.5 w-3.5" /> {s.horario.slice(0, 5)}
+                    </div>
+                    <div className="text-xs px-2 py-0.5 rounded bg-secondary text-secondary-foreground">
+                      {formatGroupLabel(s.grupo)}
+                    </div>
+                    <div className="flex-1 text-sm">
+                      <span className="font-medium">{displayName(playerMap.get(s.player1_id))}</span>
+                      <span className="text-muted-foreground mx-2">vs</span>
+                      <span className="font-medium">{displayName(playerMap.get(s.player2_id))}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        ))
+      )}
     </div>
   );
 }

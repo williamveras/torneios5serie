@@ -1,0 +1,1 @@
+CREATE POLICY "Anyone can view matchups" ON public.matchups FOR SELECT TO anon USING (true);

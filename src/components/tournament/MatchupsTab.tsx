@@ -356,7 +356,11 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
         <p className="text-center text-muted-foreground py-8">Nenhum confronto salvo ainda.</p>
       ) : (
         sortedSavedFases.map((f) => {
-          const groups = Object.keys(grouped[f]).sort();
+          const groups = Object.keys(grouped[f]).sort((a, b) => {
+            const na = Number(a), nb = Number(b);
+            if (!isNaN(na) && !isNaN(nb)) return na - nb;
+            return a.localeCompare(b);
+          });
           return (
             <Card key={f}>
               <CardHeader>

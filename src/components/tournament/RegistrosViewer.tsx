@@ -141,10 +141,20 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
     [confrontos],
   );
 
-  const filteredConfrontos = useMemo(
-    () => filterRound === "all" ? confrontos : confrontos.filter(c => String(c.rodada) === filterRound),
-    [confrontos, filterRound],
-  );
+  const availablePenalidades = useMemo(() => {
+    const set = new Set<string>();
+    for (const c of confrontos) for (const r of c.results) set.add(r.penalidades);
+    return [...set].sort();
+  }, [confrontos]);
+
+  const filteredConfrontos = useMemo(() => {
+    let list = confrontos;
+    if (filterRound !== "all") list = list.filter(c => String(c.rodada) === filterRound);
+    if (filterPenalidade !== "all") {
+      list = list.filter(c => c.results.some(r => r.penalidades === filterPenalidade));
+    }
+    return list;
+  }, [confrontos, filterRound, filterPenalidade]);
 
   const confrontoTitle = (c: Confronto) => {
     if (c.results.length === 2) {

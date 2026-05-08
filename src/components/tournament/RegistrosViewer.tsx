@@ -256,11 +256,23 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
               <div className="space-y-2">
                 <Label htmlFor="viewer-round">Filtrar por rodada</Label>
                 <Select value={filterRound} onValueChange={setFilterRound}>
-                  <SelectTrigger id="viewer-round" className="w-[200px]"><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="viewer-round" className="w-[180px]"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas as rodadas</SelectItem>
                     {availableRounds.map(r => (
                       <SelectItem key={r} value={String(r)}>Rodada {r}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="viewer-pen">Filtrar por penalidade</Label>
+                <Select value={filterPenalidade} onValueChange={setFilterPenalidade}>
+                  <SelectTrigger id="viewer-pen" className="w-[220px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as penalidades</SelectItem>
+                    {availablePenalidades.map(p => (
+                      <SelectItem key={p} value={p}>{p}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

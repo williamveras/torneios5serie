@@ -45,7 +45,7 @@ export default function TournamentPage({ tournament, onBack }: Props) {
   };
 
   const handleSharePublicLink = async () => {
-    const url = `${window.location.origin}/p/${tournament.id}`;
+    const url = `https://torneios5serie.lovable.app/p/${tournament.id}`;
     try {
       await navigator.clipboard.writeText(url);
       toast.success("Link público copiado!", { description: url });

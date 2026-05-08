@@ -15,7 +15,7 @@ type MatchResult = Tables<"match_results">;
 type Player = Tables<"players">;
 type Profile = Tables<"profiles">;
 
-const PENALIDADE_OPCOES = ["Sem penalidades", "W.O", "Digitação na mesa", "Outra"] as const;
+const PENALIDADE_OPCOES = ["Sem penalidades", "W.O", "Eliminado por W.O", "Digitação na mesa", "Outra"] as const;
 
 interface Props {
   tournamentId: string;

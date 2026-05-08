@@ -67,10 +67,10 @@ export function computeStandings(
   rows.sort((a, b) => {
     // 1º critério: pontos de vitória (desc)
     if (a.pontosJogo !== b.pontosJogo) return b.pontosJogo - a.pontosJogo;
-    // 2º critério: quem não tem penalidades fica na frente
-    if (a.hasPenalty !== b.hasPenalty) return a.hasPenalty ? 1 : -1;
-    // 3º critério: pontos de mesa (desc)
+    // 2º critério: pontos de mesa (desc)
     if (a.pontosMesa !== b.pontosMesa) return b.pontosMesa - a.pontosMesa;
+    // 3º critério: quem não tem penalidades fica na frente
+    if (a.hasPenalty !== b.hasPenalty) return a.hasPenalty ? 1 : -1;
     // 4º critério: confronto direto (head-to-head) — vencedor à frente
     const winner = h2h.get(`${a.playerId}|${b.playerId}`);
     if (winner === a.playerId) return -1;

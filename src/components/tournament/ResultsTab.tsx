@@ -14,7 +14,7 @@ import type { Tables } from "@/integrations/supabase/types";
 
 type Player = Tables<"players">;
 
-const PENALIDADE_OPCOES = ["Sem penalidades", "W.O", "Digitação na mesa", "Outra"] as const;
+const PENALIDADE_OPCOES = ["Sem penalidades", "W.O", "Eliminado por W.O", "Digitação na mesa", "Outra"] as const;
 
 interface PlayerResult {
   player_id: string;

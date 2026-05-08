@@ -15,7 +15,7 @@ type MatchResult = Tables<"match_results">;
 type Player = Tables<"players">;
 type Profile = Tables<"profiles">;
 
-const PENALIDADE_OPCOES = ["Sem penalidades", "W.O", "Digitação na mesa", "Outra"] as const;
+const PENALIDADE_OPCOES = ["Sem penalidades", "W.O", "Eliminado por W.O", "Digitação na mesa", "Outra"] as const;
 
 interface Props {
   tournamentId: string;
@@ -57,6 +57,7 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
   const [editPlayers, setEditPlayers] = useState<PlayerEditForm[]>([]);
   const [saving, setSaving] = useState(false);
   const [filterRound, setFilterRound] = useState<string>("all");
+  const [filterPenalidade, setFilterPenalidade] = useState<string>("all");
 
   const load = async () => {
     setLoading(true);
@@ -140,10 +141,20 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
     [confrontos],
   );
 
-  const filteredConfrontos = useMemo(
-    () => filterRound === "all" ? confrontos : confrontos.filter(c => String(c.rodada) === filterRound),
-    [confrontos, filterRound],
-  );
+  const availablePenalidades = useMemo(() => {
+    const set = new Set<string>();
+    for (const c of confrontos) for (const r of c.results) set.add(r.penalidades);
+    return [...set].sort();
+  }, [confrontos]);
+
+  const filteredConfrontos = useMemo(() => {
+    let list = confrontos;
+    if (filterRound !== "all") list = list.filter(c => String(c.rodada) === filterRound);
+    if (filterPenalidade !== "all") {
+      list = list.filter(c => c.results.some(r => r.penalidades === filterPenalidade));
+    }
+    return list;
+  }, [confrontos, filterRound, filterPenalidade]);
 
   const confrontoTitle = (c: Confronto) => {
     if (c.results.length === 2) {
@@ -245,11 +256,23 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
               <div className="space-y-2">
                 <Label htmlFor="viewer-round">Filtrar por rodada</Label>
                 <Select value={filterRound} onValueChange={setFilterRound}>
-                  <SelectTrigger id="viewer-round" className="w-[200px]"><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="viewer-round" className="w-[180px]"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas as rodadas</SelectItem>
                     {availableRounds.map(r => (
                       <SelectItem key={r} value={String(r)}>Rodada {r}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="viewer-pen">Filtrar por penalidade</Label>
+                <Select value={filterPenalidade} onValueChange={setFilterPenalidade}>
+                  <SelectTrigger id="viewer-pen" className="w-[220px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as penalidades</SelectItem>
+                    {availablePenalidades.map(p => (
+                      <SelectItem key={p} value={p}>{p}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

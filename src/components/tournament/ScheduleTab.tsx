@@ -66,6 +66,7 @@ const GRUPOS = Array.from({ length: 30 }, (_, i) => String(i + 1));
 export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlayer2Id, prefillGrupo, onPrefillConsumed }: Props) {
   const [players, setPlayers] = useState<Player[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [matchups, setMatchups] = useState<{ player1_id: string; player2_id: string; rodada: number | null }[]>([]);
   const [grupo, setGrupo] = useState("");
   const [player1, setPlayer1] = useState("");
   const [player2, setPlayer2] = useState("");
@@ -87,7 +88,16 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
   useEffect(() => {
     fetchPlayers();
     fetchSchedules();
+    fetchMatchups();
   }, [tournamentId]);
+
+  async function fetchMatchups() {
+    const { data } = await supabase
+      .from("matchups")
+      .select("player1_id, player2_id, rodada")
+      .eq("tournament_id", tournamentId);
+    if (data) setMatchups(data as any);
+  }
 
   // Pre-fill from PlayersTab or MatchupsTab
   useEffect(() => {
@@ -234,10 +244,25 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
     setDeleteId(null);
   }
 
-  // Group schedules by grupo, then by date
+  // Group schedules by grupo, then by date — only for current round pairs
   function groupedSchedules() {
+    const rounds = matchups.map(m => m.rodada).filter((r): r is number => r != null);
+    const currentRound = rounds.length ? Math.max(...rounds) : null;
+    let currentRoundPairs: Set<string> | null = null;
+    if (currentRound != null) {
+      currentRoundPairs = new Set(
+        matchups
+          .filter(m => m.rodada === currentRound)
+          .map(m => [m.player1_id, m.player2_id].sort().join("|"))
+      );
+    }
+
     const grouped: Record<string, Record<string, Schedule[]>> = {};
     for (const s of schedules) {
+      if (currentRoundPairs) {
+        const key = [s.player1_id, s.player2_id].sort().join("|");
+        if (!currentRoundPairs.has(key)) continue;
+      }
       if (!grouped[s.grupo]) grouped[s.grupo] = {};
       if (!grouped[s.grupo][s.data_partida]) grouped[s.grupo][s.data_partida] = [];
       grouped[s.grupo][s.data_partida].push(s);

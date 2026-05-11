@@ -65,6 +65,33 @@ export default function ResultsTab({ tournamentId }: Props) {
       }
       return updated;
     }));
+
+    if (field === "player_id" && value) {
+      // Verifica se o jogador já foi eliminado por W.O em rodadas anteriores
+      supabase
+        .from("match_results")
+        .select("id")
+        .eq("tournament_id", tournamentId)
+        .eq("player_id", value)
+        .eq("penalidades", "Eliminado por W.O")
+        .limit(1)
+        .then(({ data }) => {
+          if (data && data.length > 0) {
+            setResults(prev => prev.map((r, i) => i === idx ? {
+              ...r,
+              pontos_jogo: "0",
+              pontos_mesa: "0",
+              penalidade_tipo: "Eliminado por W.O",
+              penalidade_outra: "",
+            } : r));
+            if (isFaseDeGrupos) {
+              const playerGrupo = getPlayerGrupo(value);
+              if (playerGrupo) setGrupo(playerGrupo);
+            }
+            toast.info("Jogador já eliminado por W.O — campos preenchidos automaticamente");
+          }
+        });
+    }
   };
 
   const addSecondPlayer = () => {

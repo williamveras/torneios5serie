@@ -1,0 +1,1 @@
+ALTER TABLE public.players ADD COLUMN IF NOT EXISTS eliminado boolean NOT NULL DEFAULT false;

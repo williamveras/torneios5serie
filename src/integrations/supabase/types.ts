@@ -211,6 +211,7 @@ export type Database = {
         Row: {
           comentario: string | null
           created_at: string
+          eliminado: boolean
           grupo: string | null
           id: string
           nick_playroom: string | null
@@ -222,6 +223,7 @@ export type Database = {
         Insert: {
           comentario?: string | null
           created_at?: string
+          eliminado?: boolean
           grupo?: string | null
           id?: string
           nick_playroom?: string | null
@@ -233,6 +235,7 @@ export type Database = {
         Update: {
           comentario?: string | null
           created_at?: string
+          eliminado?: boolean
           grupo?: string | null
           id?: string
           nick_playroom?: string | null

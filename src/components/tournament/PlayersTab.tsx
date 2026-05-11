@@ -8,7 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, Trash2, Users, Shuffle, Lightbulb, MoreHorizontal, Pencil, CalendarPlus } from "lucide-react";
+import { Upload, Trash2, Users, Shuffle, Lightbulb, MoreHorizontal, Pencil, CalendarPlus, Ban, RotateCcw } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import type { Tables } from "@/integrations/supabase/types";
@@ -169,6 +170,16 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
     }
   };
 
+  const toggleEliminado = async (p: Player) => {
+    const novoValor = !p.eliminado;
+    const { error } = await supabase.from("players").update({ eliminado: novoValor }).eq("id", p.id);
+    if (error) toast.error("Erro ao atualizar status");
+    else {
+      toast.success(novoValor ? "Jogador marcado como eliminado por W.O" : "Eliminação removida");
+      fetchPlayers();
+    }
+  };
+
   const handleSuggest = () => {
     const suggestion = suggestGroupSize(players.length);
     setPerGroup(String(suggestion));
@@ -300,7 +311,10 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
                   <TableBody>
                     {list.map(p => (
                       <TableRow key={p.id}>
-                        <TableCell className="font-medium">{p.nome_completo}</TableCell>
+                        <TableCell className="font-medium">
+                          {p.nome_completo}
+                          {p.eliminado && <Badge variant="destructive" className="ml-2">Eliminado por W.O</Badge>}
+                        </TableCell>
                         <TableCell>{p.nick_playroom || "—"}</TableCell>
                         <TableCell>{p.whatsapp || "—"}</TableCell>
                         <TableCell className="max-w-[200px] truncate">{p.preferencia_horarios || "—"}</TableCell>
@@ -317,6 +331,13 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => onScheduleMatch?.(p.id)}>
                                 <CalendarPlus className="h-4 w-4 mr-2" /> Agendar partida
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => toggleEliminado(p)}>
+                                {p.eliminado ? (
+                                  <><RotateCcw className="h-4 w-4 mr-2" /> Reverter eliminação</>
+                                ) : (
+                                  <><Ban className="h-4 w-4 mr-2" /> Marcar como eliminado por W.O</>
+                                )}
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem

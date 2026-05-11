@@ -123,17 +123,15 @@ export default function PublicSchedule({ schedules, players, matchups }: Props) 
               </h3>
               <div className="space-y-2">
                 {items.map(s => (
-                  <div key={s.id} className="flex items-center gap-3 p-3 rounded-md border bg-muted/30">
-                    <div className="flex items-center gap-1 text-sm font-medium tabular-nums min-w-[60px]">
-                      <Clock className="h-3.5 w-3.5" /> {s.horario.slice(0, 5)}
-                    </div>
-                    <div className="text-xs px-2 py-0.5 rounded bg-secondary text-secondary-foreground">
-                      {formatGroupLabel(s.grupo)}
-                    </div>
-                    <div className="flex-1 text-sm">
+                  <div key={s.id} className="p-3 rounded-md border bg-muted/30">
+                    <div className="text-sm">
                       <span className="font-medium">{displayName(playerMap.get(s.player1_id))}</span>
-                      <span className="text-muted-foreground mx-2">{" x "}</span>
+                      <span className="text-muted-foreground mx-2">x</span>
                       <span className="font-medium">{displayName(playerMap.get(s.player2_id))}</span>
+                      <span className="text-muted-foreground"> ({formatGroupLabel(s.grupo).toLowerCase()})</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-sm font-medium tabular-nums mt-1">
+                      <Clock className="h-3.5 w-3.5" /> {s.horario.slice(0, 5)}
                     </div>
                   </div>
                 ))}

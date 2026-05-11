@@ -311,7 +311,10 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
                   <TableBody>
                     {list.map(p => (
                       <TableRow key={p.id}>
-                        <TableCell className="font-medium">{p.nome_completo}</TableCell>
+                        <TableCell className="font-medium">
+                          {p.nome_completo}
+                          {p.eliminado && <Badge variant="destructive" className="ml-2">Eliminado por W.O</Badge>}
+                        </TableCell>
                         <TableCell>{p.nick_playroom || "—"}</TableCell>
                         <TableCell>{p.whatsapp || "—"}</TableCell>
                         <TableCell className="max-w-[200px] truncate">{p.preferencia_horarios || "—"}</TableCell>

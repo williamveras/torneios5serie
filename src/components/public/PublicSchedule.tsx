@@ -126,7 +126,7 @@ export default function PublicSchedule({ schedules, players, matchups }: Props) 
                   <div key={s.id} className="p-3 rounded-md border bg-muted/30">
                     <div className="text-sm">
                       <span className="font-medium">{displayName(playerMap.get(s.player1_id))}</span>
-                      <span className="text-muted-foreground mx-2">x</span>
+                      <span className="text-muted-foreground mx-2">{" x "}</span>
                       <span className="font-medium">{displayName(playerMap.get(s.player2_id))}</span>
                       <span className="text-muted-foreground"> ({formatGroupLabel(s.grupo).toLowerCase()})</span>
                     </div>

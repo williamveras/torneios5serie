@@ -88,7 +88,16 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
   useEffect(() => {
     fetchPlayers();
     fetchSchedules();
+    fetchMatchups();
   }, [tournamentId]);
+
+  async function fetchMatchups() {
+    const { data } = await supabase
+      .from("matchups")
+      .select("player1_id, player2_id, rodada")
+      .eq("tournament_id", tournamentId);
+    if (data) setMatchups(data as any);
+  }
 
   // Pre-fill from PlayersTab or MatchupsTab
   useEffect(() => {

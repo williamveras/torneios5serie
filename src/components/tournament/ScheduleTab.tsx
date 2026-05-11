@@ -66,6 +66,7 @@ const GRUPOS = Array.from({ length: 30 }, (_, i) => String(i + 1));
 export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlayer2Id, prefillGrupo, onPrefillConsumed }: Props) {
   const [players, setPlayers] = useState<Player[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [matchups, setMatchups] = useState<{ player1_id: string; player2_id: string; rodada: number | null }[]>([]);
   const [grupo, setGrupo] = useState("");
   const [player1, setPlayer1] = useState("");
   const [player2, setPlayer2] = useState("");

@@ -84,20 +84,6 @@ export default function PublicStandings({ results, players, phaseStatuses }: Pro
 
   return (
     <div className="space-y-4">
-      <div className="flex items-end gap-4 flex-wrap">
-        <div className="space-y-2">
-          <Label htmlFor="public-fase">Fase</Label>
-          <Select value={selectedFase} onValueChange={setSelectedFase}>
-            <SelectTrigger id="public-fase" className="w-[200px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {(availableFases.length > 0 ? availableFases : FASES).map(f => (
-                <SelectItem key={f} value={f}>{f}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
       {totalRows > 0 && (
         isInProgress ? (
           <Alert className="border-yellow-500/50 bg-yellow-500/10" role="status">

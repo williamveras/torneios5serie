@@ -188,20 +188,6 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
 
   return (
     <div className="space-y-4">
-      <div className="flex items-end gap-4 flex-wrap">
-        <div className="space-y-2">
-          <Label htmlFor="public-results-fase">Fase</Label>
-          <Select value={selectedFase} onValueChange={setSelectedFase}>
-            <SelectTrigger id="public-results-fase" className="w-[220px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {(availableFases.length > 0 ? availableFases : FASES).map(f => (
-                <SelectItem key={f} value={f}>{f}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
       {filtered.length > 0 && (
         isInProgress ? (
           <Alert className="border-yellow-500/50 bg-yellow-500/10" role="status">

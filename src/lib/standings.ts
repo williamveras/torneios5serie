@@ -59,7 +59,11 @@ export function computeStandings(
       nick: getPlayerNick(playerId),
       pontosJogo: data.pontosJogo,
       pontosMesa: data.pontosMesa,
-      penalidades: data.penalties.length > 0 ? data.penalties.join("; ") : "Sem penalidades",
+      penalidades: data.penalties.includes("Eliminado por W.O")
+        ? "Eliminado por W.O"
+        : data.penalties.length > 0
+          ? Array.from(new Set(data.penalties)).join("; ")
+          : "Sem penalidades",
       hasPenalty: data.penalties.length > 0,
     });
   }

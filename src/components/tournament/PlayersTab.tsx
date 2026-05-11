@@ -170,6 +170,16 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
     }
   };
 
+  const toggleEliminado = async (p: Player) => {
+    const novoValor = !p.eliminado;
+    const { error } = await supabase.from("players").update({ eliminado: novoValor }).eq("id", p.id);
+    if (error) toast.error("Erro ao atualizar status");
+    else {
+      toast.success(novoValor ? "Jogador marcado como eliminado por W.O" : "Eliminação removida");
+      fetchPlayers();
+    }
+  };
+
   const handleSuggest = () => {
     const suggestion = suggestGroupSize(players.length);
     setPerGroup(String(suggestion));

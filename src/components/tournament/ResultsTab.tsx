@@ -67,6 +67,27 @@ export default function ResultsTab({ tournamentId }: Props) {
     }));
 
     if (field === "player_id" && value) {
+      const player = players.find(p => p.id === value);
+      const applyWO = () => {
+        setResults(prev => prev.map((r, i) => i === idx ? {
+          ...r,
+          pontos_jogo: "0",
+          pontos_mesa: "0",
+          penalidade_tipo: "Eliminado por W.O",
+          penalidade_outra: "",
+        } : r));
+        if (isFaseDeGrupos) {
+          const playerGrupo = getPlayerGrupo(value);
+          if (playerGrupo) setGrupo(playerGrupo);
+        }
+        toast.info("Jogador eliminado por W.O — campos preenchidos automaticamente");
+      };
+
+      if (player?.eliminado) {
+        applyWO();
+        return;
+      }
+
       // Verifica se o jogador já foi eliminado por W.O em rodadas anteriores
       supabase
         .from("match_results")
@@ -76,20 +97,7 @@ export default function ResultsTab({ tournamentId }: Props) {
         .eq("penalidades", "Eliminado por W.O")
         .limit(1)
         .then(({ data }) => {
-          if (data && data.length > 0) {
-            setResults(prev => prev.map((r, i) => i === idx ? {
-              ...r,
-              pontos_jogo: "0",
-              pontos_mesa: "0",
-              penalidade_tipo: "Eliminado por W.O",
-              penalidade_outra: "",
-            } : r));
-            if (isFaseDeGrupos) {
-              const playerGrupo = getPlayerGrupo(value);
-              if (playerGrupo) setGrupo(playerGrupo);
-            }
-            toast.info("Jogador já eliminado por W.O — campos preenchidos automaticamente");
-          }
+          if (data && data.length > 0) applyWO();
         });
     }
   };

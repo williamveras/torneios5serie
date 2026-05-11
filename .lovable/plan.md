@@ -1,34 +1,30 @@
-## Ajustes na página pública
+## Modificações na aba de Registro de Resultados e Classificação
 
-### 1. Reordenar as abas da página pública
-Em `src/pages/PublicTournament.tsx`, mudar a ordem dos botões e do conteúdo das abas para:
-1. Resultados (passa a ser a aba padrão — `defaultValue="results"`)
-2. Classificação
-3. Agenda
+### 1. Auto-preenchimento ao selecionar o jogador (eliminado por W.O)
 
-### 2. Reformatar a aba "Resultados" como confrontos
-Em `src/components/public/PublicResults.tsx`:
+No componente `ResultsTab.tsx`, ao escolher o **jogador** no campo de seleção:
 
-**Agrupamento por confronto:** cada partida gera 2 registros em `match_results` (um por jogador). Eles serão agrupados pela combinação `created_at + fase + grupo + rodada` (esse é o padrão observado nos dados — os 2 registros de uma mesma mesa são inseridos juntos e compartilham o mesmo timestamp).
+- O sistema irá consultar os registros anteriores desse jogador em `match_results` (no torneio atual).
+- Se houver **qualquer registro** com penalidade `"Eliminado por W.O"`, o sistema entende que ele já está eliminado e preenche automaticamente:
+  - **Pontos de Vitória = 0**
+  - **Pontos de Mesa = 0**
+  - **Penalidade = "Eliminado por W.O"**
+  - **Grupo** (se for Fase de Grupos), a partir do `grupo` do jogador
+- Se não houver esse registro prévio, o comportamento atual é mantido (apenas o grupo é auto-preenchido como hoje).
+- Os campos continuam editáveis caso seja necessário ajustar manualmente.
 
-**Ordenação:** confrontos exibidos do mais recente para o mais antigo (ordem em que foram postados no sistema), independentemente de fase/rodada.
+A consulta será feita na hora da seleção (uma chamada simples ao Supabase filtrando por `tournament_id`, `player_id` e `penalidades = 'Eliminado por W.O'`).
 
-**Layout de cada confronto (card):**
-- Cabeçalho: data e hora da postagem (formato `dd/mm/aaaa HH:mm`), fase, e — quando "Fase de Grupos" — o número do grupo, e a rodada.
-- Linha do jogador 1: nick (ou nome completo como fallback), pontos de jogo, pontos de mesa, penalidades.
-- Linha do jogador 2: idem.
-- Caso o confronto venha "incompleto" (apenas 1 registro com aquele timestamp), mostrar só o jogador disponível com aviso discreto "registro avulso".
+### 2. Exibição consolidada da penalidade na Classificação
 
-**Filtro de fase:** mantido como hoje (Select no topo). O banner amarelo/verde de status da fase também é mantido.
+No `src/lib/standings.ts`, ajustar a agregação de penalidades:
 
-### 3. Detalhes técnicos
+- Se o jogador tiver qualquer ocorrência de `"Eliminado por W.O"`, a coluna exibirá **apenas** `"Eliminado por W.O"` (sem repetição, sem misturar com outras).
+- Para os demais casos, manter a concatenação atual com `;`, mas removendo duplicatas para evitar `"W.O; W.O"`.
 
-- A lógica de agrupar pares vai num `useMemo` em `PublicResults.tsx` que produz uma lista de "confrontos": `{ key, created_at, fase, grupo, rodada, players: MatchResult[] }`, ordenada por `created_at` desc.
-- Chave de agrupamento: `${created_at}|${fase}|${grupo}|${rodada}`.
-- Não há mudanças no banco de dados nem em policies.
-- A seção "Rodada N" atual será substituída por cards individuais de confronto.
-- Acessibilidade: cada card vira `<article>` com `aria-label` descrevendo o confronto (ex.: "Confronto Grupo 10, Rodada 1, postado em 21/04/2026 às 14:25").
+### Arquivos afetados
 
-### Arquivos alterados
-- `src/pages/PublicTournament.tsx` — reordenação das abas e default.
-- `src/components/public/PublicResults.tsx` — nova renderização em confrontos pareados com data/hora.
+- `src/components/tournament/ResultsTab.tsx` — auto-preenchimento ao selecionar o jogador
+- `src/lib/standings.ts` — consolidação da exibição de penalidades
+
+Sem mudanças de banco de dados ou de regras de pontuação.

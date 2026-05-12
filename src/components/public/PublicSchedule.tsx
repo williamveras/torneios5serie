@@ -169,14 +169,14 @@ export default function PublicSchedule({ schedules, players, matchups, viewMode 
               <div className="space-y-2">
                 {items.map(s => (
                   <div key={s.id} className={`rounded-md border bg-muted/30 min-w-0 overflow-hidden ${compactCardPadding}`}>
-                    <div className={`text-sm ${scrollLine}`}>
+                    <h3 className={`text-base sm:text-lg font-semibold ${scrollLine}`}>
                       <span className="public-line-content">
-                      <span className="font-medium">{keepTogether(displayName(playerMap.get(s.player1_id)))}</span>{" "}
-                      <span className="text-muted-foreground">x</span>{" "}
-                      <span className="font-medium">{keepTogether(displayName(playerMap.get(s.player2_id)))}</span>
-                      <span className="text-muted-foreground"> {keepTogether(`(${formatGroupLabel(s.grupo).toLowerCase()})`)}</span>
+                        <span>{keepTogether(displayName(playerMap.get(s.player1_id)))}</span>{" "}
+                        <span className="text-muted-foreground font-normal">x</span>{" "}
+                        <span>{keepTogether(displayName(playerMap.get(s.player2_id)))}</span>{" "}
+                        <span className="text-muted-foreground font-normal text-sm">{keepTogether(`(${formatGroupLabel(s.grupo).toLowerCase()})`)}</span>
                       </span>
-                    </div>
+                    </h3>
                     <div className={`text-sm font-medium tabular-nums mt-1 ${scrollLine}`}>
                       <span className="public-line-content">
                         <Clock className="inline h-3.5 w-3.5 align-[-2px]" />{" "}

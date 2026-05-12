@@ -226,6 +226,26 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
         </Alert>
       )}
 
+      {availableRodadas.length > 0 && (
+        <div className="flex items-center gap-2">
+          <Label htmlFor="rodada-filter" className="text-sm whitespace-nowrap">Rodada:</Label>
+          <Select value={selectedRodada} onValueChange={setSelectedRodada}>
+            <SelectTrigger id="rodada-filter" className="w-[220px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__last__">
+                Última rodada{lastRodada != null ? ` (${lastRodada})` : ""}
+              </SelectItem>
+              <SelectItem value="__all__">Todas as rodadas</SelectItem>
+              {availableRodadas.map(r => (
+                <SelectItem key={r} value={String(r)}>Rodada {r}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       {dias.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">

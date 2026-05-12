@@ -145,10 +145,35 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
 
   const isFaseDeGrupos = selectedFase === "Fase de Grupos";
 
+  const availableRodadas = useMemo(() => {
+    const set = new Set<number>();
+    filtered.forEach(r => set.add(r.rodada));
+    return Array.from(set).sort((a, b) => a - b);
+  }, [filtered]);
+
+  const lastRodada = availableRodadas.length > 0 ? availableRodadas[availableRodadas.length - 1] : null;
+
+  // Reset rodada selection to "last" when fase changes
+  useEffect(() => {
+    setSelectedRodada("__last__");
+  }, [selectedFase]);
+
+  const effectiveRodada = useMemo(() => {
+    if (selectedRodada === "__all__") return null;
+    if (selectedRodada === "__last__") return lastRodada;
+    const n = Number(selectedRodada);
+    return Number.isFinite(n) ? n : lastRodada;
+  }, [selectedRodada, lastRodada]);
+
+  const rodadaFiltered = useMemo(
+    () => effectiveRodada == null ? filtered : filtered.filter(r => r.rodada === effectiveRodada),
+    [filtered, effectiveRodada],
+  );
+
   // Group results into confrontos (pairs per registration)
   const confrontos = useMemo<Confronto[]>(() => {
     const map = new Map<string, Confronto>();
-    for (const r of filtered) {
+    for (const r of rodadaFiltered) {
       const fase = r.fase || "Fase de Grupos";
       const key = `${r.created_at}|${fase}|${r.grupo}|${r.rodada}`;
       const existing = map.get(key);
@@ -169,7 +194,7 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
     return Array.from(map.values()).sort((a, b) =>
       b.created_at.localeCompare(a.created_at),
     );
-  }, [filtered]);
+  }, [rodadaFiltered]);
 
   // Group confrontos by day (most recent day first, most recent confronto first)
   const dias = useMemo(() => {

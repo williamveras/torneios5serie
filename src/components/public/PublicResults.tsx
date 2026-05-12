@@ -191,22 +191,13 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
 
   return (
     <div className="space-y-4">
-      {filtered.length > 0 && (
-        isInProgress ? (
-          <Alert className="border-yellow-500/50 bg-yellow-500/10" role="status">
-            <AlertTriangle className="h-4 w-4 text-yellow-600" />
-            <AlertDescription>
-              <strong>Fase em andamento</strong> — os resultados abaixo são parciais e podem mudar até o encerramento da fase.
-            </AlertDescription>
-          </Alert>
-        ) : (
-          <Alert className="border-green-500/50 bg-green-500/10" role="status">
-            <CheckCircle2 className="h-4 w-4 text-green-600" />
-            <AlertDescription>
-              <strong>Fase encerrada</strong> — resultados oficiais.
-            </AlertDescription>
-          </Alert>
-        )
+      {filtered.length > 0 && !isInProgress && (
+        <Alert className="border-green-500/50 bg-green-500/10" role="status">
+          <CheckCircle2 className="h-4 w-4 text-green-600" />
+          <AlertDescription>
+            <strong>Fase encerrada</strong> — resultados oficiais.
+          </AlertDescription>
+        </Alert>
       )}
 
       {dias.length === 0 ? (

@@ -262,6 +262,11 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
         return;
       }
     }
+    const editRodadaNum = editRodada.trim() ? parseInt(editRodada.trim(), 10) : null;
+    if (editRodada.trim() && (isNaN(editRodadaNum!) || editRodadaNum! < 1)) {
+      toast.error("Rodada inválida.");
+      return;
+    }
     setLoading(true);
     const { error } = await supabase
       .from("match_schedule")
@@ -272,6 +277,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
         data_partida: isoDate,
         horario: hasTime ? editHorario : null,
         observacao: hasObs ? editObservacao.trim() : null,
+        rodada: editRodadaNum,
       } as any)
       .eq("id", editItem.id);
     setLoading(false);

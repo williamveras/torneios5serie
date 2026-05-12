@@ -23,6 +23,7 @@ interface Props {
   results: MatchResult[];
   players: PlayerLite[];
   phaseStatuses: PhaseStatus[];
+  viewMode?: ViewMode;
 }
 
 const naturalGroupSort = (a: string, b: string) => {
@@ -33,7 +34,7 @@ const naturalGroupSort = (a: string, b: string) => {
 
 const hasGroup = (g: string | null | undefined) => !!g && g.trim() !== "";
 
-export default function PublicStandings({ results, players, phaseStatuses }: Props) {
+export default function PublicStandings({ results, players, phaseStatuses, viewMode = "list" }: Props) {
   const [selectedFase, setSelectedFase] = useState<string>("Fase de Grupos");
 
   const playerMap = useMemo(() => {

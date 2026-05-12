@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CalendarDays, Clock } from "lucide-react";
+import type { ViewMode } from "./ViewModeToggle";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Schedule = Tables<"match_schedule">;
@@ -16,6 +18,7 @@ interface Props {
   schedules: Schedule[];
   players: PlayerLite[];
   matchups: Matchup[];
+  viewMode?: ViewMode;
 }
 
 const displayName = (p?: PlayerLite) => {

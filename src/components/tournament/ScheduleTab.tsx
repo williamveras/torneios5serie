@@ -234,6 +234,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
     setEditDateInput(s.data_partida ? isoToDDMM(s.data_partida) : "");
     setEditHorario(s.horario ? s.horario.slice(0, 5) : "");
     setEditObservacao(s.observacao ?? "");
+    setEditRodada(s.rodada != null ? String(s.rodada) : "");
   }
 
   async function handleUpdate() {

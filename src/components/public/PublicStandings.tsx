@@ -38,6 +38,8 @@ const hasGroup = (g: string | null | undefined) => !!g && g.trim() !== "";
 const noWrapText = "public-nowrap";
 const scrollLine = "public-scroll-line";
 const compactCardPadding = "p-3 min-[360px]:p-4";
+const keepTogether = (text: string | number) =>
+  String(text).replace(/ /g, "\u00A0").replace(/-/g, "\u2011");
 
 export default function PublicStandings({ results, players, phaseStatuses, viewMode = "list" }: Props) {
   const [selectedFase, setSelectedFase] = useState<string>("Fase de Grupos");
@@ -232,12 +234,12 @@ export default function PublicStandings({ results, players, phaseStatuses, viewM
                         {s.position}º
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={`font-medium ${scrollLine}`}><span className="public-line-content">{displayName}</span></p>
+                        <p className={`font-medium ${scrollLine}`}><span className="public-line-content">{keepTogether(displayName)}</span></p>
                         <p className={`text-sm mt-0.5 ${scrollLine}`}>
-                          <span className="public-line-content"><span className={noWrapText}><strong>{s.pontosJogo}</strong> pontos de vitória</span>, <span className={noWrapText}><strong>{s.pontosMesa}</strong> pontos de mesa</span>.</span>
+                          <span className="public-line-content">{keepTogether(`${s.pontosJogo} pontos de vitória, ${s.pontosMesa} pontos de mesa.`)}</span>
                         </p>
                         <p className={`text-sm ${scrollLine} ${s.hasPenalty ? "text-destructive" : "text-muted-foreground"}`}>
-                          <span className="public-line-content">Penalidades: {s.penalidades}.</span>
+                          <span className="public-line-content">{keepTogether(`Penalidades: ${s.penalidades}.`)}</span>
                         </p>
                       </div>
                     </li>

@@ -160,22 +160,36 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
   }
 
   async function handleSave() {
-    if (!player1 || !player2 || !dateInput || !horario) {
-      toast.error("Preencha todos os campos.");
-      return;
-    }
-    const isoDate = parseDateInput(dateInput);
-    if (!isoDate) {
-      toast.error("Data inválida. Use o formato DD/MM.");
-      return;
-    }
-    const finalGrupo = grupo || players.find(p => p.id === player1)?.grupo || "";
-    if (!finalGrupo) {
-      toast.error("Selecione o grupo ou defina os grupos dos jogadores.");
+    if (!player1 || !player2) {
+      toast.error("Selecione os dois jogadores.");
       return;
     }
     if (player1 === player2) {
       toast.error("Selecione dois jogadores diferentes.");
+      return;
+    }
+    const hasDate = !!dateInput.trim();
+    const hasTime = !!horario;
+    const hasObs = !!observacao.trim();
+    if (hasDate !== hasTime) {
+      toast.error("Informe data E horário, ou deixe ambos vazios usando observação.");
+      return;
+    }
+    if (!hasDate && !hasObs) {
+      toast.error("Informe data e horário, ou preencha o campo observação.");
+      return;
+    }
+    let isoDate: string | null = null;
+    if (hasDate) {
+      isoDate = parseDateInput(dateInput);
+      if (!isoDate) {
+        toast.error("Data inválida. Use o formato DD/MM.");
+        return;
+      }
+    }
+    const finalGrupo = grupo || players.find(p => p.id === player1)?.grupo || "";
+    if (!finalGrupo) {
+      toast.error("Selecione o grupo ou defina os grupos dos jogadores.");
       return;
     }
     setLoading(true);
@@ -185,8 +199,9 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
       player2_id: player2,
       grupo: finalGrupo,
       data_partida: isoDate,
-      horario,
-    });
+      horario: hasTime ? horario : null,
+      observacao: hasObs ? observacao.trim() : null,
+    } as any);
     setLoading(false);
     if (error) {
       toast.error("Erro ao salvar: " + error.message);
@@ -196,6 +211,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
       setPlayer2("");
       setDateInput("");
       setHorario("");
+      setObservacao("");
       fetchSchedules();
     }
   }
@@ -205,20 +221,35 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
     setEditGrupo(s.grupo);
     setEditPlayer1(s.player1_id);
     setEditPlayer2(s.player2_id);
-    setEditDateInput(isoToDDMM(s.data_partida));
-    setEditHorario(s.horario.slice(0, 5));
+    setEditDateInput(s.data_partida ? isoToDDMM(s.data_partida) : "");
+    setEditHorario(s.horario ? s.horario.slice(0, 5) : "");
+    setEditObservacao(s.observacao ?? "");
   }
 
   async function handleUpdate() {
-    if (!editItem || !editGrupo || !editPlayer1 || !editPlayer2 || !editDateInput || !editHorario) return;
+    if (!editItem || !editGrupo || !editPlayer1 || !editPlayer2) return;
     if (editPlayer1 === editPlayer2) {
       toast.error("Selecione dois jogadores diferentes.");
       return;
     }
-    const isoDate = parseDateInput(editDateInput);
-    if (!isoDate) {
-      toast.error("Data inválida. Use o formato DD/MM.");
+    const hasDate = !!editDateInput.trim();
+    const hasTime = !!editHorario;
+    const hasObs = !!editObservacao.trim();
+    if (hasDate !== hasTime) {
+      toast.error("Informe data E horário, ou deixe ambos vazios usando observação.");
       return;
+    }
+    if (!hasDate && !hasObs) {
+      toast.error("Informe data e horário, ou preencha o campo observação.");
+      return;
+    }
+    let isoDate: string | null = null;
+    if (hasDate) {
+      isoDate = parseDateInput(editDateInput);
+      if (!isoDate) {
+        toast.error("Data inválida. Use o formato DD/MM.");
+        return;
+      }
     }
     setLoading(true);
     const { error } = await supabase
@@ -228,8 +259,9 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
         player1_id: editPlayer1,
         player2_id: editPlayer2,
         data_partida: isoDate,
-        horario: editHorario,
-      })
+        horario: hasTime ? editHorario : null,
+        observacao: hasObs ? editObservacao.trim() : null,
+      } as any)
       .eq("id", editItem.id);
     setLoading(false);
     if (error) {

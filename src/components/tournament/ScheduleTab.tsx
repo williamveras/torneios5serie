@@ -288,10 +288,13 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
     <div className="space-y-6">
       {/* Formulário */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex-row items-center justify-between space-y-0">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Plus className="h-5 w-5" /> Agendar Partida
           </CardTitle>
+          <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+            <FileText className="h-4 w-4 mr-1" /> Importar por texto
+          </Button>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -216,6 +216,69 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
             <p>Nenhum resultado registrado para esta fase.</p>
           </CardContent>
         </Card>
+      ) : viewMode === "table" ? (
+        <div className="space-y-8">
+          {dias.map(dia => (
+            <section key={dia.key} aria-labelledby={`dia-${dia.key}`}>
+              <h2 id={`dia-${dia.key}`} className="text-lg font-semibold mb-3 pb-2 border-b">
+                {formatDayLabel(dia.date)}
+              </h2>
+              <div className="rounded-md border overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="whitespace-nowrap">Confronto</TableHead>
+                      {isFaseDeGrupos && <TableHead className="whitespace-nowrap">Grupo</TableHead>}
+                      <TableHead className="whitespace-nowrap">Rodada</TableHead>
+                      <TableHead className="whitespace-nowrap">Jogador</TableHead>
+                      <TableHead className="text-right whitespace-nowrap">Vitória</TableHead>
+                      <TableHead className="text-right whitespace-nowrap">Mesa</TableHead>
+                      <TableHead className="whitespace-nowrap">Penalidades</TableHead>
+                      <TableHead className="whitespace-nowrap">Moderador</TableHead>
+                      <TableHead className="whitespace-nowrap">Hora</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {dia.confrontos.flatMap(c => {
+                      const horaPostagem = formatTime(new Date(c.created_at));
+                      const mod = moderatorName(c.registered_by);
+                      const colSpan = isFaseDeGrupos ? 9 : 8;
+                      return c.players.map((r, idx) => (
+                        <TableRow key={r.id} className={idx === 0 ? "border-t-2" : ""}>
+                          {idx === 0 && (
+                            <TableCell rowSpan={c.players.length} className="align-top font-medium">
+                              {c.players.length < 2
+                                ? `${displayName(c.players[0].player_id)} (avulso)`
+                                : `${displayName(c.players[0].player_id)} x ${displayName(c.players[1].player_id)}`}
+                            </TableCell>
+                          )}
+                          {idx === 0 && isFaseDeGrupos && (
+                            <TableCell rowSpan={c.players.length} className="align-top">{c.grupo}</TableCell>
+                          )}
+                          {idx === 0 && (
+                            <TableCell rowSpan={c.players.length} className="align-top">{c.rodada}</TableCell>
+                          )}
+                          <TableCell>{displayName(r.player_id)}</TableCell>
+                          <TableCell className="text-right tabular-nums">{r.pontos_jogo}</TableCell>
+                          <TableCell className="text-right tabular-nums">{r.pontos_mesa}</TableCell>
+                          <TableCell className={r.penalidades !== "Sem penalidades" ? "text-destructive" : "text-muted-foreground"}>
+                            {r.penalidades}
+                          </TableCell>
+                          {idx === 0 && (
+                            <TableCell rowSpan={c.players.length} className="align-top">{mod}</TableCell>
+                          )}
+                          {idx === 0 && (
+                            <TableCell rowSpan={c.players.length} className="align-top tabular-nums">{horaPostagem}</TableCell>
+                          )}
+                        </TableRow>
+                      ));
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </section>
+          ))}
+        </div>
       ) : (
         <div className="space-y-8">
           {dias.map(dia => (

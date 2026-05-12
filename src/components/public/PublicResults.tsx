@@ -374,7 +374,7 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
                                       {isWinner ? "vitória de " : ""}{displayName(r.player_id)}
                                     </p>
                                     <p className="text-sm mt-1">
-                                      <strong>{r.pontos_jogo}</strong> ponto{r.pontos_jogo === 1 ? "" : "s"} de vitória, <strong>{r.pontos_mesa}</strong> ponto{r.pontos_mesa === 1 ? "" : "s"} de mesa.
+                                      <span className="whitespace-nowrap"><strong>{r.pontos_jogo}</strong> ponto{r.pontos_jogo === 1 ? "" : "s"} de vitória</span>, <span className="whitespace-nowrap"><strong>{r.pontos_mesa}</strong> ponto{r.pontos_mesa === 1 ? "" : "s"} de mesa</span>.
                                     </p>
 
                                     {penalidade && (

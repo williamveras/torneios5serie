@@ -165,7 +165,7 @@ export default function PublicSchedule({ schedules, players, matchups, viewMode 
               </h3>
               <div className="space-y-2">
                 {items.map(s => (
-                  <div key={s.id} className="p-3 rounded-md border bg-muted/30">
+                  <div key={s.id} className="p-3 rounded-md border bg-muted/30 min-w-0 overflow-hidden">
                     <div className={`text-sm ${scrollLine}`}>
                       <span className="public-line-content">
                       <span className="font-medium">{displayName(playerMap.get(s.player1_id))}</span>{" "}

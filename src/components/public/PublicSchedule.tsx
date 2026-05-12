@@ -39,6 +39,9 @@ const formatGroupLabel = (grupo: string) => {
   return grupo;
 };
 
+const noWrapText = "whitespace-nowrap break-normal [overflow-wrap:normal] [word-break:normal]";
+const scrollLine = `max-w-full min-w-0 overflow-x-auto overflow-y-hidden ${noWrapText}`;
+
 // Today in São Paulo timezone (YYYY-MM-DD)
 const todaySaoPauloISO = () => {
   const fmt = new Intl.DateTimeFormat("en-CA", {
@@ -122,12 +125,12 @@ export default function PublicSchedule({ schedules, players, matchups, viewMode 
         <Card>
           <CardContent className="pt-4">
             <div className="rounded-md border overflow-x-auto">
-              <Table>
+              <Table className="min-w-max">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="whitespace-nowrap">Data</TableHead>
                     <TableHead className="whitespace-nowrap">Grupo</TableHead>
-                    <TableHead>Confronto</TableHead>
+                    <TableHead className="whitespace-nowrap">Confronto</TableHead>
                     <TableHead className="whitespace-nowrap">Horário</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -139,9 +142,8 @@ export default function PublicSchedule({ schedules, players, matchups, viewMode 
                           {date === NO_DATE_KEY ? "Sem data definida" : formatDate(date)}
                         </TableCell>
                         <TableCell className="whitespace-nowrap">{formatGroupLabel(s.grupo)}</TableCell>
-                        <TableCell className="font-medium">
-                          <span className="whitespace-nowrap">{displayName(playerMap.get(s.player1_id))} x</span>{" "}
-                          <span className="whitespace-nowrap">{displayName(playerMap.get(s.player2_id))}</span>
+                        <TableCell className={`font-medium ${noWrapText}`}>
+                          {displayName(playerMap.get(s.player1_id))} x {displayName(playerMap.get(s.player2_id))}
                         </TableCell>
                         <TableCell className="tabular-nums whitespace-nowrap">
                           {s.horario ? s.horario.slice(0, 5) : (s.observacao || "A definir")}
@@ -164,13 +166,13 @@ export default function PublicSchedule({ schedules, players, matchups, viewMode 
               <div className="space-y-2">
                 {items.map(s => (
                   <div key={s.id} className="p-3 rounded-md border bg-muted/30">
-                    <div className="text-sm whitespace-nowrap overflow-x-auto">
+                    <div className={`text-sm ${scrollLine}`}>
                       <span className="font-medium">{displayName(playerMap.get(s.player1_id))}</span>{" "}
                       <span className="text-muted-foreground">x</span>{" "}
                       <span className="font-medium">{displayName(playerMap.get(s.player2_id))}</span>
                       <span className="text-muted-foreground"> ({formatGroupLabel(s.grupo).toLowerCase()})</span>
                     </div>
-                    <div className="flex items-center gap-1 text-sm font-medium tabular-nums mt-1">
+                    <div className={`flex items-center gap-1 text-sm font-medium tabular-nums mt-1 ${scrollLine}`}>
                       <Clock className="h-3.5 w-3.5" />{" "}
                       {s.horario ? s.horario.slice(0, 5) : (s.observacao || "A definir")}
                     </div>

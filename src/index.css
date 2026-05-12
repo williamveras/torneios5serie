@@ -103,3 +103,47 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .public-page,
+  .public-page * {
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    hyphens: none;
+  }
+
+  .public-nowrap {
+    white-space: nowrap !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    hyphens: none;
+  }
+
+  .public-scroll-line {
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    hyphens: none;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .public-scroll-line::-webkit-scrollbar {
+    display: none;
+  }
+
+  .public-line-content {
+    display: inline-block;
+    width: max-content;
+    min-width: max-content;
+    max-width: none;
+    white-space: nowrap !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    hyphens: none;
+  }
+}

@@ -195,6 +195,11 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
       toast.error("Selecione o grupo ou defina os grupos dos jogadores.");
       return;
     }
+    const rodadaNum = rodada.trim() ? parseInt(rodada.trim(), 10) : null;
+    if (rodada.trim() && (isNaN(rodadaNum!) || rodadaNum! < 1)) {
+      toast.error("Rodada inválida.");
+      return;
+    }
     setLoading(true);
     const { error } = await supabase.from("match_schedule").insert({
       tournament_id: tournamentId,
@@ -204,6 +209,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
       data_partida: isoDate,
       horario: hasTime ? horario : null,
       observacao: hasObs ? observacao.trim() : null,
+      rodada: rodadaNum,
     } as any);
     setLoading(false);
     if (error) {
@@ -215,6 +221,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
       setDateInput("");
       setHorario("");
       setObservacao("");
+      setRodada("");
       fetchSchedules();
     }
   }

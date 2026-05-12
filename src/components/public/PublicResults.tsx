@@ -228,9 +228,9 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
       }));
   }, [confrontos]);
 
-  const defaultOpenRodadas = useMemo(
-    () => (rodadasGroups.length > 0 ? [`rodada-${rodadasGroups[0].rodada}`] : []),
-    [rodadasGroups],
+  const defaultOpenRodadas = useMemo<string[]>(
+    () => [],
+    [],
   );
 
   const phaseStatus = phaseStatuses.find(p => p.fase === selectedFase)?.status || "em_andamento";
@@ -292,7 +292,7 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
                     <div className="flex items-center gap-3 text-left">
                       <span className="text-base font-semibold">Rodada {group.rodada}</span>
                       <span className="text-xs text-muted-foreground">
-                        {totalConfrontos} confronto{totalConfrontos === 1 ? "" : "s"}
+                        ({totalConfrontos} {totalConfrontos === 1 ? "confronto" : "confrontos"})
                       </span>
                     </div>
                   </AccordionTrigger>

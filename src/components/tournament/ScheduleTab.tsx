@@ -384,6 +384,20 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
           </div>
 
           <div>
+            <Label htmlFor="schedule-obs">Observação (opcional)</Label>
+            <Input
+              id="schedule-obs"
+              type="text"
+              placeholder='Ex: "a definir", "W.O" — usado quando não há horário'
+              value={observacao}
+              onChange={(e) => setObservacao(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Se não houver data/horário, preencha aqui. A observação será exibida no lugar do horário.
+            </p>
+          </div>
+
+          <div>
             <Label htmlFor="schedule-grupo">Grupo</Label>
             <Input
               id="schedule-grupo"

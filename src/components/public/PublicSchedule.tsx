@@ -39,8 +39,8 @@ const formatGroupLabel = (grupo: string) => {
   return grupo;
 };
 
-const noWrapText = "whitespace-nowrap break-normal [overflow-wrap:normal] [word-break:normal]";
-const scrollLine = `max-w-full min-w-0 overflow-x-auto overflow-y-hidden ${noWrapText}`;
+const noWrapText = "public-nowrap";
+const scrollLine = "public-scroll-line";
 
 // Today in São Paulo timezone (YYYY-MM-DD)
 const todaySaoPauloISO = () => {
@@ -167,14 +167,18 @@ export default function PublicSchedule({ schedules, players, matchups, viewMode 
                 {items.map(s => (
                   <div key={s.id} className="p-3 rounded-md border bg-muted/30">
                     <div className={`text-sm ${scrollLine}`}>
+                      <span className="public-line-content">
                       <span className="font-medium">{displayName(playerMap.get(s.player1_id))}</span>{" "}
                       <span className="text-muted-foreground">x</span>{" "}
                       <span className="font-medium">{displayName(playerMap.get(s.player2_id))}</span>
                       <span className="text-muted-foreground"> ({formatGroupLabel(s.grupo).toLowerCase()})</span>
+                      </span>
                     </div>
-                    <div className={`flex items-center gap-1 text-sm font-medium tabular-nums mt-1 ${scrollLine}`}>
-                      <Clock className="h-3.5 w-3.5" />{" "}
-                      {s.horario ? s.horario.slice(0, 5) : (s.observacao || "A definir")}
+                    <div className={`text-sm font-medium tabular-nums mt-1 ${scrollLine}`}>
+                      <span className="public-line-content">
+                        <Clock className="inline h-3.5 w-3.5 align-[-2px]" />{" "}
+                        {s.horario ? s.horario.slice(0, 5) : (s.observacao || "A definir")}
+                      </span>
                     </div>
                   </div>
                 ))}

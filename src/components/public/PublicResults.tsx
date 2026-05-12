@@ -317,13 +317,15 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
                             <ul className="space-y-2">
                               {c.players.map(r => {
                                 const penalidade = r.penalidades !== "Sem penalidades";
+                                const maxJogo = Math.max(...c.players.map(p => p.pontos_jogo));
+                                const isWinner = c.players.length > 1 && r.pontos_jogo === maxJogo && c.players.filter(p => p.pontos_jogo === maxJogo).length === 1;
                                 return (
                                   <li
                                     key={r.id}
                                     className="rounded-md border bg-muted/30 p-3"
                                   >
                                     <p className="font-medium">
-                                      Jogador: {displayName(r.player_id)}
+                                      {isWinner ? "vitória de " : ""}{displayName(r.player_id)}
                                     </p>
                                     <p className="text-sm mt-1">
                                       <strong>{r.pontos_jogo}</strong> ponto{r.pontos_jogo === 1 ? "" : "s"} de vitória, <strong>{r.pontos_mesa}</strong> ponto{r.pontos_mesa === 1 ? "" : "s"} de mesa.

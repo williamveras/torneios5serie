@@ -67,6 +67,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
   const [matchups, setMatchups] = useState<Matchup[]>([]);
   const [fase, setFase] = useState<Fase>("Fase de Grupos");
   const [mode, setMode] = useState<Mode>("por_grupo");
+  const [rodadaGeral, setRodadaGeral] = useState("");
   const [drafts, setDrafts] = useState<DraftMatch[]>([]);
   const [saving, setSaving] = useState(false);
   const [confirmReplace, setConfirmReplace] = useState<{ existingCount: number } | null>(null);

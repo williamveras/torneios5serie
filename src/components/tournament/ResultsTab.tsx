@@ -7,9 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Save } from "lucide-react";
+import { Plus, Save, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { FASES } from "@/lib/constants";
+import ImportResultsDialog from "./ImportResultsDialog";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Player = Tables<"players">;
@@ -42,6 +43,7 @@ export default function ResultsTab({ tournamentId }: Props) {
   const [rodada, setRodada] = useState("");
   const [results, setResults] = useState<PlayerResult[]>([emptyResult()]);
   const [loading, setLoading] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   const isFaseDeGrupos = fase === "Fase de Grupos";
 
@@ -159,8 +161,20 @@ export default function ResultsTab({ tournamentId }: Props) {
 
   return (
     <Card>
-      <CardHeader><CardTitle>Registrar Resultados</CardTitle></CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between gap-2">
+        <CardTitle>Registrar Resultados</CardTitle>
+        <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+          <FileText className="h-4 w-4 mr-1" /> Importar por texto
+        </Button>
+      </CardHeader>
       <CardContent className="space-y-6">
+        <ImportResultsDialog
+          open={importOpen}
+          onOpenChange={setImportOpen}
+          tournamentId={tournamentId}
+          players={players}
+          onImported={() => { /* nothing to refresh in this tab */ }}
+        />
         <div className="grid gap-4 grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="fase-select">Fase</Label>

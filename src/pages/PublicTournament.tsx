@@ -96,7 +96,7 @@ export default function PublicTournament() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="public-page min-h-screen bg-muted/30">
       <header className="border-b bg-background">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3">
           <Trophy className="h-5 w-5 text-primary" />

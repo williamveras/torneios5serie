@@ -4,7 +4,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertTriangle, CheckCircle2, BarChart3 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { AlertTriangle, CheckCircle2, BarChart3, Download } from "lucide-react";
+import * as XLSX from "xlsx";
 import { FASES } from "@/lib/constants";
 import { computeStandings } from "@/lib/standings";
 import type { ViewMode } from "./ViewModeToggle";

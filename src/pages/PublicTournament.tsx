@@ -8,6 +8,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import PublicSchedule from "@/components/public/PublicSchedule";
 import PublicResults from "@/components/public/PublicResults";
 import PublicStandings from "@/components/public/PublicStandings";
+import ViewModeToggle, { type ViewMode } from "@/components/public/ViewModeToggle";
 
 type Tournament = Tables<"tournaments">;
 type MatchResult = Tables<"match_results">;

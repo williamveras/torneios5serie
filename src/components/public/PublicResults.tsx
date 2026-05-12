@@ -207,7 +207,13 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
             <p>Nenhum resultado registrado para esta fase.</p>
           </CardContent>
         </Card>
-      ) : viewMode === "table" ? (
+      ) : viewMode !== "table" && dias.length > 0 ? (
+        <p className="text-sm text-muted-foreground">
+          Acompanhe aqui os resultados individuais dos confrontos já ocorridos.
+        </p>
+      ) : null}
+
+      {dias.length === 0 ? null : viewMode === "table" ? (
         <div className="space-y-8">
           {dias.map(dia => (
             <section key={dia.key} aria-labelledby={`dia-${dia.key}`}>

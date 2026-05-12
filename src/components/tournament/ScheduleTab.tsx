@@ -436,7 +436,8 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
                       {grouped[g][d].map((s) => (
                         <div key={s.id} className="flex items-center justify-between py-1.5 px-3 rounded-md bg-muted/50">
                           <span className="text-sm">
-                            {getPlayerName(s.player1_id)} e {getPlayerName(s.player2_id)}: <strong>{s.horario.slice(0, 5)}</strong>
+                            {getPlayerName(s.player1_id)} e {getPlayerName(s.player2_id)}:{" "}
+                            <strong>{s.horario ? s.horario.slice(0, 5) : (s.observacao || "—")}</strong>
                           </span>
                           <div className="flex gap-1">
                             <Button variant="outline" size="sm" className="h-7" onClick={() => openEdit(s)}>

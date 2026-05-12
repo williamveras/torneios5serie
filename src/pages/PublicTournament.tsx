@@ -116,13 +116,22 @@ export default function PublicTournament() {
           </TabsList>
 
           <TabsContent value="results">
-            <PublicResults results={results} players={players} phaseStatuses={phaseStatuses} moderators={moderators} />
+            <div className="flex justify-end mb-3">
+              <ViewModeToggle value={resultsView} onChange={setResultsView} />
+            </div>
+            <PublicResults results={results} players={players} phaseStatuses={phaseStatuses} moderators={moderators} viewMode={resultsView} />
           </TabsContent>
           <TabsContent value="standings">
-            <PublicStandings results={results} players={players} phaseStatuses={phaseStatuses} />
+            <div className="flex justify-end mb-3">
+              <ViewModeToggle value={standingsView} onChange={setStandingsView} />
+            </div>
+            <PublicStandings results={results} players={players} phaseStatuses={phaseStatuses} viewMode={standingsView} />
           </TabsContent>
           <TabsContent value="schedule">
-            <PublicSchedule schedules={schedules} players={players} matchups={matchups} />
+            <div className="flex justify-end mb-3">
+              <ViewModeToggle value={scheduleView} onChange={setScheduleView} />
+            </div>
+            <PublicSchedule schedules={schedules} players={players} matchups={matchups} viewMode={scheduleView} />
           </TabsContent>
         </Tabs>
       </main>

@@ -202,21 +202,36 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
     );
   }, [rodadaFiltered]);
 
-  // Group confrontos by day (most recent day first, most recent confronto first)
-  const dias = useMemo(() => {
-    const map = new Map<string, { key: string; date: Date; confrontos: Confronto[] }>();
+  // Group confrontos by rodada (desc), then by day (most recent first) inside each rodada
+  const rodadasGroups = useMemo(() => {
+    const rodMap = new Map<number, Map<string, { key: string; date: Date; confrontos: Confronto[] }>>();
     for (const c of confrontos) {
       const d = new Date(c.created_at);
-      const k = formatDayKey(d);
-      const existing = map.get(k);
+      const dayKey = formatDayKey(d);
+      let dayMap = rodMap.get(c.rodada);
+      if (!dayMap) {
+        dayMap = new Map();
+        rodMap.set(c.rodada, dayMap);
+      }
+      const existing = dayMap.get(dayKey);
       if (existing) {
         existing.confrontos.push(c);
       } else {
-        map.set(k, { key: k, date: d, confrontos: [c] });
+        dayMap.set(dayKey, { key: dayKey, date: d, confrontos: [c] });
       }
     }
-    return Array.from(map.values()).sort((a, b) => b.key.localeCompare(a.key));
+    return Array.from(rodMap.entries())
+      .sort((a, b) => b[0] - a[0])
+      .map(([rodada, dayMap]) => ({
+        rodada,
+        dias: Array.from(dayMap.values()).sort((a, b) => b.key.localeCompare(a.key)),
+      }));
   }, [confrontos]);
+
+  const defaultOpenRodadas = useMemo(
+    () => (rodadasGroups.length > 0 ? [`rodada-${rodadasGroups[0].rodada}`] : []),
+    [rodadasGroups],
+  );
 
   const phaseStatus = phaseStatuses.find(p => p.fase === selectedFase)?.status || "em_andamento";
   const isInProgress = phaseStatus === "em_andamento" && filtered.length > 0;

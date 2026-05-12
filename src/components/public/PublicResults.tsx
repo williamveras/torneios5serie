@@ -107,6 +107,7 @@ const formatDayLabel = (d: Date) => {
 
 export default function PublicResults({ results, players, phaseStatuses, moderators, viewMode = "list" }: Props) {
   const [selectedFase, setSelectedFase] = useState<string>("Fase de Grupos");
+  const [selectedRodada, setSelectedRodada] = useState<string>("__last__");
 
   const playerMap = useMemo(() => {
     const m = new Map<string, PlayerLite>();

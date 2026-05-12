@@ -38,6 +38,9 @@ export default function PublicTournament() {
   const [moderators, setModerators] = useState<ModeratorLite[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [resultsView, setResultsView] = useState<ViewMode>("list");
+  const [standingsView, setStandingsView] = useState<ViewMode>("list");
+  const [scheduleView, setScheduleView] = useState<ViewMode>("list");
 
   useEffect(() => {
     if (!tournamentId) return;

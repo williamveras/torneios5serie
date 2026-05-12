@@ -52,6 +52,7 @@ interface Schedule {
   data_partida: string | null;
   horario: string | null;
   observacao: string | null;
+  rodada: number | null;
   created_at: string;
 }
 

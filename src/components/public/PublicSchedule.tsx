@@ -164,8 +164,9 @@ export default function PublicSchedule({ schedules, players, matchups, viewMode 
               <div className="space-y-2">
                 {items.map(s => (
                   <div key={s.id} className="p-3 rounded-md border bg-muted/30">
-                    <div className="text-sm">
-                      <span className="whitespace-nowrap"><span className="font-medium">{displayName(playerMap.get(s.player1_id))}</span> <span className="text-muted-foreground">x</span></span>{" "}
+                    <div className="text-sm whitespace-nowrap overflow-x-auto">
+                      <span className="font-medium">{displayName(playerMap.get(s.player1_id))}</span>{" "}
+                      <span className="text-muted-foreground">x</span>{" "}
                       <span className="font-medium">{displayName(playerMap.get(s.player2_id))}</span>
                       <span className="text-muted-foreground"> ({formatGroupLabel(s.grupo).toLowerCase()})</span>
                     </div>

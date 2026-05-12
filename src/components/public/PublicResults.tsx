@@ -250,7 +250,7 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             <BarChart3 className="h-10 w-10 mx-auto mb-3 opacity-40" aria-hidden="true" />
-            <p>Nenhum resultado registrado para esta fase.</p>
+            <p>{filtered.length === 0 ? "Nenhum resultado registrado para esta fase." : "Nenhum resultado registrado para esta rodada."}</p>
           </CardContent>
         </Card>
       ) : viewMode !== "table" && dias.length > 0 ? (

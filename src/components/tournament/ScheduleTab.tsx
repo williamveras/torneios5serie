@@ -304,14 +304,16 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
         const key = [s.player1_id, s.player2_id].sort().join("|");
         if (!currentRoundPairs.has(key)) continue;
       }
+      const dateKey = s.data_partida || NO_DATE_KEY;
       if (!grouped[s.grupo]) grouped[s.grupo] = {};
-      if (!grouped[s.grupo][s.data_partida]) grouped[s.grupo][s.data_partida] = [];
-      grouped[s.grupo][s.data_partida].push(s);
+      if (!grouped[s.grupo][dateKey]) grouped[s.grupo][dateKey] = [];
+      grouped[s.grupo][dateKey].push(s);
     }
     return grouped;
   }
 
   function formatDateTitle(dateStr: string) {
+    if (dateStr === NO_DATE_KEY) return "Sem data definida";
     const d = parseISO(dateStr);
     const dayName = format(d, "EEEE", { locale: ptBR });
     const capitalized = dayName.charAt(0).toUpperCase() + dayName.slice(1);

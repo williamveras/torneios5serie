@@ -49,10 +49,13 @@ interface Schedule {
   player1_id: string;
   player2_id: string;
   grupo: string;
-  data_partida: string;
-  horario: string;
+  data_partida: string | null;
+  horario: string | null;
+  observacao: string | null;
   created_at: string;
 }
+
+const NO_DATE_KEY = "__sem_data__";
 
 interface Props {
   tournamentId: string;
@@ -73,6 +76,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
   const [player2, setPlayer2] = useState("");
   const [dateInput, setDateInput] = useState("");
   const [horario, setHorario] = useState("");
+  const [observacao, setObservacao] = useState("");
   const [loading, setLoading] = useState(false);
 
   // Edit state
@@ -82,6 +86,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
   const [editPlayer2, setEditPlayer2] = useState("");
   const [editDateInput, setEditDateInput] = useState("");
   const [editHorario, setEditHorario] = useState("");
+  const [editObservacao, setEditObservacao] = useState("");
 
   // Delete state
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -155,22 +160,36 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
   }
 
   async function handleSave() {
-    if (!player1 || !player2 || !dateInput || !horario) {
-      toast.error("Preencha todos os campos.");
-      return;
-    }
-    const isoDate = parseDateInput(dateInput);
-    if (!isoDate) {
-      toast.error("Data inválida. Use o formato DD/MM.");
-      return;
-    }
-    const finalGrupo = grupo || players.find(p => p.id === player1)?.grupo || "";
-    if (!finalGrupo) {
-      toast.error("Selecione o grupo ou defina os grupos dos jogadores.");
+    if (!player1 || !player2) {
+      toast.error("Selecione os dois jogadores.");
       return;
     }
     if (player1 === player2) {
       toast.error("Selecione dois jogadores diferentes.");
+      return;
+    }
+    const hasDate = !!dateInput.trim();
+    const hasTime = !!horario;
+    const hasObs = !!observacao.trim();
+    if (hasDate !== hasTime) {
+      toast.error("Informe data E horário, ou deixe ambos vazios usando observação.");
+      return;
+    }
+    if (!hasDate && !hasObs) {
+      toast.error("Informe data e horário, ou preencha o campo observação.");
+      return;
+    }
+    let isoDate: string | null = null;
+    if (hasDate) {
+      isoDate = parseDateInput(dateInput);
+      if (!isoDate) {
+        toast.error("Data inválida. Use o formato DD/MM.");
+        return;
+      }
+    }
+    const finalGrupo = grupo || players.find(p => p.id === player1)?.grupo || "";
+    if (!finalGrupo) {
+      toast.error("Selecione o grupo ou defina os grupos dos jogadores.");
       return;
     }
     setLoading(true);
@@ -180,8 +199,9 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
       player2_id: player2,
       grupo: finalGrupo,
       data_partida: isoDate,
-      horario,
-    });
+      horario: hasTime ? horario : null,
+      observacao: hasObs ? observacao.trim() : null,
+    } as any);
     setLoading(false);
     if (error) {
       toast.error("Erro ao salvar: " + error.message);
@@ -191,6 +211,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
       setPlayer2("");
       setDateInput("");
       setHorario("");
+      setObservacao("");
       fetchSchedules();
     }
   }
@@ -200,20 +221,35 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
     setEditGrupo(s.grupo);
     setEditPlayer1(s.player1_id);
     setEditPlayer2(s.player2_id);
-    setEditDateInput(isoToDDMM(s.data_partida));
-    setEditHorario(s.horario.slice(0, 5));
+    setEditDateInput(s.data_partida ? isoToDDMM(s.data_partida) : "");
+    setEditHorario(s.horario ? s.horario.slice(0, 5) : "");
+    setEditObservacao(s.observacao ?? "");
   }
 
   async function handleUpdate() {
-    if (!editItem || !editGrupo || !editPlayer1 || !editPlayer2 || !editDateInput || !editHorario) return;
+    if (!editItem || !editGrupo || !editPlayer1 || !editPlayer2) return;
     if (editPlayer1 === editPlayer2) {
       toast.error("Selecione dois jogadores diferentes.");
       return;
     }
-    const isoDate = parseDateInput(editDateInput);
-    if (!isoDate) {
-      toast.error("Data inválida. Use o formato DD/MM.");
+    const hasDate = !!editDateInput.trim();
+    const hasTime = !!editHorario;
+    const hasObs = !!editObservacao.trim();
+    if (hasDate !== hasTime) {
+      toast.error("Informe data E horário, ou deixe ambos vazios usando observação.");
       return;
+    }
+    if (!hasDate && !hasObs) {
+      toast.error("Informe data e horário, ou preencha o campo observação.");
+      return;
+    }
+    let isoDate: string | null = null;
+    if (hasDate) {
+      isoDate = parseDateInput(editDateInput);
+      if (!isoDate) {
+        toast.error("Data inválida. Use o formato DD/MM.");
+        return;
+      }
     }
     setLoading(true);
     const { error } = await supabase
@@ -223,8 +259,9 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
         player1_id: editPlayer1,
         player2_id: editPlayer2,
         data_partida: isoDate,
-        horario: editHorario,
-      })
+        horario: hasTime ? editHorario : null,
+        observacao: hasObs ? editObservacao.trim() : null,
+      } as any)
       .eq("id", editItem.id);
     setLoading(false);
     if (error) {
@@ -267,14 +304,16 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
         const key = [s.player1_id, s.player2_id].sort().join("|");
         if (!currentRoundPairs.has(key)) continue;
       }
+      const dateKey = s.data_partida || NO_DATE_KEY;
       if (!grouped[s.grupo]) grouped[s.grupo] = {};
-      if (!grouped[s.grupo][s.data_partida]) grouped[s.grupo][s.data_partida] = [];
-      grouped[s.grupo][s.data_partida].push(s);
+      if (!grouped[s.grupo][dateKey]) grouped[s.grupo][dateKey] = [];
+      grouped[s.grupo][dateKey].push(s);
     }
     return grouped;
   }
 
   function formatDateTitle(dateStr: string) {
+    if (dateStr === NO_DATE_KEY) return "Sem data definida";
     const d = parseISO(dateStr);
     const dayName = format(d, "EEEE", { locale: ptBR });
     const capitalized = dayName.charAt(0).toUpperCase() + dayName.slice(1);
@@ -345,6 +384,20 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
           </div>
 
           <div>
+            <Label htmlFor="schedule-obs">Observação (opcional)</Label>
+            <Input
+              id="schedule-obs"
+              type="text"
+              placeholder='Ex: "a definir", "W.O" — usado quando não há horário'
+              value={observacao}
+              onChange={(e) => setObservacao(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Se não houver data/horário, preencha aqui. A observação será exibida no lugar do horário.
+            </p>
+          </div>
+
+          <div>
             <Label htmlFor="schedule-grupo">Grupo</Label>
             <Input
               id="schedule-grupo"
@@ -383,7 +436,8 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
                       {grouped[g][d].map((s) => (
                         <div key={s.id} className="flex items-center justify-between py-1.5 px-3 rounded-md bg-muted/50">
                           <span className="text-sm">
-                            {getPlayerName(s.player1_id)} e {getPlayerName(s.player2_id)}: <strong>{s.horario.slice(0, 5)}</strong>
+                            {getPlayerName(s.player1_id)} e {getPlayerName(s.player2_id)}:{" "}
+                            <strong>{s.horario ? s.horario.slice(0, 5) : (s.observacao || "—")}</strong>
                           </span>
                           <div className="flex gap-1">
                             <Button variant="outline" size="sm" className="h-7" onClick={() => openEdit(s)}>
@@ -455,6 +509,16 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
                 <Label htmlFor="edit-schedule-time">Horário</Label>
                 <Input id="edit-schedule-time" type="time" value={editHorario} onChange={(e) => setEditHorario(e.target.value)} />
               </div>
+            </div>
+            <div>
+              <Label htmlFor="edit-schedule-obs">Observação (opcional)</Label>
+              <Input
+                id="edit-schedule-obs"
+                type="text"
+                placeholder='Ex: "a definir", "W.O"'
+                value={editObservacao}
+                onChange={(e) => setEditObservacao(e.target.value)}
+              />
             </div>
             <div>
               <Label htmlFor="edit-schedule-grupo">Grupo</Label>

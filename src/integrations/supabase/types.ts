@@ -81,30 +81,33 @@ export type Database = {
       match_schedule: {
         Row: {
           created_at: string
-          data_partida: string
+          data_partida: string | null
           grupo: string
-          horario: string
+          horario: string | null
           id: string
+          observacao: string | null
           player1_id: string
           player2_id: string
           tournament_id: string
         }
         Insert: {
           created_at?: string
-          data_partida: string
+          data_partida?: string | null
           grupo: string
-          horario: string
+          horario?: string | null
           id?: string
+          observacao?: string | null
           player1_id: string
           player2_id: string
           tournament_id: string
         }
         Update: {
           created_at?: string
-          data_partida?: string
+          data_partida?: string | null
           grupo?: string
-          horario?: string
+          horario?: string | null
           id?: string
+          observacao?: string | null
           player1_id?: string
           player2_id?: string
           tournament_id?: string

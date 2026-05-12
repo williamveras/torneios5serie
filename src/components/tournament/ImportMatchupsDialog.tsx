@@ -111,7 +111,19 @@ export default function ImportMatchupsDialog({ open, onOpenChange, tournamentId,
           player2_id: row.player2Id!,
           data_partida: row.data,
           horario: row.horario,
-        });
+          observacao: row.observacao || null,
+        } as any);
+        if (!schedErr) scheduled++;
+      } else if (row.observacao) {
+        const { error: schedErr } = await supabase.from("match_schedule").insert({
+          tournament_id: tournamentId,
+          grupo: row.grupo,
+          player1_id: row.player1Id!,
+          player2_id: row.player2Id!,
+          data_partida: null,
+          horario: null,
+          observacao: row.observacao,
+        } as any);
         if (!schedErr) scheduled++;
       }
     }

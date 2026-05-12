@@ -28,6 +28,7 @@ interface Props {
   players: PlayerLite[];
   phaseStatuses: PhaseStatus[];
   moderators: ModeratorLite[];
+  viewMode?: ViewMode;
 }
 
 interface Confronto {

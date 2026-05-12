@@ -1,0 +1,1 @@
+ALTER TABLE public.match_schedule ADD COLUMN rodada integer;

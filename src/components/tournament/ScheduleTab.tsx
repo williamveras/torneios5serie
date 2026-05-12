@@ -49,10 +49,13 @@ interface Schedule {
   player1_id: string;
   player2_id: string;
   grupo: string;
-  data_partida: string;
-  horario: string;
+  data_partida: string | null;
+  horario: string | null;
+  observacao: string | null;
   created_at: string;
 }
+
+const NO_DATE_KEY = "__sem_data__";
 
 interface Props {
   tournamentId: string;

@@ -144,10 +144,15 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
       // geral: random pairs across all players
       const shuffled = shuffle(players.map((p) => p.id));
       const grupoLabel = fase === "Fase de Grupos" ? "Geral" : fase;
+      const rodadaNum = rodadaGeral.trim() ? parseInt(rodadaGeral.trim(), 10) : undefined;
+      if (rodadaGeral.trim() && (rodadaNum === undefined || isNaN(rodadaNum) || rodadaNum < 1)) {
+        toast.error("Rodada inválida.");
+        return;
+      }
       for (let i = 0; i < shuffled.length; i += 2) {
         const a = shuffled[i];
         const b = shuffled[i + 1] ?? null;
-        newDrafts.push({ player1_id: a, player2_id: b, grupo: grupoLabel });
+        newDrafts.push({ player1_id: a, player2_id: b, grupo: grupoLabel, rodada: rodadaNum });
       }
     }
 

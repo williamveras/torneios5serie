@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CalendarDays, Clock } from "lucide-react";
+import type { ViewMode } from "./ViewModeToggle";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Schedule = Tables<"match_schedule">;
@@ -16,6 +18,7 @@ interface Props {
   schedules: Schedule[];
   players: PlayerLite[];
   matchups: Matchup[];
+  viewMode?: ViewMode;
 }
 
 const displayName = (p?: PlayerLite) => {
@@ -45,7 +48,7 @@ const todaySaoPauloISO = () => {
   return fmt.format(new Date()); // YYYY-MM-DD
 };
 
-export default function PublicSchedule({ schedules, players, matchups }: Props) {
+export default function PublicSchedule({ schedules, players, matchups, viewMode = "list" }: Props) {
   const playerMap = useMemo(() => {
     const m = new Map<string, PlayerLite>();
     players.forEach(p => m.set(p.id, p));
@@ -113,6 +116,41 @@ export default function PublicSchedule({ schedules, players, matchups }: Props) 
           <CardContent className="py-12 text-center text-muted-foreground">
             <CalendarDays className="h-10 w-10 mx-auto mb-3 opacity-40" />
             <p>Nenhum confronto pendente para exibir.</p>
+          </CardContent>
+        </Card>
+      ) : viewMode === "table" ? (
+        <Card>
+          <CardContent className="pt-4">
+            <div className="rounded-md border overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="whitespace-nowrap">Data</TableHead>
+                    <TableHead className="whitespace-nowrap">Grupo</TableHead>
+                    <TableHead>Jogador 1</TableHead>
+                    <TableHead>Jogador 2</TableHead>
+                    <TableHead className="whitespace-nowrap">Horário</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {grouped.flatMap(([date, items]) =>
+                    items.map(s => (
+                      <TableRow key={s.id}>
+                        <TableCell className="whitespace-nowrap">
+                          {date === NO_DATE_KEY ? "Sem data definida" : formatDate(date)}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">{formatGroupLabel(s.grupo)}</TableCell>
+                        <TableCell className="font-medium">{displayName(playerMap.get(s.player1_id))}</TableCell>
+                        <TableCell className="font-medium">{displayName(playerMap.get(s.player2_id))}</TableCell>
+                        <TableCell className="tabular-nums whitespace-nowrap">
+                          {s.horario ? s.horario.slice(0, 5) : (s.observacao || "A definir")}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       ) : (

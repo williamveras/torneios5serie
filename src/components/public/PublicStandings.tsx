@@ -37,6 +37,7 @@ const naturalGroupSort = (a: string, b: string) => {
 const hasGroup = (g: string | null | undefined) => !!g && g.trim() !== "";
 const noWrapText = "public-nowrap";
 const scrollLine = "public-scroll-line";
+const compactCardPadding = "p-3 min-[360px]:p-4";
 
 export default function PublicStandings({ results, players, phaseStatuses, viewMode = "list" }: Props) {
   const [selectedFase, setSelectedFase] = useState<string>("Fase de Grupos");
@@ -222,7 +223,7 @@ export default function PublicStandings({ results, players, phaseStatuses, viewM
                   return (
                     <li
                       key={s.playerId}
-                      className={`rounded-md border bg-background p-3 flex items-start gap-3 min-w-0 overflow-hidden ${s.hasPenalty ? "bg-destructive/5" : ""}`}
+                      className={`rounded-md border bg-background flex items-start gap-3 min-w-0 overflow-hidden ${compactCardPadding} ${s.hasPenalty ? "bg-destructive/5" : ""}`}
                     >
                       <div
                         className="font-bold tabular-nums text-lg min-w-[2.5rem]"

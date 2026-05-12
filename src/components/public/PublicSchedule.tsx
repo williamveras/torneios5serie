@@ -118,6 +118,41 @@ export default function PublicSchedule({ schedules, players, matchups, viewMode 
             <p>Nenhum confronto pendente para exibir.</p>
           </CardContent>
         </Card>
+      ) : viewMode === "table" ? (
+        <Card>
+          <CardContent className="pt-4">
+            <div className="rounded-md border overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="whitespace-nowrap">Data</TableHead>
+                    <TableHead className="whitespace-nowrap">Grupo</TableHead>
+                    <TableHead>Jogador 1</TableHead>
+                    <TableHead>Jogador 2</TableHead>
+                    <TableHead className="whitespace-nowrap">Horário</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {grouped.flatMap(([date, items]) =>
+                    items.map(s => (
+                      <TableRow key={s.id}>
+                        <TableCell className="whitespace-nowrap">
+                          {date === NO_DATE_KEY ? "Sem data definida" : formatDate(date)}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">{formatGroupLabel(s.grupo)}</TableCell>
+                        <TableCell className="font-medium">{displayName(playerMap.get(s.player1_id))}</TableCell>
+                        <TableCell className="font-medium">{displayName(playerMap.get(s.player2_id))}</TableCell>
+                        <TableCell className="tabular-nums whitespace-nowrap">
+                          {s.horario ? s.horario.slice(0, 5) : (s.observacao || "A definir")}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       ) : (
         grouped.map(([date, items]) => (
           <Card key={date}>

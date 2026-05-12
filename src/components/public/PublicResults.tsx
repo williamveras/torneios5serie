@@ -267,156 +267,175 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
         </div>
       )}
 
-      {dias.length === 0 ? (
+      {rodadasGroups.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             <BarChart3 className="h-10 w-10 mx-auto mb-3 opacity-40" aria-hidden="true" />
             <p>{filtered.length === 0 ? "Nenhum resultado registrado para esta fase." : "Nenhum resultado registrado para esta rodada."}</p>
           </CardContent>
         </Card>
-      ) : viewMode !== "table" && dias.length > 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Acompanhe aqui os resultados individuais dos confrontos já ocorridos.
-        </p>
-      ) : null}
-
-      {dias.length === 0 ? null : viewMode === "table" ? (
-        <div className="space-y-8">
-          {dias.map(dia => (
-            <section key={dia.key} aria-labelledby={`dia-${dia.key}`}>
-              <h2 id={`dia-${dia.key}`} className="text-lg font-semibold mb-3 pb-2 border-b">
-                {formatDayLabel(dia.date)}
-              </h2>
-              <div className="rounded-md border overflow-x-auto">
-                <Table className="min-w-max">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="whitespace-nowrap">Confronto</TableHead>
-                      {isFaseDeGrupos && <TableHead className="whitespace-nowrap">Grupo</TableHead>}
-                      <TableHead className="whitespace-nowrap">Rodada</TableHead>
-                      <TableHead className="whitespace-nowrap">Jogador</TableHead>
-                      <TableHead className="text-right whitespace-nowrap">Vitória</TableHead>
-                      <TableHead className="text-right whitespace-nowrap">Mesa</TableHead>
-                      <TableHead className="whitespace-nowrap">Penalidades</TableHead>
-                      <TableHead className="whitespace-nowrap">Moderador</TableHead>
-                      <TableHead className="whitespace-nowrap">Hora</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {dia.confrontos.flatMap(c => {
-                      const horaPostagem = formatTime(new Date(c.created_at));
-                      const mod = moderatorName(c.registered_by);
-                      const colSpan = isFaseDeGrupos ? 9 : 8;
-                      return c.players.map((r, idx) => (
-                        <TableRow key={r.id} className={idx === 0 ? "border-t-2" : ""}>
-                          {idx === 0 && (
-                            <TableCell rowSpan={c.players.length} className={`align-top font-medium ${noWrapText}`}>
-                              {c.players.length < 2
-                                ? `${displayName(c.players[0].player_id)} (avulso)`
-                                : `${displayName(c.players[0].player_id)} x ${displayName(c.players[1].player_id)}`}
-                            </TableCell>
-                          )}
-                          {idx === 0 && isFaseDeGrupos && (
-                            <TableCell rowSpan={c.players.length} className={`align-top ${noWrapText}`}>{c.grupo}</TableCell>
-                          )}
-                          {idx === 0 && (
-                            <TableCell rowSpan={c.players.length} className={`align-top ${noWrapText}`}>{c.rodada}</TableCell>
-                          )}
-                          <TableCell className={noWrapText}>{displayName(r.player_id)}</TableCell>
-                          <TableCell className={`text-right tabular-nums ${noWrapText}`}>{r.pontos_jogo}</TableCell>
-                          <TableCell className={`text-right tabular-nums ${noWrapText}`}>{r.pontos_mesa}</TableCell>
-                          <TableCell className={`${noWrapText} ${r.penalidades !== "Sem penalidades" ? "text-destructive" : "text-muted-foreground"}`}>
-                            {r.penalidades}
-                          </TableCell>
-                          {idx === 0 && (
-                            <TableCell rowSpan={c.players.length} className={`align-top ${noWrapText}`}>{mod}</TableCell>
-                          )}
-                          {idx === 0 && (
-                            <TableCell rowSpan={c.players.length} className={`align-top tabular-nums ${noWrapText}`}>{horaPostagem}</TableCell>
-                          )}
-                        </TableRow>
-                      ));
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            </section>
-          ))}
-        </div>
       ) : (
-        <div className="space-y-8">
-          {dias.map(dia => (
-            <section key={dia.key} aria-labelledby={`dia-${dia.key}`}>
-              <h2
-                id={`dia-${dia.key}`}
-                className="text-lg font-semibold mb-3 pb-2 border-b"
-              >
-                {formatDayLabel(dia.date)}
-              </h2>
-              <ol className="space-y-3 list-none p-0">
-                {dia.confrontos.map(c => {
-                  const incompleto = c.players.length < 2;
-                  const p1 = c.players[0];
-                  const p2 = c.players[1];
-                  const nome1 = displayName(p1.player_id);
-                  const nome2 = p2 ? displayName(p2.player_id) : null;
-                  const localizacao = isFaseDeGrupos
-                    ? `rodada ${c.rodada}, grupo ${c.grupo}`
-                    : `rodada ${c.rodada}`;
-                  const tituloConfronto = incompleto
-                    ? `${nome1} (registro avulso) — ${localizacao}`
-                    : `${nome1} x ${nome2}, ${localizacao}`;
-                  const horaPostagem = formatTime(new Date(c.created_at));
+        <>
+          <p className="text-sm text-muted-foreground">
+            Acompanhe aqui os resultados individuais dos confrontos já ocorridos. Toque em uma rodada para expandir.
+          </p>
+          <Accordion type="multiple" defaultValue={defaultOpenRodadas} className="space-y-2">
+            {rodadasGroups.map(group => {
+              const totalConfrontos = group.dias.reduce((acc, d) => acc + d.confrontos.length, 0);
+              return (
+                <AccordionItem
+                  key={`rodada-${group.rodada}`}
+                  value={`rodada-${group.rodada}`}
+                  className="border rounded-md bg-card"
+                >
+                  <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                    <div className="flex items-center gap-3 text-left">
+                      <span className="text-base font-semibold">Rodada {group.rodada}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {totalConfrontos} confronto{totalConfrontos === 1 ? "" : "s"}
+                      </span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-3 pb-4 min-[360px]:px-4">
+                    {viewMode === "table" ? (
+                      <div className="space-y-6">
+                        {group.dias.map(dia => (
+                          <section key={dia.key} aria-labelledby={`dia-${group.rodada}-${dia.key}`}>
+                            <h3 id={`dia-${group.rodada}-${dia.key}`} className="text-sm font-semibold mb-2 pb-1 border-b">
+                              {formatDayLabel(dia.date)}
+                            </h3>
+                            <div className="rounded-md border overflow-x-auto">
+                              <Table className="min-w-max">
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="whitespace-nowrap">Confronto</TableHead>
+                                    {isFaseDeGrupos && <TableHead className="whitespace-nowrap">Grupo</TableHead>}
+                                    <TableHead className="whitespace-nowrap">Jogador</TableHead>
+                                    <TableHead className="text-right whitespace-nowrap">Vitória</TableHead>
+                                    <TableHead className="text-right whitespace-nowrap">Mesa</TableHead>
+                                    <TableHead className="whitespace-nowrap">Penalidades</TableHead>
+                                    <TableHead className="whitespace-nowrap">Moderador</TableHead>
+                                    <TableHead className="whitespace-nowrap">Hora</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {dia.confrontos.flatMap(c => {
+                                    const horaPostagem = formatTime(new Date(c.created_at));
+                                    const mod = moderatorName(c.registered_by);
+                                    return c.players.map((r, idx) => (
+                                      <TableRow key={r.id} className={idx === 0 ? "border-t-2" : ""}>
+                                        {idx === 0 && (
+                                          <TableCell rowSpan={c.players.length} className={`align-top font-medium ${noWrapText}`}>
+                                            {c.players.length < 2
+                                              ? `${displayName(c.players[0].player_id)} (avulso)`
+                                              : `${displayName(c.players[0].player_id)} x ${displayName(c.players[1].player_id)}`}
+                                          </TableCell>
+                                        )}
+                                        {idx === 0 && isFaseDeGrupos && (
+                                          <TableCell rowSpan={c.players.length} className={`align-top ${noWrapText}`}>{c.grupo}</TableCell>
+                                        )}
+                                        <TableCell className={noWrapText}>{displayName(r.player_id)}</TableCell>
+                                        <TableCell className={`text-right tabular-nums ${noWrapText}`}>{r.pontos_jogo}</TableCell>
+                                        <TableCell className={`text-right tabular-nums ${noWrapText}`}>{r.pontos_mesa}</TableCell>
+                                        <TableCell className={`${noWrapText} ${r.penalidades !== "Sem penalidades" ? "text-destructive" : "text-muted-foreground"}`}>
+                                          {r.penalidades}
+                                        </TableCell>
+                                        {idx === 0 && (
+                                          <TableCell rowSpan={c.players.length} className={`align-top ${noWrapText}`}>{mod}</TableCell>
+                                        )}
+                                        {idx === 0 && (
+                                          <TableCell rowSpan={c.players.length} className={`align-top tabular-nums ${noWrapText}`}>{horaPostagem}</TableCell>
+                                        )}
+                                      </TableRow>
+                                    ));
+                                  })}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          </section>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="space-y-6">
+                        {group.dias.map(dia => (
+                          <section key={dia.key} aria-labelledby={`dia-${group.rodada}-${dia.key}`}>
+                            <h3
+                              id={`dia-${group.rodada}-${dia.key}`}
+                              className="text-sm font-semibold mb-2 pb-1 border-b"
+                            >
+                              {formatDayLabel(dia.date)}
+                            </h3>
+                            <ol className="space-y-3 list-none p-0">
+                              {dia.confrontos.map(c => {
+                                const incompleto = c.players.length < 2;
+                                const p1 = c.players[0];
+                                const p2 = c.players[1];
+                                const nome1 = displayName(p1.player_id);
+                                const nome2 = p2 ? displayName(p2.player_id) : null;
+                                const localizacao = isFaseDeGrupos
+                                  ? `rodada ${c.rodada}, grupo ${c.grupo}`
+                                  : `rodada ${c.rodada}`;
+                                const tituloConfronto = incompleto
+                                  ? `${nome1} (registro avulso) — ${localizacao}`
+                                  : `${nome1} x ${nome2}, ${localizacao}`;
+                                const horaPostagem = formatTime(new Date(c.created_at));
 
-                  return (
-                    <li key={c.key}>
-                      <article aria-label={`Confronto ${tituloConfronto}, postado às ${horaPostagem}`}>
-                        <Card>
-                          <CardContent className="p-3 min-[360px]:p-4">
-                            <header className="mb-3">
-                              <h3 className={`text-base font-semibold ${scrollLine}`}>
-                                <span className="public-line-content">{keepTogether(tituloConfronto)}</span>
-                              </h3>
-                              <p className={`text-sm text-muted-foreground mt-1 ${scrollLine}`}>
-                                <span className="public-line-content">{keepTogether("Moderação:")} <span className="font-medium text-foreground">{keepTogether(moderatorName(c.registered_by))}</span>.</span>
-                              </p>
-                            </header>
-                            <ul className="space-y-2 min-w-0">
-                              {c.players.map(r => {
-                                const penalidade = r.penalidades !== "Sem penalidades";
-                                const maxJogo = Math.max(...c.players.map(p => p.pontos_jogo));
-                                const isWinner = c.players.length > 1 && r.pontos_jogo === maxJogo && c.players.filter(p => p.pontos_jogo === maxJogo).length === 1;
                                 return (
-                                  <li
-                                    key={r.id}
-                                    className={`rounded-md border bg-muted/30 min-w-0 overflow-hidden ${compactCardPadding}`}
-                                  >
-                                    <p className={`font-medium ${scrollLine}`}>
-                                      <span className="public-line-content">{keepTogether(`${isWinner ? "vitória de " : ""}${displayName(r.player_id)}`)}</span>
-                                    </p>
-                                    <p className={`text-sm mt-1 ${scrollLine}`}>
-                                      <span className="public-line-content">{keepTogether(`${r.pontos_jogo} ponto${r.pontos_jogo === 1 ? "" : "s"} de vitória, ${r.pontos_mesa} ponto${r.pontos_mesa === 1 ? "" : "s"} de mesa.`)}</span>
-                                    </p>
+                                  <li key={c.key}>
+                                    <article aria-label={`Confronto ${tituloConfronto}, postado às ${horaPostagem}`}>
+                                      <Card>
+                                        <CardContent className="p-3 min-[360px]:p-4">
+                                          <header className="mb-3">
+                                            <h4 className={`text-base font-semibold ${scrollLine}`}>
+                                              <span className="public-line-content">{keepTogether(tituloConfronto)}</span>
+                                            </h4>
+                                            <p className={`text-sm text-muted-foreground mt-1 ${scrollLine}`}>
+                                              <span className="public-line-content">{keepTogether("Moderação:")} <span className="font-medium text-foreground">{keepTogether(moderatorName(c.registered_by))}</span>.</span>
+                                            </p>
+                                          </header>
+                                          <ul className="space-y-2 min-w-0">
+                                            {c.players.map(r => {
+                                              const penalidade = r.penalidades !== "Sem penalidades";
+                                              const maxJogo = Math.max(...c.players.map(p => p.pontos_jogo));
+                                              const isWinner = c.players.length > 1 && r.pontos_jogo === maxJogo && c.players.filter(p => p.pontos_jogo === maxJogo).length === 1;
+                                              return (
+                                                <li
+                                                  key={r.id}
+                                                  className={`rounded-md border bg-muted/30 min-w-0 overflow-hidden ${compactCardPadding}`}
+                                                >
+                                                  <p className={`font-medium ${scrollLine}`}>
+                                                    <span className="public-line-content">{keepTogether(`${isWinner ? "vitória de " : ""}${displayName(r.player_id)}`)}</span>
+                                                  </p>
+                                                  <p className={`text-sm mt-1 ${scrollLine}`}>
+                                                    <span className="public-line-content">{keepTogether(`${r.pontos_jogo} ponto${r.pontos_jogo === 1 ? "" : "s"} de vitória, ${r.pontos_mesa} ponto${r.pontos_mesa === 1 ? "" : "s"} de mesa.`)}</span>
+                                                  </p>
 
-                                    {penalidade && (
-                                      <p className={`text-sm text-destructive ${scrollLine}`}>
-                                        <span className="public-line-content">{keepTogether(`Penalidades: ${r.penalidades}.`)}</span>
-                                      </p>
-                                    )}
+                                                  {penalidade && (
+                                                    <p className={`text-sm text-destructive ${scrollLine}`}>
+                                                      <span className="public-line-content">{keepTogether(`Penalidades: ${r.penalidades}.`)}</span>
+                                                    </p>
+                                                  )}
+                                                </li>
+                                              );
+                                            })}
+                                          </ul>
+                                        </CardContent>
+                                      </Card>
+                                    </article>
                                   </li>
                                 );
                               })}
-                            </ul>
-                          </CardContent>
-                        </Card>
-                      </article>
-                    </li>
-                  );
-                })}
-              </ol>
-            </section>
-          ))}
-        </div>
+                            </ol>
+                          </section>
+                        ))}
+                      </div>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+              );
+            })}
+          </Accordion>
+        </>
       )}
     </div>
   );

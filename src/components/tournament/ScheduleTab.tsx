@@ -488,6 +488,17 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ImportMatchupsDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        tournamentId={tournamentId}
+        players={players}
+        onImported={() => {
+          fetchSchedules();
+          fetchMatchups();
+        }}
+      />
     </div>
   );
 }

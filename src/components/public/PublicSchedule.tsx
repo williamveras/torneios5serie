@@ -140,7 +140,8 @@ export default function PublicSchedule({ schedules, players, matchups, viewMode 
                         </TableCell>
                         <TableCell className="whitespace-nowrap">{formatGroupLabel(s.grupo)}</TableCell>
                         <TableCell className="font-medium">
-                          {displayName(playerMap.get(s.player1_id))} x {displayName(playerMap.get(s.player2_id))}
+                          <span className="whitespace-nowrap">{displayName(playerMap.get(s.player1_id))} x</span>{" "}
+                          <span className="whitespace-nowrap">{displayName(playerMap.get(s.player2_id))}</span>
                         </TableCell>
                         <TableCell className="tabular-nums whitespace-nowrap">
                           {s.horario ? s.horario.slice(0, 5) : (s.observacao || "A definir")}

@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -67,6 +68,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
   const [matchups, setMatchups] = useState<Matchup[]>([]);
   const [fase, setFase] = useState<Fase>("Fase de Grupos");
   const [mode, setMode] = useState<Mode>("por_grupo");
+  const [rodadaGeral, setRodadaGeral] = useState("");
   const [drafts, setDrafts] = useState<DraftMatch[]>([]);
   const [saving, setSaving] = useState(false);
   const [confirmReplace, setConfirmReplace] = useState<{ existingCount: number } | null>(null);
@@ -143,10 +145,15 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
       // geral: random pairs across all players
       const shuffled = shuffle(players.map((p) => p.id));
       const grupoLabel = fase === "Fase de Grupos" ? "Geral" : fase;
+      const rodadaNum = rodadaGeral.trim() ? parseInt(rodadaGeral.trim(), 10) : undefined;
+      if (rodadaGeral.trim() && (rodadaNum === undefined || isNaN(rodadaNum) || rodadaNum < 1)) {
+        toast.error("Rodada inválida.");
+        return;
+      }
       for (let i = 0; i < shuffled.length; i += 2) {
         const a = shuffled[i];
         const b = shuffled[i + 1] ?? null;
-        newDrafts.push({ player1_id: a, player2_id: b, grupo: grupoLabel });
+        newDrafts.push({ player1_id: a, player2_id: b, grupo: grupoLabel, rodada: rodadaNum });
       }
     }
 
@@ -275,6 +282,23 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
             <p className="text-xs text-destructive">
               Nenhum grupo definido. Vá em Participantes → Sortear Grupos antes de gerar.
             </p>
+          )}
+
+          {mode === "geral" && (
+            <div className="max-w-xs">
+              <Label htmlFor="matchup-rodada-geral">Rodada (opcional)</Label>
+              <Input
+                id="matchup-rodada-geral"
+                type="number"
+                min={1}
+                placeholder="Deixe em branco se for rodada única"
+                value={rodadaGeral}
+                onChange={(e) => setRodadaGeral(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                No modo "Por grupo", a rodada é definida automaticamente pelo round-robin.
+              </p>
+            </div>
           )}
 
           <div className="flex flex-wrap gap-2">

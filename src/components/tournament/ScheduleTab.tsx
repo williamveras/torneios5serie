@@ -52,6 +52,7 @@ interface Schedule {
   data_partida: string | null;
   horario: string | null;
   observacao: string | null;
+  rodada: number | null;
   created_at: string;
 }
 
@@ -77,6 +78,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
   const [dateInput, setDateInput] = useState("");
   const [horario, setHorario] = useState("");
   const [observacao, setObservacao] = useState("");
+  const [rodada, setRodada] = useState("");
   const [loading, setLoading] = useState(false);
 
   // Edit state
@@ -87,6 +89,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
   const [editDateInput, setEditDateInput] = useState("");
   const [editHorario, setEditHorario] = useState("");
   const [editObservacao, setEditObservacao] = useState("");
+  const [editRodada, setEditRodada] = useState("");
 
   // Delete state
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -192,6 +195,11 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
       toast.error("Selecione o grupo ou defina os grupos dos jogadores.");
       return;
     }
+    const rodadaNum = rodada.trim() ? parseInt(rodada.trim(), 10) : null;
+    if (rodada.trim() && (isNaN(rodadaNum!) || rodadaNum! < 1)) {
+      toast.error("Rodada inválida.");
+      return;
+    }
     setLoading(true);
     const { error } = await supabase.from("match_schedule").insert({
       tournament_id: tournamentId,
@@ -201,6 +209,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
       data_partida: isoDate,
       horario: hasTime ? horario : null,
       observacao: hasObs ? observacao.trim() : null,
+      rodada: rodadaNum,
     } as any);
     setLoading(false);
     if (error) {
@@ -212,6 +221,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
       setDateInput("");
       setHorario("");
       setObservacao("");
+      setRodada("");
       fetchSchedules();
     }
   }
@@ -224,6 +234,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
     setEditDateInput(s.data_partida ? isoToDDMM(s.data_partida) : "");
     setEditHorario(s.horario ? s.horario.slice(0, 5) : "");
     setEditObservacao(s.observacao ?? "");
+    setEditRodada(s.rodada != null ? String(s.rodada) : "");
   }
 
   async function handleUpdate() {
@@ -251,6 +262,11 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
         return;
       }
     }
+    const editRodadaNum = editRodada.trim() ? parseInt(editRodada.trim(), 10) : null;
+    if (editRodada.trim() && (isNaN(editRodadaNum!) || editRodadaNum! < 1)) {
+      toast.error("Rodada inválida.");
+      return;
+    }
     setLoading(true);
     const { error } = await supabase
       .from("match_schedule")
@@ -261,6 +277,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
         data_partida: isoDate,
         horario: hasTime ? editHorario : null,
         observacao: hasObs ? editObservacao.trim() : null,
+        rodada: editRodadaNum,
       } as any)
       .eq("id", editItem.id);
     setLoading(false);
@@ -285,14 +302,18 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
     setDeleteId(null);
   }
 
-  // Group schedules by grupo, then by date — show ALL schedules
+  const NO_ROUND_KEY = "__sem_rodada__";
+
+  // Group schedules by rodada (most recent first), then by grupo, then by date
   function groupedSchedules() {
-    const grouped: Record<string, Record<string, Schedule[]>> = {};
+    const grouped: Record<string, Record<string, Record<string, Schedule[]>>> = {};
     for (const s of schedules) {
+      const rodadaKey = s.rodada != null ? String(s.rodada) : NO_ROUND_KEY;
       const dateKey = s.data_partida || NO_DATE_KEY;
-      if (!grouped[s.grupo]) grouped[s.grupo] = {};
-      if (!grouped[s.grupo][dateKey]) grouped[s.grupo][dateKey] = [];
-      grouped[s.grupo][dateKey].push(s);
+      if (!grouped[rodadaKey]) grouped[rodadaKey] = {};
+      if (!grouped[rodadaKey][s.grupo]) grouped[rodadaKey][s.grupo] = {};
+      if (!grouped[rodadaKey][s.grupo][dateKey]) grouped[rodadaKey][s.grupo][dateKey] = [];
+      grouped[rodadaKey][s.grupo][dateKey].push(s);
     }
     return grouped;
   }
@@ -306,7 +327,12 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
   }
 
   const grouped = groupedSchedules();
-  const sortedGrupos = Object.keys(grouped).sort();
+  // Sort rodadas: numeric desc (most recent first), "sem rodada" last
+  const sortedRodadas = Object.keys(grouped).sort((a, b) => {
+    if (a === NO_ROUND_KEY) return 1;
+    if (b === NO_ROUND_KEY) return -1;
+    return Number(b) - Number(a);
+  });
 
   return (
     <div className="space-y-6">
@@ -382,16 +408,29 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
             </p>
           </div>
 
-          <div>
-            <Label htmlFor="schedule-grupo">Grupo</Label>
-            <Input
-              id="schedule-grupo"
-              type="text"
-              value={grupo ? (/^\d+$/.test(grupo) ? `Grupo ${grupo}` : grupo) : ""}
-              readOnly
-              placeholder="Preenchido automaticamente ao escolher o jogador"
-              className="bg-muted"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="schedule-grupo">Grupo</Label>
+              <Input
+                id="schedule-grupo"
+                type="text"
+                value={grupo ? (/^\d+$/.test(grupo) ? `Grupo ${grupo}` : grupo) : ""}
+                readOnly
+                placeholder="Preenchido automaticamente ao escolher o jogador"
+                className="bg-muted"
+              />
+            </div>
+            <div>
+              <Label htmlFor="schedule-rodada">Rodada (opcional)</Label>
+              <Input
+                id="schedule-rodada"
+                type="number"
+                min={1}
+                placeholder="Ex: 1, 2, 3..."
+                value={rodada}
+                onChange={(e) => setRodada(e.target.value)}
+              />
+            </div>
           </div>
 
           <Button onClick={handleSave} disabled={loading} className="w-full">
@@ -400,43 +439,59 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
         </CardContent>
       </Card>
 
-      {/* Visualização */}
-      {sortedGrupos.length === 0 ? (
+      {/* Título separador */}
+      <h2 className="text-xl font-semibold pt-2">Partidas agendadas</h2>
+
+      {/* Visualização — agrupada por Rodada → Grupo → Data */}
+      {sortedRodadas.length === 0 ? (
         <p className="text-center text-muted-foreground py-8">Nenhuma partida agendada ainda.</p>
       ) : (
-        sortedGrupos.map((g) => {
-          const dates = Object.keys(grouped[g]).sort();
+        sortedRodadas.map((rk) => {
+          const grupos = Object.keys(grouped[rk]).sort();
+          const rodadaTitle = rk === NO_ROUND_KEY ? "Sem rodada definida" : `Rodada ${rk}`;
           return (
-            <Card key={g}>
+            <Card key={rk}>
               <CardHeader>
-                <CardTitle className="text-lg">Grupo {g}</CardTitle>
+                <CardTitle className="text-lg">{rodadaTitle}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {dates.map((d) => (
-                  <div key={d}>
-                    <h4 className="font-semibold text-sm text-muted-foreground mb-2">
-                      {formatDateTitle(d)}
-                    </h4>
-                    <div className="space-y-1">
-                      {grouped[g][d].map((s) => (
-                        <div key={s.id} className="flex items-center justify-between py-1.5 px-3 rounded-md bg-muted/50">
-                          <span className="text-sm">
-                            {getPlayerName(s.player1_id)} e {getPlayerName(s.player2_id)}:{" "}
-                            <strong>{s.horario ? s.horario.slice(0, 5) : (s.observacao || "—")}</strong>
-                          </span>
-                          <div className="flex gap-1">
-                            <Button variant="outline" size="sm" className="h-7" onClick={() => openEdit(s)}>
-                              <CalendarClock className="h-3.5 w-3.5 mr-1" /> Realocar
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(s.id)}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
+                {grupos.map((g) => {
+                  const dates = Object.keys(grouped[rk][g]).sort();
+                  return (
+                    <div key={g}>
+                      <h3 className="font-semibold text-sm mb-2">
+                        {/^\d+$/.test(g) ? `Grupo ${g}` : g}
+                      </h3>
+                      <div className="space-y-3 pl-2">
+                        {dates.map((d) => (
+                          <div key={d}>
+                            <h4 className="font-medium text-xs text-muted-foreground mb-1">
+                              {formatDateTitle(d)}
+                            </h4>
+                            <div className="space-y-1">
+                              {grouped[rk][g][d].map((s) => (
+                                <div key={s.id} className="flex items-center justify-between py-1.5 px-3 rounded-md bg-muted/50">
+                                  <span className="text-sm">
+                                    {getPlayerName(s.player1_id)} e {getPlayerName(s.player2_id)}:{" "}
+                                    <strong>{s.horario ? s.horario.slice(0, 5) : (s.observacao || "—")}</strong>
+                                  </span>
+                                  <div className="flex gap-1">
+                                    <Button variant="outline" size="sm" className="h-7" onClick={() => openEdit(s)}>
+                                      <CalendarClock className="h-3.5 w-3.5 mr-1" /> Realocar
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(s.id)}>
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </CardContent>
             </Card>
           );
@@ -505,16 +560,29 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
                 onChange={(e) => setEditObservacao(e.target.value)}
               />
             </div>
-            <div>
-              <Label htmlFor="edit-schedule-grupo">Grupo</Label>
-              <Input
-                id="edit-schedule-grupo"
-                type="text"
-                value={editGrupo ? `Grupo ${editGrupo}` : ""}
-                readOnly
-                placeholder="Preenchido automaticamente ao escolher o jogador"
-                className="bg-muted"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-schedule-grupo">Grupo</Label>
+                <Input
+                  id="edit-schedule-grupo"
+                  type="text"
+                  value={editGrupo ? (/^\d+$/.test(editGrupo) ? `Grupo ${editGrupo}` : editGrupo) : ""}
+                  readOnly
+                  placeholder="Preenchido automaticamente ao escolher o jogador"
+                  className="bg-muted"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-schedule-rodada">Rodada (opcional)</Label>
+                <Input
+                  id="edit-schedule-rodada"
+                  type="number"
+                  min={1}
+                  placeholder="Ex: 1, 2, 3..."
+                  value={editRodada}
+                  onChange={(e) => setEditRodada(e.target.value)}
+                />
+              </div>
             </div>
           </div>
           <DialogFooter>

@@ -88,6 +88,7 @@ export type Database = {
           observacao: string | null
           player1_id: string
           player2_id: string
+          rodada: number | null
           tournament_id: string
         }
         Insert: {
@@ -99,6 +100,7 @@ export type Database = {
           observacao?: string | null
           player1_id: string
           player2_id: string
+          rodada?: number | null
           tournament_id: string
         }
         Update: {
@@ -110,6 +112,7 @@ export type Database = {
           observacao?: string | null
           player1_id?: string
           player2_id?: string
+          rodada?: number | null
           tournament_id?: string
         }
         Relationships: [

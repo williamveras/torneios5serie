@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -107,6 +107,7 @@ const formatDayLabel = (d: Date) => {
 
 export default function PublicResults({ results, players, phaseStatuses, moderators, viewMode = "list" }: Props) {
   const [selectedFase, setSelectedFase] = useState<string>("Fase de Grupos");
+  const [selectedRodada, setSelectedRodada] = useState<string>("__last__");
 
   const playerMap = useMemo(() => {
     const m = new Map<string, PlayerLite>();
@@ -144,10 +145,35 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
 
   const isFaseDeGrupos = selectedFase === "Fase de Grupos";
 
+  const availableRodadas = useMemo(() => {
+    const set = new Set<number>();
+    filtered.forEach(r => set.add(r.rodada));
+    return Array.from(set).sort((a, b) => a - b);
+  }, [filtered]);
+
+  const lastRodada = availableRodadas.length > 0 ? availableRodadas[availableRodadas.length - 1] : null;
+
+  // Reset rodada selection to "last" when fase changes
+  useEffect(() => {
+    setSelectedRodada("__last__");
+  }, [selectedFase]);
+
+  const effectiveRodada = useMemo(() => {
+    if (selectedRodada === "__all__") return null;
+    if (selectedRodada === "__last__") return lastRodada;
+    const n = Number(selectedRodada);
+    return Number.isFinite(n) ? n : lastRodada;
+  }, [selectedRodada, lastRodada]);
+
+  const rodadaFiltered = useMemo(
+    () => effectiveRodada == null ? filtered : filtered.filter(r => r.rodada === effectiveRodada),
+    [filtered, effectiveRodada],
+  );
+
   // Group results into confrontos (pairs per registration)
   const confrontos = useMemo<Confronto[]>(() => {
     const map = new Map<string, Confronto>();
-    for (const r of filtered) {
+    for (const r of rodadaFiltered) {
       const fase = r.fase || "Fase de Grupos";
       const key = `${r.created_at}|${fase}|${r.grupo}|${r.rodada}`;
       const existing = map.get(key);
@@ -168,7 +194,7 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
     return Array.from(map.values()).sort((a, b) =>
       b.created_at.localeCompare(a.created_at),
     );
-  }, [filtered]);
+  }, [rodadaFiltered]);
 
   // Group confrontos by day (most recent day first, most recent confronto first)
   const dias = useMemo(() => {
@@ -200,11 +226,31 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
         </Alert>
       )}
 
+      {availableRodadas.length > 0 && (
+        <div className="flex items-center gap-2">
+          <Label htmlFor="rodada-filter" className="text-sm whitespace-nowrap">Rodada:</Label>
+          <Select value={selectedRodada} onValueChange={setSelectedRodada}>
+            <SelectTrigger id="rodada-filter" className="w-[220px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__last__">
+                Última rodada{lastRodada != null ? ` (${lastRodada})` : ""}
+              </SelectItem>
+              <SelectItem value="__all__">Todas as rodadas</SelectItem>
+              {availableRodadas.map(r => (
+                <SelectItem key={r} value={String(r)}>Rodada {r}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       {dias.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             <BarChart3 className="h-10 w-10 mx-auto mb-3 opacity-40" aria-hidden="true" />
-            <p>Nenhum resultado registrado para esta fase.</p>
+            <p>{filtered.length === 0 ? "Nenhum resultado registrado para esta fase." : "Nenhum resultado registrado para esta rodada."}</p>
           </CardContent>
         </Card>
       ) : viewMode !== "table" && dias.length > 0 ? (

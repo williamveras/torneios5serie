@@ -54,6 +54,7 @@ const WEEKDAYS = [
 const TZ = "America/Sao_Paulo";
 const noWrapText = "public-nowrap";
 const scrollLine = "public-scroll-line";
+const compactCardPadding = "p-3 min-[360px]:p-4";
 
 // Returns parts in Brasília timezone for a given Date
 const brasiliaParts = (d: Date) => {
@@ -353,7 +354,7 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
                     <li key={c.key}>
                       <article aria-label={`Confronto ${tituloConfronto}, postado às ${horaPostagem}`}>
                         <Card>
-                          <CardContent className="pt-4">
+                          <CardContent className="p-3 min-[360px]:p-4">
                             <header className="mb-3">
                               <h3 className={`text-base font-semibold ${scrollLine}`}>
                                 <span className="public-line-content">{tituloConfronto}</span>
@@ -370,7 +371,7 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
                                 return (
                                   <li
                                     key={r.id}
-                                    className="rounded-md border bg-muted/30 p-3 min-w-0 overflow-hidden"
+                                    className={`rounded-md border bg-muted/30 min-w-0 overflow-hidden ${compactCardPadding}`}
                                   >
                                     <p className={`font-medium ${scrollLine}`}>
                                       <span className="public-line-content">{isWinner ? "vitória de " : ""}{displayName(r.player_id)}</span>

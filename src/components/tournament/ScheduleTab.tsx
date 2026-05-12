@@ -560,16 +560,29 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
                 onChange={(e) => setEditObservacao(e.target.value)}
               />
             </div>
-            <div>
-              <Label htmlFor="edit-schedule-grupo">Grupo</Label>
-              <Input
-                id="edit-schedule-grupo"
-                type="text"
-                value={editGrupo ? `Grupo ${editGrupo}` : ""}
-                readOnly
-                placeholder="Preenchido automaticamente ao escolher o jogador"
-                className="bg-muted"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-schedule-grupo">Grupo</Label>
+                <Input
+                  id="edit-schedule-grupo"
+                  type="text"
+                  value={editGrupo ? (/^\d+$/.test(editGrupo) ? `Grupo ${editGrupo}` : editGrupo) : ""}
+                  readOnly
+                  placeholder="Preenchido automaticamente ao escolher o jogador"
+                  className="bg-muted"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-schedule-rodada">Rodada (opcional)</Label>
+                <Input
+                  id="edit-schedule-rodada"
+                  type="number"
+                  min={1}
+                  placeholder="Ex: 1, 2, 3..."
+                  value={editRodada}
+                  onChange={(e) => setEditRodada(e.target.value)}
+                />
+              </div>
             </div>
           </div>
           <DialogFooter>

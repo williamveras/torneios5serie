@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -209,7 +209,7 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
                   </TableHeader>
                   <TableBody>
                     {blocks.map((b, i) => (
-                      <>
+                      <Fragment key={i}>
                         {b.parsed.players.map((pl, idx) => (
                           <TableRow key={`${i}-${idx}`} className={b.parsed.errors.length > 0 ? "bg-destructive/10" : ""}>
                             {idx === 0 && (
@@ -251,7 +251,7 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
                             </TableCell>
                           </TableRow>
                         )}
-                      </>
+                      </Fragment>
                     ))}
                   </TableBody>
                 </Table>

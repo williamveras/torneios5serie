@@ -511,6 +511,16 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
               </div>
             </div>
             <div>
+              <Label htmlFor="edit-schedule-obs">Observação (opcional)</Label>
+              <Input
+                id="edit-schedule-obs"
+                type="text"
+                placeholder='Ex: "a definir", "W.O"'
+                value={editObservacao}
+                onChange={(e) => setEditObservacao(e.target.value)}
+              />
+            </div>
+            <div>
               <Label htmlFor="edit-schedule-grupo">Grupo</Label>
               <Input
                 id="edit-schedule-grupo"

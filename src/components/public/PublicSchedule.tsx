@@ -48,7 +48,7 @@ const todaySaoPauloISO = () => {
   return fmt.format(new Date()); // YYYY-MM-DD
 };
 
-export default function PublicSchedule({ schedules, players, matchups }: Props) {
+export default function PublicSchedule({ schedules, players, matchups, viewMode = "list" }: Props) {
   const playerMap = useMemo(() => {
     const m = new Map<string, PlayerLite>();
     players.forEach(p => m.set(p.id, p));

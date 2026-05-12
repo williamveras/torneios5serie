@@ -408,16 +408,29 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
             </p>
           </div>
 
-          <div>
-            <Label htmlFor="schedule-grupo">Grupo</Label>
-            <Input
-              id="schedule-grupo"
-              type="text"
-              value={grupo ? (/^\d+$/.test(grupo) ? `Grupo ${grupo}` : grupo) : ""}
-              readOnly
-              placeholder="Preenchido automaticamente ao escolher o jogador"
-              className="bg-muted"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="schedule-grupo">Grupo</Label>
+              <Input
+                id="schedule-grupo"
+                type="text"
+                value={grupo ? (/^\d+$/.test(grupo) ? `Grupo ${grupo}` : grupo) : ""}
+                readOnly
+                placeholder="Preenchido automaticamente ao escolher o jogador"
+                className="bg-muted"
+              />
+            </div>
+            <div>
+              <Label htmlFor="schedule-rodada">Rodada (opcional)</Label>
+              <Input
+                id="schedule-rodada"
+                type="number"
+                min={1}
+                placeholder="Ex: 1, 2, 3..."
+                value={rodada}
+                onChange={(e) => setRodada(e.target.value)}
+              />
+            </div>
           </div>
 
           <Button onClick={handleSave} disabled={loading} className="w-full">
@@ -425,6 +438,9 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
           </Button>
         </CardContent>
       </Card>
+
+      {/* Título separador */}
+      <h2 className="text-xl font-semibold pt-2">Partidas agendadas</h2>
 
       {/* Visualização */}
       {sortedGrupos.length === 0 ? (

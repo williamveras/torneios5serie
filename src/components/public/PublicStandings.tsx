@@ -222,7 +222,7 @@ export default function PublicStandings({ results, players, phaseStatuses, viewM
                   return (
                     <li
                       key={s.playerId}
-                      className={`rounded-md border bg-background p-3 flex items-start gap-3 ${s.hasPenalty ? "bg-destructive/5" : ""}`}
+                      className={`rounded-md border bg-background p-3 flex items-start gap-3 min-w-0 overflow-hidden ${s.hasPenalty ? "bg-destructive/5" : ""}`}
                     >
                       <div
                         className="font-bold tabular-nums text-lg min-w-[2.5rem]"

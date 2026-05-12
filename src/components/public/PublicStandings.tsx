@@ -87,8 +87,53 @@ export default function PublicStandings({ results, players, phaseStatuses, viewM
   const phaseStatus = phaseStatuses.find(p => p.fase === selectedFase)?.status || "em_andamento";
   const isInProgress = phaseStatus === "em_andamento" && totalRows > 0;
 
+  const exportToXlsx = () => {
+    const wb = XLSX.utils.book_new();
+    if (!hasAnyGroup) {
+      const data = sections[0].rows.map(s => ({
+        "Posição": s.position,
+        "Nick": s.nick || s.playerName,
+        "Pts Vitória": s.pontosJogo,
+        "Pts Mesa": s.pontosMesa,
+        "Penalidades": s.penalidades,
+      }));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), "Classificação");
+    } else {
+      const geral = sections.flatMap(sec =>
+        sec.rows.map(s => ({
+          "Grupo": sec.grupo,
+          "Posição no Grupo": s.position,
+          "Nick": s.nick || s.playerName,
+          "Pts Vitória": s.pontosJogo,
+          "Pts Mesa": s.pontosMesa,
+          "Penalidades": s.penalidades,
+        })),
+      );
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(geral), "Geral");
+      sections.forEach(sec => {
+        const data = sec.rows.map(s => ({
+          "Posição": s.position,
+          "Nick": s.nick || s.playerName,
+          "Pts Vitória": s.pontosJogo,
+          "Pts Mesa": s.pontosMesa,
+          "Penalidades": s.penalidades,
+        }));
+        const sheetName = `Grupo ${sec.grupo}`.slice(0, 31);
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), sheetName);
+      });
+    }
+    XLSX.writeFile(wb, `classificacao_${selectedFase.replace(/ /g, "_")}.xlsx`);
+  };
+
   return (
     <div className="space-y-4">
+      {totalRows > 0 && (
+        <div className="flex justify-end">
+          <Button variant="outline" size="sm" onClick={exportToXlsx}>
+            <Download className="h-4 w-4 mr-1" /> Exportar planilha
+          </Button>
+        </div>
+      )}
       {totalRows > 0 && (
         isInProgress ? (
           <Alert className="border-yellow-500/50 bg-yellow-500/10" role="status">

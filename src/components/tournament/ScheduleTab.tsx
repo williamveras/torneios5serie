@@ -86,6 +86,9 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
   // Delete state
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
+  // Import dialog state
+  const [importOpen, setImportOpen] = useState(false);
+
   useEffect(() => {
     fetchPlayers();
     fetchSchedules();

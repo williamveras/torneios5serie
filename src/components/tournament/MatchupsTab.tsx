@@ -284,6 +284,23 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
             </p>
           )}
 
+          {mode === "geral" && (
+            <div className="max-w-xs">
+              <Label htmlFor="matchup-rodada-geral">Rodada (opcional)</Label>
+              <Input
+                id="matchup-rodada-geral"
+                type="number"
+                min={1}
+                placeholder="Deixe em branco se for rodada única"
+                value={rodadaGeral}
+                onChange={(e) => setRodadaGeral(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                No modo "Por grupo", a rodada é definida automaticamente pelo round-robin.
+              </p>
+            </div>
+          )}
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={generate}>
               <Shuffle className="h-4 w-4 mr-1" /> Gerar Confrontos

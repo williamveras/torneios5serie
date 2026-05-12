@@ -52,8 +52,8 @@ const WEEKDAYS = [
 ];
 
 const TZ = "America/Sao_Paulo";
-const noWrapText = "whitespace-nowrap break-normal [overflow-wrap:normal] [word-break:normal]";
-const scrollLine = `max-w-full min-w-0 overflow-x-auto overflow-y-hidden ${noWrapText}`;
+const noWrapText = "public-nowrap";
+const scrollLine = "public-scroll-line";
 
 // Returns parts in Brasília timezone for a given Date
 const brasiliaParts = (d: Date) => {
@@ -356,10 +356,10 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
                           <CardContent className="pt-4">
                             <header className="mb-3">
                               <h3 className={`text-base font-semibold ${scrollLine}`}>
-                                {tituloConfronto}
+                                <span className="public-line-content">{tituloConfronto}</span>
                               </h3>
                               <p className={`text-sm text-muted-foreground mt-1 ${scrollLine}`}>
-                                Moderação: <span className="font-medium text-foreground">{moderatorName(c.registered_by)}</span>.
+                                <span className="public-line-content">Moderação: <span className="font-medium text-foreground">{moderatorName(c.registered_by)}</span>.</span>
                               </p>
                             </header>
                             <ul className="space-y-2">
@@ -373,15 +373,15 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
                                     className="rounded-md border bg-muted/30 p-3"
                                   >
                                     <p className={`font-medium ${scrollLine}`}>
-                                      {isWinner ? "vitória de " : ""}{displayName(r.player_id)}
+                                      <span className="public-line-content">{isWinner ? "vitória de " : ""}{displayName(r.player_id)}</span>
                                     </p>
                                     <p className={`text-sm mt-1 ${scrollLine}`}>
-                                      <span className={noWrapText}><strong>{r.pontos_jogo}</strong> ponto{r.pontos_jogo === 1 ? "" : "s"} de vitória</span>, <span className={noWrapText}><strong>{r.pontos_mesa}</strong> ponto{r.pontos_mesa === 1 ? "" : "s"} de mesa</span>.
+                                      <span className="public-line-content"><span className={noWrapText}><strong>{r.pontos_jogo}</strong> ponto{r.pontos_jogo === 1 ? "" : "s"} de vitória</span>, <span className={noWrapText}><strong>{r.pontos_mesa}</strong> ponto{r.pontos_mesa === 1 ? "" : "s"} de mesa</span>.</span>
                                     </p>
 
                                     {penalidade && (
                                       <p className={`text-sm text-destructive ${scrollLine}`}>
-                                        Penalidades: {r.penalidades}.
+                                        <span className="public-line-content">Penalidades: {r.penalidades}.</span>
                                       </p>
                                     )}
                                   </li>

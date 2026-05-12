@@ -35,6 +35,8 @@ const naturalGroupSort = (a: string, b: string) => {
 };
 
 const hasGroup = (g: string | null | undefined) => !!g && g.trim() !== "";
+const noWrapText = "whitespace-nowrap break-normal [overflow-wrap:normal] [word-break:normal]";
+const scrollLine = `max-w-full min-w-0 overflow-x-auto overflow-y-hidden ${noWrapText}`;
 
 export default function PublicStandings({ results, players, phaseStatuses, viewMode = "list" }: Props) {
   const [selectedFase, setSelectedFase] = useState<string>("Fase de Grupos");
@@ -167,7 +169,7 @@ export default function PublicStandings({ results, players, phaseStatuses, viewM
                 <h3 className="font-semibold text-lg mb-2">Grupo {sec.grupo}</h3>
               )}
               <div className="rounded-md border overflow-x-auto">
-                <Table>
+                <Table className="min-w-max">
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-12">#</TableHead>
@@ -183,10 +185,10 @@ export default function PublicStandings({ results, players, phaseStatuses, viewM
                       return (
                         <TableRow key={s.playerId} className={s.hasPenalty ? "bg-destructive/5" : ""}>
                           <TableCell className="font-bold tabular-nums">{s.position}º</TableCell>
-                          <TableCell className="font-medium">{displayName}</TableCell>
-                          <TableCell className="text-right tabular-nums">{s.pontosJogo}</TableCell>
-                          <TableCell className="text-right tabular-nums">{s.pontosMesa}</TableCell>
-                          <TableCell className={s.hasPenalty ? "text-destructive" : "text-muted-foreground"}>
+                          <TableCell className={`font-medium ${noWrapText}`}>{displayName}</TableCell>
+                          <TableCell className={`text-right tabular-nums ${noWrapText}`}>{s.pontosJogo}</TableCell>
+                          <TableCell className={`text-right tabular-nums ${noWrapText}`}>{s.pontosMesa}</TableCell>
+                          <TableCell className={`${noWrapText} ${s.hasPenalty ? "text-destructive" : "text-muted-foreground"}`}>
                             {s.penalidades}
                           </TableCell>
                         </TableRow>
@@ -229,11 +231,11 @@ export default function PublicStandings({ results, players, phaseStatuses, viewM
                         {s.position}º
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium whitespace-nowrap overflow-x-auto">{displayName}</p>
-                        <p className="text-sm mt-0.5 whitespace-nowrap overflow-x-auto">
-                          <span><strong>{s.pontosJogo}</strong> pontos de vitória</span>, <span><strong>{s.pontosMesa}</strong> pontos de mesa</span>.
+                        <p className={`font-medium ${scrollLine}`}>{displayName}</p>
+                        <p className={`text-sm mt-0.5 ${scrollLine}`}>
+                          <span className={noWrapText}><strong>{s.pontosJogo}</strong> pontos de vitória</span>, <span className={noWrapText}><strong>{s.pontosMesa}</strong> pontos de mesa</span>.
                         </p>
-                        <p className={`text-sm ${s.hasPenalty ? "text-destructive" : "text-muted-foreground"}`}>
+                        <p className={`text-sm ${scrollLine} ${s.hasPenalty ? "text-destructive" : "text-muted-foreground"}`}>
                           Penalidades: {s.penalidades}.
                         </p>
                       </div>

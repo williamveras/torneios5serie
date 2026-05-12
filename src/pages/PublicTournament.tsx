@@ -105,10 +105,10 @@ export default function PublicTournament() {
 
       <main className="max-w-5xl mx-auto px-4 py-6">
         <Tabs defaultValue="results">
-          <TabsList className="mb-4 flex-wrap h-auto">
-            <TabsTrigger value="results">Resultados</TabsTrigger>
-            <TabsTrigger value="standings">Classificação</TabsTrigger>
-            <TabsTrigger value="schedule">Confrontos</TabsTrigger>
+          <TabsList className="mb-4 grid grid-cols-3 w-full h-auto gap-1">
+            <TabsTrigger value="results" className="text-xs sm:text-sm py-2">Resultados</TabsTrigger>
+            <TabsTrigger value="standings" className="text-xs sm:text-sm py-2">Classificação</TabsTrigger>
+            <TabsTrigger value="schedule" className="text-xs sm:text-sm py-2">Confrontos</TabsTrigger>
           </TabsList>
 
           <TabsContent value="results">

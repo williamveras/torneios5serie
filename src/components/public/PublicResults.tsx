@@ -362,7 +362,7 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
                                 <span className="public-line-content">Moderação: <span className="font-medium text-foreground">{moderatorName(c.registered_by)}</span>.</span>
                               </p>
                             </header>
-                            <ul className="space-y-2">
+                            <ul className="space-y-2 min-w-0">
                               {c.players.map(r => {
                                 const penalidade = r.penalidades !== "Sem penalidades";
                                 const maxJogo = Math.max(...c.players.map(p => p.pontos_jogo));
@@ -370,7 +370,7 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
                                 return (
                                   <li
                                     key={r.id}
-                                    className="rounded-md border bg-muted/30 p-3"
+                                    className="rounded-md border bg-muted/30 p-3 min-w-0 overflow-hidden"
                                   >
                                     <p className={`font-medium ${scrollLine}`}>
                                       <span className="public-line-content">{isWinner ? "vitória de " : ""}{displayName(r.player_id)}</span>

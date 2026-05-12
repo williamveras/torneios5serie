@@ -55,6 +55,8 @@ const TZ = "America/Sao_Paulo";
 const noWrapText = "public-nowrap";
 const scrollLine = "public-scroll-line";
 const compactCardPadding = "p-3 min-[360px]:p-4";
+const keepTogether = (text: string | number) =>
+  String(text).replace(/ /g, "\u00A0").replace(/-/g, "\u2011");
 
 // Returns parts in Brasília timezone for a given Date
 const brasiliaParts = (d: Date) => {
@@ -357,10 +359,10 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
                           <CardContent className="p-3 min-[360px]:p-4">
                             <header className="mb-3">
                               <h3 className={`text-base font-semibold ${scrollLine}`}>
-                                <span className="public-line-content">{tituloConfronto}</span>
+                                <span className="public-line-content">{keepTogether(tituloConfronto)}</span>
                               </h3>
                               <p className={`text-sm text-muted-foreground mt-1 ${scrollLine}`}>
-                                <span className="public-line-content">Moderação: <span className="font-medium text-foreground">{moderatorName(c.registered_by)}</span>.</span>
+                                <span className="public-line-content">{keepTogether("Moderação:")} <span className="font-medium text-foreground">{keepTogether(moderatorName(c.registered_by))}</span>.</span>
                               </p>
                             </header>
                             <ul className="space-y-2 min-w-0">
@@ -374,15 +376,15 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
                                     className={`rounded-md border bg-muted/30 min-w-0 overflow-hidden ${compactCardPadding}`}
                                   >
                                     <p className={`font-medium ${scrollLine}`}>
-                                      <span className="public-line-content">{isWinner ? "vitória de " : ""}{displayName(r.player_id)}</span>
+                                      <span className="public-line-content">{keepTogether(`${isWinner ? "vitória de " : ""}${displayName(r.player_id)}`)}</span>
                                     </p>
                                     <p className={`text-sm mt-1 ${scrollLine}`}>
-                                      <span className="public-line-content"><span className={noWrapText}><strong>{r.pontos_jogo}</strong> ponto{r.pontos_jogo === 1 ? "" : "s"} de vitória</span>, <span className={noWrapText}><strong>{r.pontos_mesa}</strong> ponto{r.pontos_mesa === 1 ? "" : "s"} de mesa</span>.</span>
+                                      <span className="public-line-content">{keepTogether(`${r.pontos_jogo} ponto${r.pontos_jogo === 1 ? "" : "s"} de vitória, ${r.pontos_mesa} ponto${r.pontos_mesa === 1 ? "" : "s"} de mesa.`)}</span>
                                     </p>
 
                                     {penalidade && (
                                       <p className={`text-sm text-destructive ${scrollLine}`}>
-                                        <span className="public-line-content">Penalidades: {r.penalidades}.</span>
+                                        <span className="public-line-content">{keepTogether(`Penalidades: ${r.penalidades}.`)}</span>
                                       </p>
                                     )}
                                   </li>

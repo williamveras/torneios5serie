@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Trash2, CalendarClock } from "lucide-react";
+import { Plus, Trash2, CalendarClock, FileText } from "lucide-react";
 import { toast } from "sonner";
+import ImportMatchupsDialog from "./ImportMatchupsDialog";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Tables } from "@/integrations/supabase/types";
@@ -84,6 +85,9 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
 
   // Delete state
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  // Import dialog state
+  const [importOpen, setImportOpen] = useState(false);
 
   useEffect(() => {
     fetchPlayers();
@@ -284,10 +288,13 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
     <div className="space-y-6">
       {/* Formulário */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex-row items-center justify-between space-y-0">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Plus className="h-5 w-5" /> Agendar Partida
           </CardTitle>
+          <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+            <FileText className="h-4 w-4 mr-1" /> Importar por texto
+          </Button>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -481,6 +488,17 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ImportMatchupsDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        tournamentId={tournamentId}
+        players={players}
+        onImported={() => {
+          fetchSchedules();
+          fetchMatchups();
+        }}
+      />
     </div>
   );
 }

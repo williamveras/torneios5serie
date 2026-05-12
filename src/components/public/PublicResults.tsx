@@ -52,6 +52,8 @@ const WEEKDAYS = [
 ];
 
 const TZ = "America/Sao_Paulo";
+const noWrapText = "whitespace-nowrap break-normal [overflow-wrap:normal] [word-break:normal]";
+const scrollLine = `max-w-full min-w-0 overflow-x-auto overflow-y-hidden ${noWrapText}`;
 
 // Returns parts in Brasília timezone for a given Date
 const brasiliaParts = (d: Date) => {
@@ -267,7 +269,7 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
                 {formatDayLabel(dia.date)}
               </h2>
               <div className="rounded-md border overflow-x-auto">
-                <Table>
+                <Table className="min-w-max">
                   <TableHeader>
                     <TableRow>
                       <TableHead className="whitespace-nowrap">Confronto</TableHead>
@@ -289,29 +291,29 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
                       return c.players.map((r, idx) => (
                         <TableRow key={r.id} className={idx === 0 ? "border-t-2" : ""}>
                           {idx === 0 && (
-                            <TableCell rowSpan={c.players.length} className="align-top font-medium">
+                            <TableCell rowSpan={c.players.length} className={`align-top font-medium ${noWrapText}`}>
                               {c.players.length < 2
                                 ? `${displayName(c.players[0].player_id)} (avulso)`
                                 : `${displayName(c.players[0].player_id)} x ${displayName(c.players[1].player_id)}`}
                             </TableCell>
                           )}
                           {idx === 0 && isFaseDeGrupos && (
-                            <TableCell rowSpan={c.players.length} className="align-top">{c.grupo}</TableCell>
+                            <TableCell rowSpan={c.players.length} className={`align-top ${noWrapText}`}>{c.grupo}</TableCell>
                           )}
                           {idx === 0 && (
-                            <TableCell rowSpan={c.players.length} className="align-top">{c.rodada}</TableCell>
+                            <TableCell rowSpan={c.players.length} className={`align-top ${noWrapText}`}>{c.rodada}</TableCell>
                           )}
-                          <TableCell>{displayName(r.player_id)}</TableCell>
-                          <TableCell className="text-right tabular-nums">{r.pontos_jogo}</TableCell>
-                          <TableCell className="text-right tabular-nums">{r.pontos_mesa}</TableCell>
-                          <TableCell className={r.penalidades !== "Sem penalidades" ? "text-destructive" : "text-muted-foreground"}>
+                          <TableCell className={noWrapText}>{displayName(r.player_id)}</TableCell>
+                          <TableCell className={`text-right tabular-nums ${noWrapText}`}>{r.pontos_jogo}</TableCell>
+                          <TableCell className={`text-right tabular-nums ${noWrapText}`}>{r.pontos_mesa}</TableCell>
+                          <TableCell className={`${noWrapText} ${r.penalidades !== "Sem penalidades" ? "text-destructive" : "text-muted-foreground"}`}>
                             {r.penalidades}
                           </TableCell>
                           {idx === 0 && (
-                            <TableCell rowSpan={c.players.length} className="align-top">{mod}</TableCell>
+                            <TableCell rowSpan={c.players.length} className={`align-top ${noWrapText}`}>{mod}</TableCell>
                           )}
                           {idx === 0 && (
-                            <TableCell rowSpan={c.players.length} className="align-top tabular-nums">{horaPostagem}</TableCell>
+                            <TableCell rowSpan={c.players.length} className={`align-top tabular-nums ${noWrapText}`}>{horaPostagem}</TableCell>
                           )}
                         </TableRow>
                       ));
@@ -353,10 +355,10 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
                         <Card>
                           <CardContent className="pt-4">
                             <header className="mb-3">
-                              <h3 className="text-base font-semibold whitespace-nowrap overflow-x-auto">
+                              <h3 className={`text-base font-semibold ${scrollLine}`}>
                                 {tituloConfronto}
                               </h3>
-                              <p className="text-sm text-muted-foreground mt-1 whitespace-nowrap overflow-x-auto">
+                              <p className={`text-sm text-muted-foreground mt-1 ${scrollLine}`}>
                                 Moderação: <span className="font-medium text-foreground">{moderatorName(c.registered_by)}</span>.
                               </p>
                             </header>
@@ -370,15 +372,15 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
                                     key={r.id}
                                     className="rounded-md border bg-muted/30 p-3"
                                   >
-                                    <p className="font-medium whitespace-nowrap overflow-x-auto">
+                                    <p className={`font-medium ${scrollLine}`}>
                                       {isWinner ? "vitória de " : ""}{displayName(r.player_id)}
                                     </p>
-                                    <p className="text-sm mt-1 whitespace-nowrap overflow-x-auto">
-                                      <span><strong>{r.pontos_jogo}</strong> ponto{r.pontos_jogo === 1 ? "" : "s"} de vitória</span>, <span><strong>{r.pontos_mesa}</strong> ponto{r.pontos_mesa === 1 ? "" : "s"} de mesa</span>.
+                                    <p className={`text-sm mt-1 ${scrollLine}`}>
+                                      <span className={noWrapText}><strong>{r.pontos_jogo}</strong> ponto{r.pontos_jogo === 1 ? "" : "s"} de vitória</span>, <span className={noWrapText}><strong>{r.pontos_mesa}</strong> ponto{r.pontos_mesa === 1 ? "" : "s"} de mesa</span>.
                                     </p>
 
                                     {penalidade && (
-                                      <p className="text-sm text-destructive">
+                                      <p className={`text-sm text-destructive ${scrollLine}`}>
                                         Penalidades: {r.penalidades}.
                                       </p>
                                     )}

@@ -112,6 +112,45 @@ export default function PublicStandings({ results, players, phaseStatuses, viewM
             <p>Nenhum resultado registrado para esta fase.</p>
           </CardContent>
         </Card>
+      ) : viewMode === "table" ? (
+        <div className="space-y-6">
+          {sections.map(sec => (
+            <section key={sec.grupo || "__no_group__"}>
+              {hasAnyGroup && (
+                <h3 className="font-semibold text-lg mb-2">Grupo {sec.grupo}</h3>
+              )}
+              <div className="rounded-md border overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">#</TableHead>
+                      <TableHead>Jogador</TableHead>
+                      <TableHead className="text-right whitespace-nowrap">Pts. vitória</TableHead>
+                      <TableHead className="text-right whitespace-nowrap">Pts. mesa</TableHead>
+                      <TableHead className="whitespace-nowrap">Penalidades</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sec.rows.map(s => {
+                      const displayName = s.nick || s.playerName;
+                      return (
+                        <TableRow key={s.playerId} className={s.hasPenalty ? "bg-destructive/5" : ""}>
+                          <TableCell className="font-bold tabular-nums">{s.position}º</TableCell>
+                          <TableCell className="font-medium">{displayName}</TableCell>
+                          <TableCell className="text-right tabular-nums">{s.pontosJogo}</TableCell>
+                          <TableCell className="text-right tabular-nums">{s.pontosMesa}</TableCell>
+                          <TableCell className={s.hasPenalty ? "text-destructive" : "text-muted-foreground"}>
+                            {s.penalidades}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </section>
+          ))}
+        </div>
       ) : (
         <div className="space-y-6">
           {sections.map(sec => (

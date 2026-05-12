@@ -229,9 +229,9 @@ export default function PublicStandings({ results, players, phaseStatuses, viewM
                         {s.position}º
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium">{displayName}</p>
-                        <p className="text-sm mt-0.5">
-                          <span className="whitespace-nowrap"><strong>{s.pontosJogo}</strong> pontos de vitória</span>, <span className="whitespace-nowrap"><strong>{s.pontosMesa}</strong> pontos de mesa</span>.
+                        <p className="font-medium whitespace-nowrap overflow-x-auto">{displayName}</p>
+                        <p className="text-sm mt-0.5 whitespace-nowrap overflow-x-auto">
+                          <span><strong>{s.pontosJogo}</strong> pontos de vitória</span>, <span><strong>{s.pontosMesa}</strong> pontos de mesa</span>.
                         </p>
                         <p className={`text-sm ${s.hasPenalty ? "text-destructive" : "text-muted-foreground"}`}>
                           Penalidades: {s.penalidades}.

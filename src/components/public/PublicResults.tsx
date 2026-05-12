@@ -353,10 +353,10 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
                         <Card>
                           <CardContent className="pt-4">
                             <header className="mb-3">
-                              <h3 className="text-base font-semibold">
+                              <h3 className="text-base font-semibold whitespace-nowrap overflow-x-auto">
                                 {tituloConfronto}
                               </h3>
-                              <p className="text-sm text-muted-foreground mt-1">
+                              <p className="text-sm text-muted-foreground mt-1 whitespace-nowrap overflow-x-auto">
                                 Moderação: <span className="font-medium text-foreground">{moderatorName(c.registered_by)}</span>.
                               </p>
                             </header>
@@ -370,11 +370,11 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
                                     key={r.id}
                                     className="rounded-md border bg-muted/30 p-3"
                                   >
-                                    <p className="font-medium">
+                                    <p className="font-medium whitespace-nowrap overflow-x-auto">
                                       {isWinner ? "vitória de " : ""}{displayName(r.player_id)}
                                     </p>
-                                    <p className="text-sm mt-1">
-                                      <span className="whitespace-nowrap"><strong>{r.pontos_jogo}</strong> ponto{r.pontos_jogo === 1 ? "" : "s"} de vitória</span>, <span className="whitespace-nowrap"><strong>{r.pontos_mesa}</strong> ponto{r.pontos_mesa === 1 ? "" : "s"} de mesa</span>.
+                                    <p className="text-sm mt-1 whitespace-nowrap overflow-x-auto">
+                                      <span><strong>{r.pontos_jogo}</strong> ponto{r.pontos_jogo === 1 ? "" : "s"} de vitória</span>, <span><strong>{r.pontos_mesa}</strong> ponto{r.pontos_mesa === 1 ? "" : "s"} de mesa</span>.
                                     </p>
 
                                     {penalidade && (

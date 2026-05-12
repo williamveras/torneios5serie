@@ -41,6 +41,7 @@ const formatGroupLabel = (grupo: string) => {
 
 const noWrapText = "public-nowrap";
 const scrollLine = "public-scroll-line";
+const compactCardPadding = "p-3 min-[360px]:p-4";
 
 // Today in São Paulo timezone (YYYY-MM-DD)
 const todaySaoPauloISO = () => {
@@ -165,7 +166,7 @@ export default function PublicSchedule({ schedules, players, matchups, viewMode 
               </h3>
               <div className="space-y-2">
                 {items.map(s => (
-                  <div key={s.id} className="p-3 rounded-md border bg-muted/30 min-w-0 overflow-hidden">
+                  <div key={s.id} className={`rounded-md border bg-muted/30 min-w-0 overflow-hidden ${compactCardPadding}`}>
                     <div className={`text-sm ${scrollLine}`}>
                       <span className="public-line-content">
                       <span className="font-medium">{displayName(playerMap.get(s.player1_id))}</span>{" "}

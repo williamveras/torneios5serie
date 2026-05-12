@@ -124,6 +124,15 @@ export default function ResultsTab({ tournamentId }: Props) {
     if (isFaseDeGrupos && !grupo.trim()) { toast.error("Grupo não preenchido — selecione um jogador com grupo"); return; }
 
     setLoading(true);
+    // Buscar usuário diretamente da sessão para evitar registro com registered_by=null
+    // caso o hook useAuth ainda não tenha hidratado.
+    const { data: sessionData } = await supabase.auth.getSession();
+    const currentUserId = sessionData.session?.user?.id ?? user?.id ?? null;
+    if (!currentUserId) {
+      setLoading(false);
+      toast.error("Sessão não encontrada. Faça login novamente.");
+      return;
+    }
     const toInsert = results.map(r => ({
       tournament_id: tournamentId,
       player_id: r.player_id,
@@ -133,7 +142,7 @@ export default function ResultsTab({ tournamentId }: Props) {
       pontos_jogo: parseInt(r.pontos_jogo),
       pontos_mesa: parseInt(r.pontos_mesa),
       penalidades: resolvePenalidade(r),
-      registered_by: user?.id || null,
+      registered_by: currentUserId,
     }));
 
     const { error } = await supabase.from("match_results").insert(toInsert);

@@ -207,7 +207,13 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
             <p>Nenhum resultado registrado para esta fase.</p>
           </CardContent>
         </Card>
-      ) : viewMode === "table" ? (
+      ) : viewMode !== "table" && dias.length > 0 ? (
+        <p className="text-sm text-muted-foreground">
+          Acompanhe aqui os resultados individuais dos confrontos já ocorridos.
+        </p>
+      ) : null}
+
+      {dias.length === 0 ? null : viewMode === "table" ? (
         <div className="space-y-8">
           {dias.map(dia => (
             <section key={dia.key} aria-labelledby={`dia-${dia.key}`}>
@@ -305,9 +311,7 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
                                 {tituloConfronto}
                               </h3>
                               <p className="text-sm text-muted-foreground mt-1">
-                                Jogo moderado por <span className="font-medium text-foreground">{moderatorName(c.registered_by)}</span>.
-                                {" "}
-                                <span>Postado às {horaPostagem}.</span>
+                                Moderação: <span className="font-medium text-foreground">{moderatorName(c.registered_by)}</span>.
                               </p>
                             </header>
                             <ul className="space-y-2">
@@ -319,12 +323,12 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
                                     className="rounded-md border bg-muted/30 p-3"
                                   >
                                     <p className="font-medium">
-                                      <span className="sr-only">Jogador:&nbsp;</span>
-                                      {displayName(r.player_id)}
+                                      Jogador: {displayName(r.player_id)}
                                     </p>
                                     <p className="text-sm mt-1">
-                                      <strong>{r.pontos_jogo}</strong> ponto{r.pontos_jogo === 1 ? "" : "s"} de vitória, <strong>{r.pontos_mesa}</strong> ponto{r.pontos_mesa === 1 ? "" : "s"} de mesa neste confronto.
+                                      <strong>{r.pontos_jogo}</strong> ponto{r.pontos_jogo === 1 ? "" : "s"} de vitória, <strong>{r.pontos_mesa}</strong> ponto{r.pontos_mesa === 1 ? "" : "s"} de mesa.
                                     </p>
+
                                     {penalidade && (
                                       <p className="text-sm text-destructive">
                                         Penalidades: {r.penalidades}.

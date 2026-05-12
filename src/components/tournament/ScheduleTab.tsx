@@ -78,6 +78,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
   const [dateInput, setDateInput] = useState("");
   const [horario, setHorario] = useState("");
   const [observacao, setObservacao] = useState("");
+  const [rodada, setRodada] = useState("");
   const [loading, setLoading] = useState(false);
 
   // Edit state

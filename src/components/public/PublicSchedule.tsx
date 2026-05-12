@@ -71,12 +71,12 @@ export default function PublicSchedule({ schedules, players, matchups }: Props) 
   }, [matchups, currentRound]);
 
   const today = todaySaoPauloISO();
+  const NO_DATE_KEY = "__sem_data__";
 
   const filteredSchedules = useMemo(() => {
     return schedules.filter(s => {
-      // Hide past dates (date < today, São Paulo)
-      if (s.data_partida < today) return false;
-      // Only show matches that belong to the current round
+      // Hide past dates (date < today, São Paulo). Schedules with no date are kept.
+      if (s.data_partida && s.data_partida < today) return false;
       if (currentRoundPairs) {
         const key = [s.player1_id, s.player2_id].sort().join("|");
         if (!currentRoundPairs.has(key)) return false;
@@ -88,13 +88,18 @@ export default function PublicSchedule({ schedules, players, matchups }: Props) 
   const grouped = useMemo(() => {
     const map = new Map<string, Schedule[]>();
     const sorted = [...filteredSchedules].sort((a, b) => {
-      if (a.data_partida !== b.data_partida) return a.data_partida.localeCompare(b.data_partida);
-      return a.horario.localeCompare(b.horario);
+      const da = a.data_partida || "9999-12-31";
+      const db = b.data_partida || "9999-12-31";
+      if (da !== db) return da.localeCompare(db);
+      const ha = a.horario || "99:99";
+      const hb = b.horario || "99:99";
+      return ha.localeCompare(hb);
     });
     for (const s of sorted) {
-      const arr = map.get(s.data_partida) || [];
+      const key = s.data_partida || NO_DATE_KEY;
+      const arr = map.get(key) || [];
       arr.push(s);
-      map.set(s.data_partida, arr);
+      map.set(key, arr);
     }
     return Array.from(map.entries());
   }, [filteredSchedules]);
@@ -119,7 +124,7 @@ export default function PublicSchedule({ schedules, players, matchups }: Props) 
           <Card key={date}>
             <CardContent className="pt-4">
               <h3 className="font-semibold mb-3 flex items-center gap-2">
-                <CalendarDays className="h-4 w-4" /> {formatDate(date)}
+                <CalendarDays className="h-4 w-4" /> {date === NO_DATE_KEY ? "Sem data definida" : formatDate(date)}
               </h3>
               <div className="space-y-2">
                 {items.map(s => (
@@ -131,7 +136,8 @@ export default function PublicSchedule({ schedules, players, matchups }: Props) 
                       <span className="text-muted-foreground"> ({formatGroupLabel(s.grupo).toLowerCase()})</span>
                     </div>
                     <div className="flex items-center gap-1 text-sm font-medium tabular-nums mt-1">
-                      <Clock className="h-3.5 w-3.5" /> {s.horario.slice(0, 5)}
+                      <Clock className="h-3.5 w-3.5" />{" "}
+                      {s.horario ? s.horario.slice(0, 5) : (s.observacao || "A definir")}
                     </div>
                   </div>
                 ))}

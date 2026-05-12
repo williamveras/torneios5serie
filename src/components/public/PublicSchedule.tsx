@@ -41,6 +41,9 @@ const formatGroupLabel = (grupo: string) => {
 
 const noWrapText = "public-nowrap";
 const scrollLine = "public-scroll-line";
+const compactCardPadding = "p-3 min-[360px]:p-4";
+const keepTogether = (text: string | number) =>
+  String(text).replace(/ /g, "\u00A0").replace(/-/g, "\u2011");
 
 // Today in São Paulo timezone (YYYY-MM-DD)
 const todaySaoPauloISO = () => {
@@ -165,19 +168,19 @@ export default function PublicSchedule({ schedules, players, matchups, viewMode 
               </h3>
               <div className="space-y-2">
                 {items.map(s => (
-                  <div key={s.id} className="p-3 rounded-md border bg-muted/30">
+                  <div key={s.id} className={`rounded-md border bg-muted/30 min-w-0 overflow-hidden ${compactCardPadding}`}>
                     <div className={`text-sm ${scrollLine}`}>
                       <span className="public-line-content">
-                      <span className="font-medium">{displayName(playerMap.get(s.player1_id))}</span>{" "}
+                      <span className="font-medium">{keepTogether(displayName(playerMap.get(s.player1_id)))}</span>{" "}
                       <span className="text-muted-foreground">x</span>{" "}
-                      <span className="font-medium">{displayName(playerMap.get(s.player2_id))}</span>
-                      <span className="text-muted-foreground"> ({formatGroupLabel(s.grupo).toLowerCase()})</span>
+                      <span className="font-medium">{keepTogether(displayName(playerMap.get(s.player2_id)))}</span>
+                      <span className="text-muted-foreground"> {keepTogether(`(${formatGroupLabel(s.grupo).toLowerCase()})`)}</span>
                       </span>
                     </div>
                     <div className={`text-sm font-medium tabular-nums mt-1 ${scrollLine}`}>
                       <span className="public-line-content">
                         <Clock className="inline h-3.5 w-3.5 align-[-2px]" />{" "}
-                        {s.horario ? s.horario.slice(0, 5) : (s.observacao || "A definir")}
+                        {keepTogether(s.horario ? s.horario.slice(0, 5) : (s.observacao || "A definir"))}
                       </span>
                     </div>
                   </div>

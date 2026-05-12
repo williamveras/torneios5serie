@@ -107,29 +107,48 @@ All colors MUST be HSL.
 @layer utilities {
   .public-page,
   .public-page * {
-    word-break: normal !important;
+    word-break: keep-all !important;
     overflow-wrap: normal !important;
-    hyphens: none;
+    hyphens: none !important;
+    -webkit-hyphens: none !important;
   }
 
   .public-nowrap {
+    display: inline-block !important;
+    max-width: none !important;
+    min-width: max-content !important;
+    width: max-content !important;
+    flex: 0 0 auto !important;
     white-space: nowrap !important;
-    word-break: normal !important;
+    word-break: keep-all !important;
     overflow-wrap: normal !important;
-    hyphens: none;
+    hyphens: none !important;
+    -webkit-hyphens: none !important;
   }
 
   .public-scroll-line {
+    display: block !important;
     max-width: 100%;
+    width: 100%;
     min-width: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
     white-space: nowrap !important;
-    word-break: normal !important;
+    word-break: keep-all !important;
     overflow-wrap: normal !important;
-    hyphens: none;
+    hyphens: none !important;
+    -webkit-hyphens: none !important;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+  }
+
+  .public-scroll-line,
+  .public-scroll-line * {
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+    overflow-wrap: normal !important;
+    hyphens: none !important;
+    -webkit-hyphens: none !important;
   }
 
   .public-scroll-line::-webkit-scrollbar {
@@ -142,8 +161,9 @@ All colors MUST be HSL.
     min-width: max-content;
     max-width: none;
     white-space: nowrap !important;
-    word-break: normal !important;
+    word-break: keep-all !important;
     overflow-wrap: normal !important;
-    hyphens: none;
+    hyphens: none !important;
+    -webkit-hyphens: none !important;
   }
 }

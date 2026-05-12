@@ -77,13 +77,9 @@ export default function PublicSchedule({ schedules, players, matchups }: Props) 
     return schedules.filter(s => {
       // Hide past dates (date < today, São Paulo). Schedules with no date are kept.
       if (s.data_partida && s.data_partida < today) return false;
-      if (currentRoundPairs) {
-        const key = [s.player1_id, s.player2_id].sort().join("|");
-        if (!currentRoundPairs.has(key)) return false;
-      }
       return true;
     });
-  }, [schedules, today, currentRoundPairs]);
+  }, [schedules, today]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, Schedule[]>();

@@ -58,7 +58,6 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
   const [editNome, setEditNome] = useState("");
   const [editNick, setEditNick] = useState("");
   const [editWhats, setEditWhats] = useState("");
-  const [editEmail, setEditEmail] = useState("");
   const [editHorarios, setEditHorarios] = useState("");
   const [editGrupo, setEditGrupo] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
@@ -104,7 +103,6 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
       nome_completo: findCol(row, ["nome"]) || Object.values(row)[0]?.toString() || "Sem nome",
       nick_playroom: findCol(row, ["nick", "playroom"]) || null,
       whatsapp: findCol(row, ["whatsapp", "telefone", "celular", "ddd"]) || null,
-      email: findCol(row, ["e-mail", "email"]) || null,
       preferencia_horarios: findCol(row, ["horário", "horario", "preferência", "preferencia"]) || null,
       comentario: findCol(row, ["comentário", "comentario", "adicional", "observação"]) || null,
     })).filter(p => {
@@ -147,7 +145,6 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
     setEditNome(p.nome_completo);
     setEditNick(p.nick_playroom || "");
     setEditWhats(p.whatsapp || "");
-    setEditEmail((p as any).email || "");
     setEditHorarios(p.preferencia_horarios || "");
     setEditGrupo(p.grupo || "");
   };
@@ -155,19 +152,14 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
   const handleSaveEdit = async () => {
     if (!editPlayer) return;
     if (!editNome.trim()) { toast.error("Nome é obrigatório"); return; }
-    const emailTrim = editEmail.trim();
-    if (emailTrim && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) {
-      toast.error("E-mail inválido"); return;
-    }
     setSavingEdit(true);
     const { error } = await supabase.from("players").update({
       nome_completo: editNome.trim(),
       nick_playroom: editNick.trim() || null,
       whatsapp: editWhats.trim() || null,
-      email: emailTrim || null,
       preferencia_horarios: editHorarios.trim() || null,
       grupo: editGrupo.trim() || null,
-    } as any).eq("id", editPlayer.id);
+    }).eq("id", editPlayer.id);
     setSavingEdit(false);
     if (error) {
       toast.error("Erro ao salvar: " + error.message);
@@ -402,10 +394,6 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
             <div>
               <Label htmlFor="edit-whats">WhatsApp</Label>
               <Input id="edit-whats" value={editWhats} onChange={e => setEditWhats(e.target.value)} />
-            </div>
-            <div>
-              <Label htmlFor="edit-email">E-mail (para lembretes automáticos)</Label>
-              <Input id="edit-email" type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} placeholder="jogador@exemplo.com" />
             </div>
             <div>
               <Label htmlFor="edit-horarios">Preferência de horários</Label>

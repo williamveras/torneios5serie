@@ -14,27 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      match_reminders_sent: {
-        Row: {
-          id: string
-          player_id: string
-          schedule_id: string
-          sent_at: string
-        }
-        Insert: {
-          id?: string
-          player_id: string
-          schedule_id: string
-          sent_at?: string
-        }
-        Update: {
-          id?: string
-          player_id?: string
-          schedule_id?: string
-          sent_at?: string
-        }
-        Relationships: []
-      }
       match_results: {
         Row: {
           created_at: string
@@ -239,7 +218,6 @@ export type Database = {
           comentario: string | null
           created_at: string
           eliminado: boolean
-          email: string | null
           grupo: string | null
           id: string
           nick_playroom: string | null
@@ -252,7 +230,6 @@ export type Database = {
           comentario?: string | null
           created_at?: string
           eliminado?: boolean
-          email?: string | null
           grupo?: string | null
           id?: string
           nick_playroom?: string | null
@@ -265,7 +242,6 @@ export type Database = {
           comentario?: string | null
           created_at?: string
           eliminado?: boolean
-          email?: string | null
           grupo?: string | null
           id?: string
           nick_playroom?: string | null

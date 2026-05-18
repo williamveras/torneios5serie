@@ -311,18 +311,16 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
     return Math.max(...rounds);
   })();
 
-  // Group schedules by rodada → grupo → date. Only the current round is included.
+  // Group schedules by date → grupo. Only the current round is included.
   function groupedSchedules() {
-    const grouped: Record<string, Record<string, Record<string, Schedule[]>>> = {};
+    const grouped: Record<string, Record<string, Schedule[]>> = {};
     if (currentRound == null) return grouped;
     for (const s of schedules) {
       if (s.rodada !== currentRound) continue;
-      const rodadaKey = String(s.rodada);
       const dateKey = s.data_partida || NO_DATE_KEY;
-      if (!grouped[rodadaKey]) grouped[rodadaKey] = {};
-      if (!grouped[rodadaKey][s.grupo]) grouped[rodadaKey][s.grupo] = {};
-      if (!grouped[rodadaKey][s.grupo][dateKey]) grouped[rodadaKey][s.grupo][dateKey] = [];
-      grouped[rodadaKey][s.grupo][dateKey].push(s);
+      if (!grouped[dateKey]) grouped[dateKey] = {};
+      if (!grouped[dateKey][s.grupo]) grouped[dateKey][s.grupo] = [];
+      grouped[dateKey][s.grupo].push(s);
     }
     return grouped;
   }
@@ -336,7 +334,11 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
   }
 
   const grouped = groupedSchedules();
-  const sortedRodadas = Object.keys(grouped);
+  const sortedDates = Object.keys(grouped).sort((a, b) => {
+    if (a === NO_DATE_KEY) return 1;
+    if (b === NO_DATE_KEY) return -1;
+    return a.localeCompare(b);
+  });
 
   return (
     <div className="space-y-6">

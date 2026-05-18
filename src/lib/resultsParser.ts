@@ -4,15 +4,13 @@
 //   Lyly01: 26.
 //   princesinha: 17.
 //   Lyly01 ganhou!
-//
-// Multiple blocks may be separated by blank lines or by repeated "Pontuações:" headers.
 
 export interface ParsedResultPlayer {
   rawName: string;
   playerId?: string;
   playerName: string;
   pontosMesa: number;
-  pontosJogo: number; // 3 winner, 0 loser
+  pontosJogo: number;
 }
 
 export interface ParsedResult {
@@ -29,29 +27,41 @@ interface PlayerLite {
   grupo?: string | null;
 }
 
+// Normaliza removendo TODOS os espaços + lowercase.
 function norm(s: string): string {
-  return s.trim().toLowerCase();
+  return (s || "").replace(/\s+/g, "").toLowerCase();
 }
 
-function findPlayer(name: string, players: PlayerLite[]): PlayerLite | undefined {
+// Retorna todos os candidatos para um nome em uma pool dada, em ordem de prioridade.
+function candidatesFor(name: string, pool: PlayerLite[]): PlayerLite[] {
   const n = norm(name);
-  if (!n) return undefined;
-  return (
-    players.find((p) => norm(p.nick_playroom || "") === n) ||
-    players.find((p) => norm(p.nome_completo) === n) ||
-    players.find((p) => norm(p.nick_playroom || "").length > 0 && (norm(p.nick_playroom || "").includes(n) || n.includes(norm(p.nick_playroom || "")))) ||
-    players.find((p) => norm(p.nome_completo).includes(n))
-  );
+  if (!n) return [];
+
+  const exactNick = pool.filter((p) => norm(p.nick_playroom || "") === n);
+  if (exactNick.length > 0) return exactNick;
+
+  const exactName = pool.filter((p) => norm(p.nome_completo) === n);
+  if (exactName.length > 0) return exactName;
+
+  if (n.length < 3) return [];
+
+  const partial = pool.filter((p) => {
+    const nick = norm(p.nick_playroom || "");
+    const nome = norm(p.nome_completo);
+    return (
+      (nick.length > 0 && (nick.includes(n) || n.includes(nick))) ||
+      (nome.length > 0 && nome.includes(n))
+    );
+  });
+  return partial;
 }
 
-// Line like "Name: 26" or "Name: 26."
 function parseScoreLine(line: string): { name: string; score: number } | null {
   const m = line.match(/^\s*(.+?)\s*[:\-–]\s*(-?\d+)\s*\.?\s*$/);
   if (!m) return null;
   return { name: m[1].trim(), score: parseInt(m[2], 10) };
 }
 
-// Line like "Name ganhou!" / "Name venceu" / "Name ganhou."
 function parseWinnerLine(line: string): string | null {
   const m = line.match(/^\s*(.+?)\s+(?:ganhou|venceu|won)\b.*$/i);
   return m ? m[1].trim() : null;
@@ -71,13 +81,11 @@ export function parseResultsText(text: string, players: PlayerLite[]): ParsedRes
     const isWinner = parseWinnerLine(line) !== null;
     if (!isScore && !isWinner) continue;
     current.push(line);
-    // A block is complete after a winner line
     if (isWinner) {
       blocks.push(current);
       current = [];
     }
   }
-  // If still scores without winner, push as incomplete block
   if (current.length > 0) blocks.push(current);
 
   const results: ParsedResult[] = [];
@@ -95,25 +103,73 @@ export function parseResultsText(text: string, players: PlayerLite[]): ParsedRes
     }
     const picked = scoreLines.slice(0, 2);
 
-    const resolved = picked.map((s) => {
-      const p = findPlayer(s.name, players);
-      if (!p) errors.push(`Jogador "${s.name}" não encontrado.`);
-      return { raw: s.name, score: s.score, player: p };
+    // Candidatos brutos para cada jogador
+    const cands = picked.map((s) => ({ raw: s.name, score: s.score, candidates: candidatesFor(s.name, players) }));
+
+    // Resolução conjunta: prefere combinação onde ambos pertencem ao mesmo grupo.
+    const resolved: { raw: string; score: number; player?: PlayerLite }[] = cands.map((c) => ({
+      raw: c.raw,
+      score: c.score,
+      player: undefined,
+    }));
+
+    if (cands.length === 2 && cands[0].candidates.length > 0 && cands[1].candidates.length > 0) {
+      // Gerar pares válidos (mesmo grupo, jogadores diferentes)
+      const validPairs: { a: PlayerLite; b: PlayerLite; sameGroup: boolean }[] = [];
+      for (const a of cands[0].candidates) {
+        for (const b of cands[1].candidates) {
+          if (a.id === b.id) continue;
+          const sameGroup =
+            a.grupo != null && b.grupo != null && String(a.grupo) === String(b.grupo);
+          validPairs.push({ a, b, sameGroup });
+        }
+      }
+      const sameGroupPairs = validPairs.filter((p) => p.sameGroup);
+      if (sameGroupPairs.length === 1) {
+        resolved[0].player = sameGroupPairs[0].a;
+        resolved[1].player = sameGroupPairs[0].b;
+      } else if (sameGroupPairs.length > 1) {
+        errors.push(
+          `Ambiguidade: "${cands[0].raw}" x "${cands[1].raw}" tem múltiplas combinações no mesmo grupo.`
+        );
+      } else if (validPairs.length === 1) {
+        // Sem par no mesmo grupo - se há apenas um par possível, pega mas avisa
+        resolved[0].player = validPairs[0].a;
+        resolved[1].player = validPairs[0].b;
+        errors.push(
+          `Jogadores "${cands[0].raw}" e "${cands[1].raw}" pertencem a grupos diferentes (${validPairs[0].a.grupo} e ${validPairs[0].b.grupo}).`
+        );
+      } else if (validPairs.length > 1) {
+        errors.push(
+          `Ambiguidade entre grupos: "${cands[0].raw}" x "${cands[1].raw}" tem múltiplas combinações possíveis.`
+        );
+      }
+    } else {
+      // Fallback individual quando algum lado não tem candidatos
+      cands.forEach((c, i) => {
+        if (c.candidates.length === 1) resolved[i].player = c.candidates[0];
+        else if (c.candidates.length > 1) {
+          errors.push(`"${c.raw}" é ambíguo (${c.candidates.length} jogadores correspondem).`);
+        }
+      });
+    }
+
+    resolved.forEach((r) => {
+      if (!r.player) errors.push(`Jogador "${r.raw}" não encontrado.`);
     });
 
     let winnerIdx = -1;
     if (winnerLine) {
-      const wp = findPlayer(winnerLine, players);
+      const winnerCands = candidatesFor(winnerLine, players);
+      const wp = winnerCands.length === 1 ? winnerCands[0] : undefined;
       if (wp) {
         winnerIdx = resolved.findIndex((r) => r.player?.id === wp.id);
       }
       if (winnerIdx < 0) {
-        // Try by raw name
         winnerIdx = resolved.findIndex((r) => norm(r.raw) === norm(winnerLine));
       }
       if (winnerIdx < 0) errors.push(`Vencedor "${winnerLine}" não corresponde aos jogadores do bloco.`);
     } else if (resolved.length === 2) {
-      // Infer winner by highest score
       if (resolved[0].score !== resolved[1].score) {
         winnerIdx = resolved[0].score > resolved[1].score ? 0 : 1;
       } else {

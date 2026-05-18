@@ -1,51 +1,106 @@
-## Importação de confrontos por colagem de texto
 
-Adiciona, na aba **Agenda** (área logada), um botão "Importar por texto" que abre um diálogo onde o usuário cola um bloco de texto bruto (ex.: o que é compartilhado no grupo) e o sistema extrai grupo, jogadores, data e horário, gravando em `matchups` e `match_schedule`.
+## Visão geral
 
-### Arquivos
+Adicionar dois tipos de e-mails automáticos para os jogadores:
 
-1. **`src/lib/matchupParser.ts`** (novo)
-   - `parseMatchupsText(text, players)` percorre o texto linha a linha mantendo um "grupo atual".
-   - Regras de detecção:
-     - Cabeçalho de grupo: linha que casa com `/^grupo\s+(\d+)/i` → atualiza grupo corrente.
-     - Confronto: linha contendo ` x ` (case-insensitive, com espaços ou separadores comuns) → captura nick à esquerda e à direita.
-     - Linha imediatamente seguinte ao confronto:
-       - Se contiver data (`DD/MM` ou `DD/MM/YYYY`) e hora (`HH:MM` ou `HH'h'MM`) → vira `data_partida` + `horario`.
-       - Se contiver palavras-chave como `a definir`, `W.O`, `WO`, `bye` → vira `observacao` (sem data/hora).
-   - Casamento de jogador: busca em `players` por `nick_playroom` (case-insensitive, trim); fallback `nome_completo`. Se não achar, marca a linha com erro.
-   - Saída: array de `{ grupo, player1, player2, player1Id?, player2Id?, data?, horario?, observacao?, errors[] }`.
+1. **Lembrete 2h antes** da partida agendada.
+2. **Aviso de realocação** quando a data, horário ou observação de uma partida do jogador for alterada.
 
-2. **`src/components/tournament/ImportMatchupsDialog.tsx`** (novo)
-   - Campos: `Rodada` (number, obrigatório), `Texto` (textarea grande).
-   - Botão "Pré-visualizar" → roda o parser e mostra tabela editável: Grupo | Jogador 1 | Jogador 2 | Data | Horário | Observação. Linhas com erro destacadas em vermelho com mensagem (ex.: "Jogador 'Fulano' não encontrado").
-   - Botão "Confirmar e gravar":
-     - Para cada linha válida: insere em `matchups` (tournament_id, rodada, grupo, player1_id, player2_id, fase atual). Pula se já existe par para a rodada.
-     - Se há `data` + `horario`: insere também em `match_schedule`.
-     - Se há `observacao` (W.O / a definir): só `matchups`, sem `match_schedule`.
-   - Toast com resumo: X gravados, Y ignorados, Z com erro.
+Os e-mails sairão pelo remetente padrão da Lovable (configuração de infraestrutura de e-mail acontece como passo prévio).
 
-3. **`src/components/tournament/ScheduleTab.tsx`** (editado)
-   - Adiciona botão "Importar por texto" no cabeçalho da aba ao lado do "Adicionar agendamento".
-   - Após confirmar no diálogo, recarrega `fetchSchedules()` (e dispara reload da aba Confrontos via mecanismo já existente, se houver — caso contrário só recarrega o que essa aba controla; a aba Confrontos relê quando o usuário voltar para ela).
+---
 
-### Comportamento integrado
+## 1. Campo de e-mail nos jogadores
 
-- A rodada informada faz Confrontos (logada) e a página pública mostrarem esses jogos como "rodada atual" e ocultarem a anterior (lógica já implementada em commits anteriores).
-- Não duplica pares já existentes em `matchups` para a mesma rodada.
-- Sem mudanças de schema.
+- Adicionar coluna `email TEXT` (nullable) na tabela `players`.
+- Atualizar:
+  - **Formulário de cadastro/edição** em `PlayersTab` — novo input opcional "E-mail".
+  - **Importação por CSV/XLSX** (`Player Import`) — mapear coluna "E-mail" se presente.
+  - **Listagem** — mostrar discreto ícone/indicador para jogadores sem e-mail (pra você identificar quem ainda precisa preencher).
 
-### Exemplo de texto suportado
+Jogadores sem e-mail simplesmente não recebem lembretes (sem erro).
 
-```text
-Quarta rodada :
+---
 
-Grupo 1:
-Nando_sousa x Zico10
-Terça 12/05 20:45
+## 2. Infraestrutura de e-mail (Lovable Cloud)
 
-Grupo 2:
-felino x Cowboy
-a definir
+- Configurar domínio padrão da plataforma + provisionar fila de envio + tabelas de log.
+- Criar template transacional React Email **`match-reminder`** (lembrete 2h antes) com:
+  - Nome do torneio
+  - Adversário (Nick no Playroom > Nome)
+  - Grupo / fase
+  - Data e horário
+  - Observação (se houver)
+- Criar template **`match-rescheduled`** (realocação) com:
+  - Adversário
+  - Dados anteriores (data/horário/observação)
+  - Dados novos (data/horário/observação)
+  - Quem realocou (nome do profile)
+
+Edge function única `send-transactional-email` é usada por ambos.
+
+---
+
+## 3. Lembrete 2h antes — cron a cada 15 min
+
+- Nova edge function **`send-match-reminders`** que:
+  1. Busca em `match_schedule` partidas com `data_partida` + `horario` que caem na janela `[agora + 1h53min, agora + 2h07min]` (margem para cobrir o intervalo de 15 min do cron e evitar duplicatas).
+  2. Para cada partida, busca e-mail e dados dos dois jogadores + torneio.
+  3. Verifica em nova tabela **`match_reminders_sent`** (`schedule_id`, `player_id`, `sent_at`) se já foi enviado — pula se sim.
+  4. Invoca `send-transactional-email` com `templateName: "match-reminder"`, `idempotencyKey: reminder-{schedule_id}-{player_id}`.
+  5. Registra em `match_reminders_sent`.
+- Agendamento via `pg_cron` a cada 15 minutos chamando essa edge function.
+
+---
+
+## 4. Aviso de realocação
+
+- Modificar `ScheduleTab` (dialog "Realocar") para, **após `UPDATE` bem-sucedido em `match_schedule`**, comparar valores antigos vs novos. Se mudou `data_partida`, `horario` ou `observacao`:
+  - Invocar `send-transactional-email` para os 2 jogadores (`templateName: "match-rescheduled"`).
+  - `idempotencyKey: reschedule-{schedule_id}-{player_id}-{updated_at_timestamp}` para garantir que cada alteração dispara uma vez.
+  - Passar `templateData` com valores anteriores, novos, nome de quem realocou (do `useAuth` + profile) e adversário.
+- Se a partida realocada já tinha sido enviada para `match_reminders_sent`, removê-la dessa tabela para que o novo horário também receba seu lembrete de 2h antes.
+
+---
+
+## 5. Detalhes técnicos
+
+**Tabelas novas / alteradas:**
+- `players` → adiciona `email TEXT`
+- `match_reminders_sent` → `id`, `schedule_id` (uuid), `player_id` (uuid), `sent_at` (timestamptz), unique(schedule_id, player_id). RLS: leitura/escrita só service role (manipulada pela edge function).
+
+**Edge functions:**
+- `send-transactional-email` (gerada pelo scaffold)
+- `send-match-reminders` (cron, sem JWT, autenticada via header secret simples vindo do pg_cron)
+
+**Templates (React Email .tsx):**
+- `match-reminder.tsx`
+- `match-rescheduled.tsx`
+
+**Cron (`pg_cron`):**
+```
+*/15 * * * *  → POST send-match-reminders
 ```
 
-Resultado: 2 matchups gravados (rodada 4); 1 entrada em `match_schedule` (Nando vs Zico10 em 12/05 20:45); o jogo do Grupo 2 fica com observação "a definir" e sem agendamento.
+**Validação:**
+- Zod nos payloads das edge functions.
+- Edge `send-match-reminders` checa que o request veio do cron (header com secret armazenado em Vault).
+
+---
+
+## 6. O que NÃO faz parte desse plano
+
+- Não envia e-mail quando um confronto é apenas **criado/agendado pela primeira vez** (só lembrete 2h antes e quando há realocação).
+- Não notifica admins logados.
+- Não cria página/aba de "preferências de notificação" — basta ter o e-mail no cadastro.
+
+---
+
+## Próximos passos após sua aprovação
+
+1. Executar migração: coluna `email` em `players` + tabela `match_reminders_sent`.
+2. Configurar infraestrutura de e-mail Lovable (passo automático).
+3. Criar templates e edge functions.
+4. Agendar cron job.
+5. Integrar disparo de realocação no `ScheduleTab`.
+6. Atualizar formulário e import de jogadores para o novo campo de e-mail.

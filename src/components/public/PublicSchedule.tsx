@@ -27,10 +27,15 @@ const displayName = (p?: PlayerLite) => {
   return nick || p.nome_completo;
 };
 
+const WEEKDAYS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+
 const formatDate = (iso: string) => {
   try {
     const [y, m, d] = iso.split("-");
-    return `${d}/${m}/${y}`;
+    // Use noon to avoid timezone edge cases shifting the weekday
+    const dt = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10), 12, 0, 0);
+    const weekday = WEEKDAYS[dt.getDay()];
+    return `${weekday}, ${d}/${m}/${y}`;
   } catch { return iso; }
 };
 

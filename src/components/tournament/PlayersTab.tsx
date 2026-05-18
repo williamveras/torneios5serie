@@ -58,6 +58,7 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
   const [editNome, setEditNome] = useState("");
   const [editNick, setEditNick] = useState("");
   const [editWhats, setEditWhats] = useState("");
+  const [editEmail, setEditEmail] = useState("");
   const [editHorarios, setEditHorarios] = useState("");
   const [editGrupo, setEditGrupo] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);

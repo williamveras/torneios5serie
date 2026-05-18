@@ -147,6 +147,7 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
     setEditNome(p.nome_completo);
     setEditNick(p.nick_playroom || "");
     setEditWhats(p.whatsapp || "");
+    setEditEmail((p as any).email || "");
     setEditHorarios(p.preferencia_horarios || "");
     setEditGrupo(p.grupo || "");
   };

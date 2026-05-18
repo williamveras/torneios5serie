@@ -155,14 +155,19 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
   const handleSaveEdit = async () => {
     if (!editPlayer) return;
     if (!editNome.trim()) { toast.error("Nome é obrigatório"); return; }
+    const emailTrim = editEmail.trim();
+    if (emailTrim && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) {
+      toast.error("E-mail inválido"); return;
+    }
     setSavingEdit(true);
     const { error } = await supabase.from("players").update({
       nome_completo: editNome.trim(),
       nick_playroom: editNick.trim() || null,
       whatsapp: editWhats.trim() || null,
+      email: emailTrim || null,
       preferencia_horarios: editHorarios.trim() || null,
       grupo: editGrupo.trim() || null,
-    }).eq("id", editPlayer.id);
+    } as any).eq("id", editPlayer.id);
     setSavingEdit(false);
     if (error) {
       toast.error("Erro ao salvar: " + error.message);

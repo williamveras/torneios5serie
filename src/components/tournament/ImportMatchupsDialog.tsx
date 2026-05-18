@@ -112,6 +112,7 @@ export default function ImportMatchupsDialog({ open, onOpenChange, tournamentId,
           data_partida: row.data,
           horario: row.horario,
           observacao: row.observacao || null,
+          rodada: rd,
         } as any);
         if (!schedErr) scheduled++;
       } else if (row.observacao) {
@@ -123,6 +124,7 @@ export default function ImportMatchupsDialog({ open, onOpenChange, tournamentId,
           data_partida: null,
           horario: null,
           observacao: row.observacao,
+          rodada: rd,
         } as any);
         if (!schedErr) scheduled++;
       }

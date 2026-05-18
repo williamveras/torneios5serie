@@ -104,6 +104,7 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
       nome_completo: findCol(row, ["nome"]) || Object.values(row)[0]?.toString() || "Sem nome",
       nick_playroom: findCol(row, ["nick", "playroom"]) || null,
       whatsapp: findCol(row, ["whatsapp", "telefone", "celular", "ddd"]) || null,
+      email: findCol(row, ["e-mail", "email"]) || null,
       preferencia_horarios: findCol(row, ["horário", "horario", "preferência", "preferencia"]) || null,
       comentario: findCol(row, ["comentário", "comentario", "adicional", "observação"]) || null,
     })).filter(p => {

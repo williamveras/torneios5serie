@@ -444,11 +444,15 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
       </Card>
 
       {/* Título separador */}
-      <h2 className="text-xl font-semibold pt-2">Partidas agendadas</h2>
+      <h2 className="text-xl font-semibold pt-2">
+        {currentRound != null ? `Partidas agendadas — Rodada ${currentRound}` : "Partidas agendadas"}
+      </h2>
 
-      {/* Visualização — agrupada por Rodada → Grupo → Data */}
-      {sortedRodadas.length === 0 ? (
-        <p className="text-center text-muted-foreground py-8">Nenhuma partida agendada ainda.</p>
+      {/* Visualização — agrupada por Rodada → Grupo → Data (somente rodada atual) */}
+      {currentRound == null ? (
+        <p className="text-center text-muted-foreground py-8">Nenhuma rodada atual definida.</p>
+      ) : sortedRodadas.length === 0 ? (
+        <p className="text-center text-muted-foreground py-8">Nenhuma partida agendada para a rodada {currentRound}.</p>
       ) : (
         sortedRodadas.map((rk) => {
           const grupos = Object.keys(grouped[rk]).sort();

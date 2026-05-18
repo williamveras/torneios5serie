@@ -404,6 +404,10 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
               <Input id="edit-whats" value={editWhats} onChange={e => setEditWhats(e.target.value)} />
             </div>
             <div>
+              <Label htmlFor="edit-email">E-mail (para lembretes automáticos)</Label>
+              <Input id="edit-email" type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} placeholder="jogador@exemplo.com" />
+            </div>
+            <div>
               <Label htmlFor="edit-horarios">Preferência de horários</Label>
               <Input id="edit-horarios" value={editHorarios} onChange={e => setEditHorarios(e.target.value)} />
             </div>

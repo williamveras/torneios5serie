@@ -304,11 +304,20 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
 
   const NO_ROUND_KEY = "__sem_rodada__";
 
-  // Group schedules by rodada (most recent first), then by grupo, then by date
+  // Current round = max rodada in matchups
+  const currentRound: number | null = (() => {
+    const rounds = matchups.map(m => m.rodada).filter((r): r is number => r != null);
+    if (rounds.length === 0) return null;
+    return Math.max(...rounds);
+  })();
+
+  // Group schedules by rodada → grupo → date. Only the current round is included.
   function groupedSchedules() {
     const grouped: Record<string, Record<string, Record<string, Schedule[]>>> = {};
+    if (currentRound == null) return grouped;
     for (const s of schedules) {
-      const rodadaKey = s.rodada != null ? String(s.rodada) : NO_ROUND_KEY;
+      if (s.rodada !== currentRound) continue;
+      const rodadaKey = String(s.rodada);
       const dateKey = s.data_partida || NO_DATE_KEY;
       if (!grouped[rodadaKey]) grouped[rodadaKey] = {};
       if (!grouped[rodadaKey][s.grupo]) grouped[rodadaKey][s.grupo] = {};
@@ -327,12 +336,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
   }
 
   const grouped = groupedSchedules();
-  // Sort rodadas: numeric desc (most recent first), "sem rodada" last
-  const sortedRodadas = Object.keys(grouped).sort((a, b) => {
-    if (a === NO_ROUND_KEY) return 1;
-    if (b === NO_ROUND_KEY) return -1;
-    return Number(b) - Number(a);
-  });
+  const sortedRodadas = Object.keys(grouped);
 
   return (
     <div className="space-y-6">
@@ -440,11 +444,15 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
       </Card>
 
       {/* Título separador */}
-      <h2 className="text-xl font-semibold pt-2">Partidas agendadas</h2>
+      <h2 className="text-xl font-semibold pt-2">
+        {currentRound != null ? `Partidas agendadas — Rodada ${currentRound}` : "Partidas agendadas"}
+      </h2>
 
-      {/* Visualização — agrupada por Rodada → Grupo → Data */}
-      {sortedRodadas.length === 0 ? (
-        <p className="text-center text-muted-foreground py-8">Nenhuma partida agendada ainda.</p>
+      {/* Visualização — agrupada por Rodada → Grupo → Data (somente rodada atual) */}
+      {currentRound == null ? (
+        <p className="text-center text-muted-foreground py-8">Nenhuma rodada atual definida.</p>
+      ) : sortedRodadas.length === 0 ? (
+        <p className="text-center text-muted-foreground py-8">Nenhuma partida agendada para a rodada {currentRound}.</p>
       ) : (
         sortedRodadas.map((rk) => {
           const grupos = Object.keys(grouped[rk]).sort();

@@ -1,51 +1,38 @@
-## Importação de confrontos por colagem de texto
+## Problemas
 
-Adiciona, na aba **Agenda** (área logada), um botão "Importar por texto" que abre um diálogo onde o usuário cola um bloco de texto bruto (ex.: o que é compartilhado no grupo) e o sistema extrai grupo, jogadores, data e horário, gravando em `matchups` e `match_schedule`.
+1. **Niks com espaço:** alguns jogadores foram cadastrados com espaços no nick (ex.: `borboleta lilás`), mas o texto colado da sala vem sem espaços (`borboletalilás`). A comparação atual usa `trim().toLowerCase()`, que não remove espaços internos, então não bate.
 
-### Arquivos
+2. **Ambiguidade entre grupos:** o matching parcial (`includes`) faz `borboleta` casar com `borboleta lilás` (ou vice-versa), misturando jogadores de grupos diferentes (grupo 4 e grupo 9). Não há validação de que o jogador encontrado pertença ao grupo do bloco sendo importado.
 
-1. **`src/lib/matchupParser.ts`** (novo)
-   - `parseMatchupsText(text, players)` percorre o texto linha a linha mantendo um "grupo atual".
-   - Regras de detecção:
-     - Cabeçalho de grupo: linha que casa com `/^grupo\s+(\d+)/i` → atualiza grupo corrente.
-     - Confronto: linha contendo ` x ` (case-insensitive, com espaços ou separadores comuns) → captura nick à esquerda e à direita.
-     - Linha imediatamente seguinte ao confronto:
-       - Se contiver data (`DD/MM` ou `DD/MM/YYYY`) e hora (`HH:MM` ou `HH'h'MM`) → vira `data_partida` + `horario`.
-       - Se contiver palavras-chave como `a definir`, `W.O`, `WO`, `bye` → vira `observacao` (sem data/hora).
-   - Casamento de jogador: busca em `players` por `nick_playroom` (case-insensitive, trim); fallback `nome_completo`. Se não achar, marca a linha com erro.
-   - Saída: array de `{ grupo, player1, player2, player1Id?, player2Id?, data?, horario?, observacao?, errors[] }`.
+## Solução
 
-2. **`src/components/tournament/ImportMatchupsDialog.tsx`** (novo)
-   - Campos: `Rodada` (number, obrigatório), `Texto` (textarea grande).
-   - Botão "Pré-visualizar" → roda o parser e mostra tabela editável: Grupo | Jogador 1 | Jogador 2 | Data | Horário | Observação. Linhas com erro destacadas em vermelho com mensagem (ex.: "Jogador 'Fulano' não encontrado").
-   - Botão "Confirmar e gravar":
-     - Para cada linha válida: insere em `matchups` (tournament_id, rodada, grupo, player1_id, player2_id, fase atual). Pula se já existe par para a rodada.
-     - Se há `data` + `horario`: insere também em `match_schedule`.
-     - Se há `observacao` (W.O / a definir): só `matchups`, sem `match_schedule`.
-   - Toast com resumo: X gravados, Y ignorados, Z com erro.
+Ajustar os dois parsers — `src/lib/matchupParser.ts` e `src/lib/resultsParser.ts` — para:
 
-3. **`src/components/tournament/ScheduleTab.tsx`** (editado)
-   - Adiciona botão "Importar por texto" no cabeçalho da aba ao lado do "Adicionar agendamento".
-   - Após confirmar no diálogo, recarrega `fetchSchedules()` (e dispara reload da aba Confrontos via mecanismo já existente, se houver — caso contrário só recarrega o que essa aba controla; a aba Confrontos relê quando o usuário voltar para ela).
+### 1. Normalização sem espaços
+- Trocar `norm(s)` por uma versão que remove **todos** os espaços internos além do trim/lowercase: `s.replace(/\s+/g, "").toLowerCase()`.
+- Aplicar isso tanto ao nome digitado/colado quanto ao `nick_playroom` e `nome_completo` cadastrados.
+- Resultado: `borboletalilás` (do texto) casa com `borboleta lilás` (cadastrado).
 
-### Comportamento integrado
+### 2. Matching restrito ao grupo (matchupParser)
+- Em `parseMatchupsText`, `findPlayer` passa a receber o `currentGrupo` e a lista filtrada por aquele grupo. A busca por igualdade exata (nick → nome) acontece primeiro **dentro do grupo**; só se não houver nada no grupo é que tenta no conjunto global, e nesse caso adiciona um erro indicando “jogador encontrado em outro grupo”.
+- O fallback `includes` (matching parcial) **só roda dentro do grupo** e exige correspondência única; se mais de um jogador do grupo bate parcialmente (ex.: `borboleta` vs `borboleta lilás` no mesmo grupo, se acontecer), retorna ambíguo com erro.
 
-- A rodada informada faz Confrontos (logada) e a página pública mostrarem esses jogos como "rodada atual" e ocultarem a anterior (lógica já implementada em commits anteriores).
-- Não duplica pares já existentes em `matchups` para a mesma rodada.
-- Sem mudanças de schema.
+### 3. Matching restrito ao grupo (resultsParser)
+- O resultsParser já infere o grupo a partir dos jogadores resolvidos, então a ambiguidade entre grupos é o problema central.
+- Estratégia: tentar resolver os dois jogadores do bloco **em conjunto**, escolhendo a combinação onde ambos pertençam ao mesmo grupo. Se houver mais de uma combinação válida, marcar erro de ambiguidade; se a única combinação possível misturar grupos, marcar erro pedindo desambiguação.
+- Manter prioridade: igualdade exata > `includes` apenas como fallback e apenas quando único.
 
-### Exemplo de texto suportado
+### 4. Reforçar segurança do `includes`
+- Hoje qualquer `includes` casa, mesmo strings muito curtas (ex.: `wo` casaria com vários nicks). Adicionar mínimo de 3 caracteres no termo buscado antes de permitir matching parcial, para reduzir falsos positivos.
 
-```text
-Quarta rodada :
+## Arquivos afetados
 
-Grupo 1:
-Nando_sousa x Zico10
-Terça 12/05 20:45
+- `src/lib/matchupParser.ts` — nova `norm`, `findPlayer` consciente de grupo, fallback parcial seguro.
+- `src/lib/resultsParser.ts` — nova `norm`, resolução em conjunto dos 2 jogadores priorizando mesmo grupo, fallback parcial seguro.
 
-Grupo 2:
-felino x Cowboy
-a definir
-```
+Nenhuma mudança em UI ou no banco. As mensagens de erro existentes nas telas de pré-visualização (`ImportMatchupsDialog` e o equivalente de resultados) continuam exibindo os novos erros automaticamente.
 
-Resultado: 2 matchups gravados (rodada 4); 1 entrada em `match_schedule` (Nando vs Zico10 em 12/05 20:45); o jogo do Grupo 2 fica com observação "a definir" e sem agendamento.
+## Observações
+
+- A normalização sem espaços é aplicada **só para comparação**; os nomes originais continuam sendo exibidos na pré-visualização.
+- Nenhum dado existente precisa ser corrigido — quem já estava cadastrado com espaço continua assim; o parser passa a tolerar a divergência.

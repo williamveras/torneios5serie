@@ -17,23 +17,71 @@ interface PlayerLite {
   id: string;
   nome_completo: string;
   nick_playroom: string | null;
+  grupo?: string | null;
 }
 
 const OBS_KEYWORDS = /\b(a\s+definir|w\.?\s*o|wo|bye|adiad[oa]|cancelad[oa])\b/i;
 
+// Normaliza removendo TODOS os espaços internos + lowercase.
+// Necessário porque alguns nicks foram cadastrados com espaço, mas a sala de
+// jogos não permite espaços, então o texto colado vem sem eles.
 function norm(s: string): string {
-  return s.trim().toLowerCase();
+  return (s || "").replace(/\s+/g, "").toLowerCase();
 }
 
-function findPlayer(name: string, players: PlayerLite[]): PlayerLite | undefined {
+interface FindResult {
+  player?: PlayerLite;
+  error?: string;
+}
+
+function findPlayerInGroup(name: string, pool: PlayerLite[]): FindResult {
   const n = norm(name);
-  if (!n) return undefined;
-  return (
-    players.find((p) => norm(p.nick_playroom || "") === n) ||
-    players.find((p) => norm(p.nome_completo) === n) ||
-    players.find((p) => norm(p.nick_playroom || "").includes(n) || n.includes(norm(p.nick_playroom || ""))) ||
-    players.find((p) => norm(p.nome_completo).includes(n))
-  );
+  if (!n) return {};
+
+  // 1) Igualdade exata por nick
+  const exactNick = pool.filter((p) => norm(p.nick_playroom || "") === n);
+  if (exactNick.length === 1) return { player: exactNick[0] };
+  if (exactNick.length > 1) return { error: `Vários jogadores com nick "${name}" no grupo` };
+
+  // 2) Igualdade exata por nome completo
+  const exactName = pool.filter((p) => norm(p.nome_completo) === n);
+  if (exactName.length === 1) return { player: exactName[0] };
+  if (exactName.length > 1) return { error: `Vários jogadores com nome "${name}" no grupo` };
+
+  // 3) Matching parcial - apenas com 3+ caracteres, exige unicidade
+  if (n.length < 3) return {};
+
+  const partial = pool.filter((p) => {
+    const nick = norm(p.nick_playroom || "");
+    const nome = norm(p.nome_completo);
+    return (
+      (nick.length > 0 && (nick.includes(n) || n.includes(nick))) ||
+      (nome.length > 0 && nome.includes(n))
+    );
+  });
+  if (partial.length === 1) return { player: partial[0] };
+  if (partial.length > 1) {
+    return { error: `"${name}" é ambíguo no grupo (${partial.length} correspondências)` };
+  }
+  return {};
+}
+
+function findPlayer(name: string, players: PlayerLite[], currentGrupo: string): FindResult {
+  if (currentGrupo) {
+    const inGroup = players.filter((p) => String(p.grupo || "") === String(currentGrupo));
+    const res = findPlayerInGroup(name, inGroup);
+    if (res.player || res.error) return res;
+
+    // Não achou no grupo - verifica se existe em outro grupo, para dar erro claro
+    const outside = findPlayerInGroup(name, players);
+    if (outside.player) {
+      return {
+        error: `Jogador "${name}" pertence ao grupo ${outside.player.grupo}, não ao grupo ${currentGrupo}`,
+      };
+    }
+    return {};
+  }
+  return findPlayerInGroup(name, players);
 }
 
 function parseGroupHeader(line: string): string | null {
@@ -42,12 +90,10 @@ function parseGroupHeader(line: string): string | null {
 }
 
 function parseMatchLine(line: string): { p1: string; p2: string } | null {
-  // Match "A x B" or "A vs B" with whitespace around separator
   const m = line.match(/^\s*(.+?)\s+(?:x|vs|×|✕)\s+(.+?)\s*$/i);
   if (!m) return null;
   const p1 = m[1].trim();
   const p2 = m[2].trim();
-  // Reject if either side contains a digit-heavy date pattern (likely not a name)
   if (!p1 || !p2) return null;
   return { p1, p2 };
 }
@@ -97,18 +143,18 @@ export function parseMatchupsText(text: string, players: PlayerLite[]): ParsedMa
     if (!match) continue;
 
     const errors: string[] = [];
-    const p1 = findPlayer(match.p1, players);
-    const p2 = findPlayer(match.p2, players);
-    if (!p1) errors.push(`Jogador "${match.p1}" não encontrado`);
-    if (!p2) errors.push(`Jogador "${match.p2}" não encontrado`);
+    const r1 = findPlayer(match.p1, players, currentGrupo);
+    const r2 = findPlayer(match.p2, players, currentGrupo);
     if (!currentGrupo) errors.push("Grupo não definido (adicione cabeçalho 'Grupo N')");
+    if (!r1.player) errors.push(r1.error || `Jogador "${match.p1}" não encontrado`);
+    if (!r2.player) errors.push(r2.error || `Jogador "${match.p2}" não encontrado`);
 
     const parsed: ParsedMatchup = {
       grupo: currentGrupo,
       player1Name: match.p1,
       player2Name: match.p2,
-      player1Id: p1?.id,
-      player2Id: p2?.id,
+      player1Id: r1.player?.id,
+      player2Id: r2.player?.id,
       errors,
     };
 
@@ -117,7 +163,6 @@ export function parseMatchupsText(text: string, players: PlayerLite[]): ParsedMa
     while (j < lines.length && !lines[j]) j++;
     if (j < lines.length) {
       const next = lines[j];
-      // Don't consume if next line is a group header or another matchup
       if (!parseGroupHeader(next) && !parseMatchLine(next)) {
         if (OBS_KEYWORDS.test(next)) {
           parsed.observacao = next;

@@ -68,10 +68,14 @@ function parseWinnerLine(line: string): string | null {
 }
 
 export function parseResultsText(text: string, players: PlayerLite[]): ParsedResult[] {
-  const lines = text
+  // Normaliza: quebra também em ". " (ponto seguido de espaço) para suportar
+  // textos colados em uma única linha. Scores são inteiros, então é seguro.
+  const normalized = text.replace(/\.\s+/g, ".\n");
+  const lines = normalized
     .split(/\r?\n/)
     .map((l) => l.trim())
-    .filter((l) => l.length > 0 && !/^pontua[cç][oõ]es?\s*:?\s*$/i.test(l));
+    .map((l) => l.replace(/^pontua[cç][oõ]es?\s*:?\s*/i, "").trim())
+    .filter((l) => l.length > 0);
 
   const blocks: string[][] = [];
   let current: string[] = [];

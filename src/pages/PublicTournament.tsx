@@ -135,6 +135,9 @@ export default function PublicTournament() {
             </div>
             <PublicSchedule schedules={schedules} players={players} matchups={matchups} viewMode={scheduleView} />
           </TabsContent>
+          <TabsContent value="regulamento">
+            <PublicRegulamento regulamento={tournament.regulamento ?? null} />
+          </TabsContent>
         </Tabs>
       </main>
     </div>

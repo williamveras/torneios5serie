@@ -105,6 +105,9 @@ export default function TournamentPage({ tournament, onBack }: Props) {
           <TabsContent value="stats">
             <StatsTab tournamentId={tournament.id} />
           </TabsContent>
+          <TabsContent value="regulamento">
+            <RegulamentoTab tournamentId={tournament.id} />
+          </TabsContent>
         </Tabs>
       </main>
     </div>

@@ -10,6 +10,7 @@ import ResultsTab from "./tournament/ResultsTab";
 import ScheduleTab from "./tournament/ScheduleTab";
 import StandingsTab from "./tournament/StandingsTab";
 import StatsTab from "./tournament/StatsTab";
+import RegulamentoTab from "./tournament/RegulamentoTab";
 
 type Tournament = Tables<"tournaments">;
 
@@ -77,6 +78,7 @@ export default function TournamentPage({ tournament, onBack }: Props) {
             <TabsTrigger value="schedule">Agenda</TabsTrigger>
             <TabsTrigger value="standings">Classificação</TabsTrigger>
             <TabsTrigger value="stats">Estatísticas</TabsTrigger>
+            <TabsTrigger value="regulamento">Regulamento</TabsTrigger>
           </TabsList>
 
           <TabsContent value="players">
@@ -102,6 +104,9 @@ export default function TournamentPage({ tournament, onBack }: Props) {
           </TabsContent>
           <TabsContent value="stats">
             <StatsTab tournamentId={tournament.id} />
+          </TabsContent>
+          <TabsContent value="regulamento">
+            <RegulamentoTab tournamentId={tournament.id} />
           </TabsContent>
         </Tabs>
       </main>

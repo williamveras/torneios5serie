@@ -8,6 +8,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import PublicSchedule from "@/components/public/PublicSchedule";
 import PublicResults from "@/components/public/PublicResults";
 import PublicStandings from "@/components/public/PublicStandings";
+import PublicRegulamento from "@/components/public/PublicRegulamento";
 import ViewModeToggle, { type ViewMode } from "@/components/public/ViewModeToggle";
 
 type Tournament = Tables<"tournaments">;
@@ -109,10 +110,11 @@ export default function PublicTournament() {
 
       <main className="max-w-5xl mx-auto px-3 py-6 sm:px-4">
         <Tabs defaultValue="results" activationMode="manual">
-          <TabsList className="mb-4 grid grid-cols-3 w-full h-auto gap-1">
+          <TabsList className="mb-4 grid grid-cols-4 w-full h-auto gap-1">
             <TabsTrigger value="results" className="text-xs sm:text-sm py-2">Resultados</TabsTrigger>
             <TabsTrigger value="standings" className="text-xs sm:text-sm py-2">Classificação</TabsTrigger>
             <TabsTrigger value="schedule" className="text-xs sm:text-sm py-2">Confrontos</TabsTrigger>
+            <TabsTrigger value="regulamento" className="text-xs sm:text-sm py-2">Regulamento</TabsTrigger>
           </TabsList>
 
           <TabsContent value="results">
@@ -132,6 +134,9 @@ export default function PublicTournament() {
               <ViewModeToggle value={scheduleView} onChange={setScheduleView} />
             </div>
             <PublicSchedule schedules={schedules} players={players} matchups={matchups} viewMode={scheduleView} />
+          </TabsContent>
+          <TabsContent value="regulamento">
+            <PublicRegulamento regulamento={tournament.regulamento ?? null} />
           </TabsContent>
         </Tabs>
       </main>

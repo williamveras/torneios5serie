@@ -88,12 +88,12 @@ export default function PublicSchedule({ schedules, players, matchups, viewMode 
   const NO_DATE_KEY = "__sem_data__";
 
   const filteredSchedules = useMemo(() => {
+    if (currentRound == null || !currentRoundPairs) return [];
     return schedules.filter(s => {
-      // Hide past dates (date < today, São Paulo). Schedules with no date are kept.
-      if (s.data_partida && s.data_partida < today) return false;
-      return true;
+      const key = [s.player1_id, s.player2_id].sort().join("|");
+      return currentRoundPairs.has(key);
     });
-  }, [schedules, today]);
+  }, [schedules, currentRound, currentRoundPairs]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, Schedule[]>();

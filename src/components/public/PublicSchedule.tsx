@@ -66,14 +66,17 @@ export default function PublicSchedule({ schedules, players, matchups, viewMode 
     return m;
   }, [players]);
 
-  // Determine current (latest) round from matchups
+  // Determine current (latest) round from matchups AND schedules
   const currentRound = useMemo(() => {
-    const rounds = matchups.map(m => m.rodada).filter((r): r is number => r != null);
+    const rounds = [
+      ...matchups.map(m => m.rodada),
+      ...schedules.map(s => s.rodada),
+    ].filter((r): r is number => r != null);
     if (rounds.length === 0) return null;
     return Math.max(...rounds);
-  }, [matchups]);
+  }, [matchups, schedules]);
 
-  // Set of (sorted player-pair) keys belonging to the current round
+  // Set of (sorted player-pair) keys belonging to the current round (from matchups)
   const currentRoundPairs = useMemo(() => {
     if (currentRound == null) return null;
     const set = new Set<string>();
@@ -88,8 +91,12 @@ export default function PublicSchedule({ schedules, players, matchups, viewMode 
   const NO_DATE_KEY = "__sem_data__";
 
   const filteredSchedules = useMemo(() => {
-    if (currentRound == null || !currentRoundPairs) return [];
+    if (currentRound == null) return [];
     return schedules.filter(s => {
+      // Prefer the schedule's own round when available
+      if (s.rodada != null) return s.rodada === currentRound;
+      // Fall back to matching pair against current round's matchups
+      if (!currentRoundPairs) return false;
       const key = [s.player1_id, s.player2_id].sort().join("|");
       return currentRoundPairs.has(key);
     });

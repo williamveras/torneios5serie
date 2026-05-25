@@ -1,21 +1,19 @@
-## Filtrar agenda para mostrar apenas a rodada atual
+## Filtrar agenda pública para mostrar apenas a rodada atual
 
-Na aba "Agenda" (admin), na seção **"Partidas agendadas"**, exibir somente os confrontos da rodada atual. Rodadas anteriores ficam ocultas da visualização (mas continuam no banco e podem ser editadas via outras telas, sem perda de dados).
+Na aba **Confrontos** da página pública (`/p/:tournamentId`), atualmente alguns agendamentos de rodadas antigas continuam aparecendo — especialmente os sem data/horário definido e W.O., que caem no bloco "A definir" e nunca somem.
 
-### Comportamento
-- A rodada atual é o **maior número de rodada** existente em `matchups` do torneio (mesma lógica já usada em `PublicSchedule.tsx`).
-- Apenas agendamentos com `rodada === rodadaAtual` são listados.
-- Agendamentos sem rodada definida (`rodada == null`) também ficam ocultos, já que não pertencem à rodada atual. (Se preferir manter os "sem rodada" visíveis, me avise.)
-- Se não houver nenhuma rodada em `matchups`, mostra mensagem "Nenhuma rodada atual definida."
-- Se houver rodada atual mas nenhum agendamento nela, mostra "Nenhuma partida agendada para a rodada X."
-- O formulário de agendamento e o botão "Importar por texto" continuam funcionando normalmente — somente a listagem é filtrada.
+### Comportamento desejado
+- Mostrar **apenas** agendamentos pertencentes à rodada atual (a maior `rodada` existente em `matchups` do torneio).
+- Vale para tudo: confrontos com data futura, sem data, sem horário, W.O., observações — se não for da rodada atual, não aparece.
+- Se não houver rodada atual definida (sem `matchups`), mostra "Nenhum confronto pendente para exibir."
 
-### Detalhes técnicos
-Arquivo: `src/components/tournament/ScheduleTab.tsx`
+### Implementação
+Arquivo: `src/components/public/PublicSchedule.tsx`
 
-1. Calcular `currentRound = Math.max(...matchups.map(m => m.rodada).filter(r => r != null))` (ou `null`).
-2. Em `groupedSchedules()`, filtrar `schedules` por `s.rodada === currentRound` antes de agrupar.
-3. Ajustar o título da seção para "Partidas agendadas — Rodada X" para deixar claro o escopo.
-4. Ajustar as mensagens vazias conforme acima.
+O componente já calcula `currentRound` e `currentRoundPairs` (Set com chaves `player1_id|player2_id` ordenadas da rodada atual), mas **não usa** essa informação no filtro. Ajustar `filteredSchedules` para:
 
-Nenhuma mudança em banco, parsers ou na página pública.
+1. Se `currentRound == null` ou `currentRoundPairs == null` → retornar `[]`.
+2. Manter cada schedule somente se a chave `[s.player1_id, s.player2_id].sort().join("|")` estiver em `currentRoundPairs`.
+3. **Remover** o filtro atual que esconde datas passadas (`s.data_partida < today`) — passa a ser irrelevante, pois a rodada atual já delimita o escopo, e jogos "A definir"/W.O. da rodada atual devem continuar visíveis mesmo se a data já passou.
+
+Nenhuma mudança em banco, parsers, admin ou outras abas públicas.

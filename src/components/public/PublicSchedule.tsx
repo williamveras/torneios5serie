@@ -93,6 +93,8 @@ export default function PublicSchedule({ schedules, players, matchups, viewMode 
   const filteredSchedules = useMemo(() => {
     if (currentRound == null) return [];
     return schedules.filter(s => {
+      // Hide games whose date already passed (São Paulo timezone) — they disappear at midnight
+      if (s.data_partida && s.data_partida < today) return false;
       // Prefer the schedule's own round when available
       if (s.rodada != null) return s.rodada === currentRound;
       // Fall back to matching pair against current round's matchups
@@ -100,7 +102,7 @@ export default function PublicSchedule({ schedules, players, matchups, viewMode 
       const key = [s.player1_id, s.player2_id].sort().join("|");
       return currentRoundPairs.has(key);
     });
-  }, [schedules, currentRound, currentRoundPairs]);
+  }, [schedules, currentRound, currentRoundPairs, today]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, Schedule[]>();

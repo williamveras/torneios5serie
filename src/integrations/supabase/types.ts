@@ -305,6 +305,33 @@ export type Database = {
         }
         Relationships: []
       }
+      registration_links: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          token: string
+          tournament_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at: string
+          id?: string
+          token: string
+          tournament_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          token?: string
+          tournament_id?: string
+        }
+        Relationships: []
+      }
       tournaments: {
         Row: {
           created_at: string

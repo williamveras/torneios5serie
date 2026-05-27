@@ -26,7 +26,11 @@ const OBS_KEYWORDS = /\b(a\s+definir|w\.?\s*o|wo|bye|adiad[oa]|cancelad[oa])\b/i
 // Necessário porque alguns nicks foram cadastrados com espaço, mas a sala de
 // jogos não permite espaços, então o texto colado vem sem eles.
 function norm(s: string): string {
-  return (s || "").replace(/\s+/g, "").toLowerCase();
+  return (s || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .toLowerCase();
 }
 
 interface FindResult {

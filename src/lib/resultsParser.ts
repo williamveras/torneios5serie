@@ -27,9 +27,16 @@ interface PlayerLite {
   grupo?: string | null;
 }
 
-// Normaliza removendo TODOS os espaços + lowercase.
+// Normaliza removendo qualquer caractere não alfanumérico (espaços, pontuação,
+// caracteres invisíveis como ZWSP/NBSP, vírgulas grudadas em nicks, etc.) +
+// lowercase + remoção de acentos. Garante matching robusto entre o texto colado
+// e os nicks/nomes cadastrados.
 function norm(s: string): string {
-  return (s || "").replace(/\s+/g, "").toLowerCase();
+  return (s || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .toLowerCase();
 }
 
 // Retorna todos os candidatos para um nome em uma pool dada, em ordem de prioridade.

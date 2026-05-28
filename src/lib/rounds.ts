@@ -111,7 +111,12 @@ export function computeCurrentRound(
   const firstIncomplete = roundsState.find(
     (rs) => rs.totalJogos > 0 && !rs.isComplete,
   );
-  const phaseComplete = roundsState.every((rs) => rs.isComplete);
+  // Phase only counts as complete when every configured round has matchups
+  // AND all of them are finished — otherwise empty rounds would falsely
+  // close the phase before the games are actually generated.
+  const phaseComplete = roundsState.every(
+    (rs) => rs.totalJogos > 0 && rs.jogosConcluidos === rs.totalJogos,
+  );
   const lastWithMatchups = [...roundsState]
     .reverse()
     .find((rs) => rs.totalJogos > 0);

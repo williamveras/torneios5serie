@@ -21,6 +21,7 @@ export default function Dashboard() {
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [nome, setNome] = useState("");
   const [dataInicio, setDataInicio] = useState("");
+  const [numeroRodadas, setNumeroRodadas] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -34,14 +35,25 @@ export default function Dashboard() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    const rodadasNum = numeroRodadas.trim() ? parseInt(numeroRodadas.trim(), 10) : null;
+    if (numeroRodadas.trim() && (isNaN(rodadasNum!) || rodadasNum! < 1)) {
+      toast.error("Número de rodadas inválido.");
+      return;
+    }
     setLoading(true);
-    const { error } = await supabase.from("tournaments").insert({ nome, data_inicio: dataInicio, created_by: user.id });
+    const { error } = await supabase.from("tournaments").insert({
+      nome,
+      data_inicio: dataInicio,
+      created_by: user.id,
+      numero_rodadas: rodadasNum,
+    } as any);
     if (error) {
       toast.error("Erro ao criar torneio");
     } else {
       toast.success("Torneio criado!");
       setNome("");
       setDataInicio("");
+      setNumeroRodadas("");
       setDialogOpen(false);
       fetchTournaments();
     }

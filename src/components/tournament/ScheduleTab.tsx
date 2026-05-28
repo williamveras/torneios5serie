@@ -328,12 +328,14 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
 
   const NO_ROUND_KEY = "__sem_rodada__";
 
-  // Current round = max rodada in matchups
-  const currentRound: number | null = (() => {
-    const rounds = matchups.map(m => m.rodada).filter((r): r is number => r != null);
-    if (rounds.length === 0) return null;
-    return Math.max(...rounds);
-  })();
+  // Compute current round from numero_rodadas + matchups + results.
+  // Falls back to max(rodada) when numero_rodadas isn't configured.
+  const { currentRound, totalRounds, phaseComplete } = computeCurrentRound(
+    matchups,
+    results,
+    numeroRodadas,
+  );
+
 
   // Group schedules by date → grupo. Only the current round is included.
   function groupedSchedules() {

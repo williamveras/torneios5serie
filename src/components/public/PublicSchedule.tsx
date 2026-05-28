@@ -64,22 +64,19 @@ const todaySaoPauloISO = () => {
   return fmt.format(new Date()); // YYYY-MM-DD
 };
 
-export default function PublicSchedule({ schedules, players, matchups, viewMode = "list" }: Props) {
+export default function PublicSchedule({ schedules, players, matchups, results = [], numeroRodadas = null, viewMode = "list" }: Props) {
   const playerMap = useMemo(() => {
     const m = new Map<string, PlayerLite>();
     players.forEach(p => m.set(p.id, p));
     return m;
   }, [players]);
 
-  // Determine current (latest) round from matchups AND schedules
-  const currentRound = useMemo(() => {
-    const rounds = [
-      ...matchups.map(m => m.rodada),
-      ...schedules.map(s => s.rodada),
-    ].filter((r): r is number => r != null);
-    if (rounds.length === 0) return null;
-    return Math.max(...rounds);
-  }, [matchups, schedules]);
+  // Compute current round using numero_rodadas + results (with legacy fallback)
+  const { currentRound, totalRounds, phaseComplete } = useMemo(
+    () => computeCurrentRound(matchups as any, results as any, numeroRodadas),
+    [matchups, results, numeroRodadas],
+  );
+
 
   // Set of (sorted player-pair) keys belonging to the current round (from matchups)
   const currentRoundPairs = useMemo(() => {

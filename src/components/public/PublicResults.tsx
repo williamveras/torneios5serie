@@ -113,7 +113,7 @@ const formatDayLabel = (d: Date) => {
 
 export default function PublicResults({ results, players, phaseStatuses, moderators, viewMode = "list" }: Props) {
   const [selectedFase, setSelectedFase] = useState<string>("Fase de Grupos");
-  const [selectedRodada, setSelectedRodada] = useState<string>("__last__");
+  const [selectedRodada, setSelectedRodada] = useState<string>("__all__");
 
   const playerMap = useMemo(() => {
     const m = new Map<string, PlayerLite>();
@@ -161,7 +161,7 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
 
   // Reset rodada selection to "last" when fase changes
   useEffect(() => {
-    setSelectedRodada("__last__");
+    setSelectedRodada("__all__");
   }, [selectedFase]);
 
   const effectiveRodada = useMemo(() => {

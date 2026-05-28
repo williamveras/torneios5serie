@@ -56,6 +56,29 @@ export default function StandingsTab({ tournamentId }: Props) {
     loadPhaseStatuses();
   }, [tournamentId]);
 
+  const grupoStatus = phaseStatuses.find(p => p.fase === "Fase de Grupos")?.status || "em_andamento";
+  const grupoConcluded = grupoStatus === "concluida";
+
+  // Auto-close Fase de Grupos when all rounds are complete
+  useEffect(() => {
+    if (grupoConcluded) return;
+    if (!numeroRodadas) return;
+    if (matchups.length === 0 || results.length === 0) return;
+    const { phaseComplete } = computeCurrentRound(matchups as any, results as any, numeroRodadas);
+    if (!phaseComplete) return;
+
+    const existing = phaseStatuses.find(p => p.fase === "Fase de Grupos");
+    const op = existing
+      ? supabase.from("phase_status").update({ status: "concluida" }).eq("id", existing.id)
+      : supabase.from("phase_status").insert({
+          tournament_id: tournamentId, fase: "Fase de Grupos", status: "concluida",
+        });
+    op.then(({ error }) => {
+      if (error) return;
+      toast.success("Fase de Grupos encerrada automaticamente — todas as rodadas concluídas.");
+      loadPhaseStatuses();
+    });
+  }, [matchups, results, numeroRodadas, phaseStatuses, grupoConcluded, tournamentId]);
 
   const currentPhaseStatus = phaseStatuses.find(p => p.fase === selectedFase)?.status || "em_andamento";
   const isConcluded = currentPhaseStatus === "concluida";
@@ -188,22 +211,6 @@ export default function StandingsTab({ tournamentId }: Props) {
         )}
       </div>
 
-      {selectedFase === "Fase de Grupos" && !isConcluded && (() => {
-        const { phaseComplete, totalRounds } = computeCurrentRound(matchups as any, results as any, numeroRodadas);
-        if (!phaseComplete || !totalRounds) return null;
-        return (
-          <Card className="border-primary/40 bg-primary/5">
-            <CardContent className="py-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-              <p className="text-sm">
-                Todas as <strong>{totalRounds} rodadas</strong> da Fase de Grupos têm resultado registrado. Deseja encerrar a fase?
-              </p>
-              <Button size="sm" onClick={togglePhaseStatus}>
-                <Lock className="h-4 w-4 mr-1" /> Encerrar Fase de Grupos
-              </Button>
-            </CardContent>
-          </Card>
-        );
-      })()}
 
 
       {totalRows === 0 ? (

@@ -4,9 +4,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { CalendarDays, Clock } from "lucide-react";
 import type { ViewMode } from "./ViewModeToggle";
 import type { Tables } from "@/integrations/supabase/types";
+import { computeCurrentRound } from "@/lib/rounds";
 
 type Schedule = Tables<"match_schedule">;
 type Matchup = Tables<"matchups">;
+type MatchResult = Tables<"match_results">;
 
 interface PlayerLite {
   id: string;
@@ -18,11 +20,11 @@ interface Props {
   schedules: Schedule[];
   players: PlayerLite[];
   matchups: Matchup[];
+  results?: MatchResult[];
+  numeroRodadas?: number | null;
   viewMode?: ViewMode;
 }
 
-const displayName = (p?: PlayerLite) => {
-  if (!p) return "Jogador desconhecido";
   const nick = p.nick_playroom?.trim();
   return nick || p.nome_completo;
 };

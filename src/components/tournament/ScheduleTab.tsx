@@ -105,15 +105,35 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
     fetchPlayers();
     fetchSchedules();
     fetchMatchups();
+    fetchResults();
+    fetchTournament();
   }, [tournamentId]);
 
   async function fetchMatchups() {
     const { data } = await supabase
       .from("matchups")
-      .select("player1_id, player2_id, rodada")
+      .select("player1_id, player2_id, rodada, fase")
       .eq("tournament_id", tournamentId);
     if (data) setMatchups(data as any);
   }
+
+  async function fetchResults() {
+    const { data } = await supabase
+      .from("match_results")
+      .select("player_id, rodada, fase")
+      .eq("tournament_id", tournamentId);
+    if (data) setResults(data as any);
+  }
+
+  async function fetchTournament() {
+    const { data } = await supabase
+      .from("tournaments")
+      .select("numero_rodadas")
+      .eq("id", tournamentId)
+      .maybeSingle();
+    if (data) setNumeroRodadas((data as any).numero_rodadas ?? null);
+  }
+
 
   // Pre-fill from PlayersTab or MatchupsTab
   useEffect(() => {

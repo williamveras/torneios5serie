@@ -25,9 +25,12 @@ interface Props {
   viewMode?: ViewMode;
 }
 
+const displayName = (p?: PlayerLite) => {
+  if (!p) return "Jogador desconhecido";
   const nick = p.nick_playroom?.trim();
   return nick || p.nome_completo;
 };
+
 
 const WEEKDAYS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 

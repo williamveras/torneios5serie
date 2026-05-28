@@ -94,7 +94,21 @@ export default function Dashboard() {
                   <Label>Data de início</Label>
                   <Input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} required />
                 </div>
+                <div className="space-y-2">
+                  <Label>Número de rodadas (Fase de Grupos)</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={numeroRodadas}
+                    onChange={e => setNumeroRodadas(e.target.value)}
+                    placeholder="Ex: 7"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Usado para calcular automaticamente a rodada atual e o encerramento da fase.
+                  </p>
+                </div>
                 <Button type="submit" className="w-full" disabled={loading}>{loading ? "Criando..." : "Criar"}</Button>
+
               </form>
             </DialogContent>
           </Dialog>

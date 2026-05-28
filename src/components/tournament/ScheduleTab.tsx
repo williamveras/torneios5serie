@@ -475,7 +475,10 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
 
       {/* Título separador */}
       <h2 className="text-xl font-semibold pt-2">
-        {currentRound != null ? `Partidas agendadas — Rodada ${currentRound}` : "Partidas agendadas"}
+        {currentRound != null
+          ? `Partidas agendadas — Rodada ${currentRound}${totalRounds ? ` de ${totalRounds}` : ""}${phaseComplete ? " (fase concluída)" : ""}`
+          : "Partidas agendadas"}
+
       </h2>
 
       {/* Visualização — agrupada por Rodada → Grupo → Data (somente rodada atual) */}

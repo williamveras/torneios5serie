@@ -4,9 +4,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { CalendarDays, Clock } from "lucide-react";
 import type { ViewMode } from "./ViewModeToggle";
 import type { Tables } from "@/integrations/supabase/types";
+import { computeCurrentRound } from "@/lib/rounds";
 
 type Schedule = Tables<"match_schedule">;
 type Matchup = Tables<"matchups">;
+type MatchResult = Tables<"match_results">;
 
 interface PlayerLite {
   id: string;
@@ -18,6 +20,8 @@ interface Props {
   schedules: Schedule[];
   players: PlayerLite[];
   matchups: Matchup[];
+  results?: MatchResult[];
+  numeroRodadas?: number | null;
   viewMode?: ViewMode;
 }
 
@@ -26,6 +30,7 @@ const displayName = (p?: PlayerLite) => {
   const nick = p.nick_playroom?.trim();
   return nick || p.nome_completo;
 };
+
 
 const WEEKDAYS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
@@ -59,22 +64,19 @@ const todaySaoPauloISO = () => {
   return fmt.format(new Date()); // YYYY-MM-DD
 };
 
-export default function PublicSchedule({ schedules, players, matchups, viewMode = "list" }: Props) {
+export default function PublicSchedule({ schedules, players, matchups, results = [], numeroRodadas = null, viewMode = "list" }: Props) {
   const playerMap = useMemo(() => {
     const m = new Map<string, PlayerLite>();
     players.forEach(p => m.set(p.id, p));
     return m;
   }, [players]);
 
-  // Determine current (latest) round from matchups AND schedules
-  const currentRound = useMemo(() => {
-    const rounds = [
-      ...matchups.map(m => m.rodada),
-      ...schedules.map(s => s.rodada),
-    ].filter((r): r is number => r != null);
-    if (rounds.length === 0) return null;
-    return Math.max(...rounds);
-  }, [matchups, schedules]);
+  // Compute current round using numero_rodadas + results (with legacy fallback)
+  const { currentRound, totalRounds, phaseComplete } = useMemo(
+    () => computeCurrentRound(matchups as any, results as any, numeroRodadas),
+    [matchups, results, numeroRodadas],
+  );
+
 
   // Set of (sorted player-pair) keys belonging to the current round (from matchups)
   const currentRoundPairs = useMemo(() => {
@@ -123,9 +125,13 @@ export default function PublicSchedule({ schedules, players, matchups, viewMode 
     return Array.from(map.entries());
   }, [filteredSchedules]);
 
+  const roundLabel = currentRound != null
+    ? `Rodada ${currentRound}${totalRounds ? ` de ${totalRounds}` : ""}${phaseComplete ? " — fase concluída" : ""}`
+    : null;
   const description = currentRound != null
-    ? `Seguem abaixo os confrontos da rodada ${currentRound} e seus respectivos horários.`
+    ? `Seguem abaixo os confrontos da rodada ${currentRound}${totalRounds ? ` (de ${totalRounds})` : ""} e seus respectivos horários.`
     : "Seguem abaixo os confrontos e seus respectivos horários.";
+
 
   return (
     <div className="space-y-4">

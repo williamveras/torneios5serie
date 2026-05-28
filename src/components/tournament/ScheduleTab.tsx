@@ -13,6 +13,8 @@ import ImportMatchupsDialog from "./ImportMatchupsDialog";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Tables } from "@/integrations/supabase/types";
+import { computeCurrentRound } from "@/lib/rounds";
+
 
 // Parse "DD/MM" or "DD/MM/YYYY" to "YYYY-MM-DD". Returns null if invalid.
 function parseDateInput(input: string): string | null {
@@ -71,8 +73,12 @@ const GRUPOS = Array.from({ length: 30 }, (_, i) => String(i + 1));
 export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlayer2Id, prefillGrupo, onPrefillConsumed }: Props) {
   const [players, setPlayers] = useState<Player[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [matchups, setMatchups] = useState<{ player1_id: string; player2_id: string; rodada: number | null }[]>([]);
+  const [matchups, setMatchups] = useState<{ player1_id: string; player2_id: string; rodada: number | null; fase: string | null }[]>([]);
+  const [results, setResults] = useState<{ player_id: string; rodada: number; fase: string | null }[]>([]);
+  const [numeroRodadas, setNumeroRodadas] = useState<number | null>(null);
+
   const [grupo, setGrupo] = useState("");
+
   const [player1, setPlayer1] = useState("");
   const [player2, setPlayer2] = useState("");
   const [dateInput, setDateInput] = useState("");
@@ -101,15 +107,35 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
     fetchPlayers();
     fetchSchedules();
     fetchMatchups();
+    fetchResults();
+    fetchTournament();
   }, [tournamentId]);
 
   async function fetchMatchups() {
     const { data } = await supabase
       .from("matchups")
-      .select("player1_id, player2_id, rodada")
+      .select("player1_id, player2_id, rodada, fase")
       .eq("tournament_id", tournamentId);
     if (data) setMatchups(data as any);
   }
+
+  async function fetchResults() {
+    const { data } = await supabase
+      .from("match_results")
+      .select("player_id, rodada, fase")
+      .eq("tournament_id", tournamentId);
+    if (data) setResults(data as any);
+  }
+
+  async function fetchTournament() {
+    const { data } = await supabase
+      .from("tournaments")
+      .select("numero_rodadas")
+      .eq("id", tournamentId)
+      .maybeSingle();
+    if (data) setNumeroRodadas((data as any).numero_rodadas ?? null);
+  }
+
 
   // Pre-fill from PlayersTab or MatchupsTab
   useEffect(() => {
@@ -304,12 +330,14 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
 
   const NO_ROUND_KEY = "__sem_rodada__";
 
-  // Current round = max rodada in matchups
-  const currentRound: number | null = (() => {
-    const rounds = matchups.map(m => m.rodada).filter((r): r is number => r != null);
-    if (rounds.length === 0) return null;
-    return Math.max(...rounds);
-  })();
+  // Compute current round from numero_rodadas + matchups + results.
+  // Falls back to max(rodada) when numero_rodadas isn't configured.
+  const { currentRound, totalRounds, phaseComplete } = computeCurrentRound(
+    matchups,
+    results,
+    numeroRodadas,
+  );
+
 
   // Group schedules by date → grupo. Only the current round is included.
   function groupedSchedules() {
@@ -447,7 +475,10 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
 
       {/* Título separador */}
       <h2 className="text-xl font-semibold pt-2">
-        {currentRound != null ? `Partidas agendadas — Rodada ${currentRound}` : "Partidas agendadas"}
+        {currentRound != null
+          ? `Partidas agendadas — Rodada ${currentRound}${totalRounds ? ` de ${totalRounds}` : ""}${phaseComplete ? " (fase concluída)" : ""}`
+          : "Partidas agendadas"}
+
       </h2>
 
       {/* Visualização — agrupada por Rodada → Grupo → Data (somente rodada atual) */}

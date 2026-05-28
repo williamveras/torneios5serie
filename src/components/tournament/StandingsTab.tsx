@@ -10,7 +10,9 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { FASES } from "@/lib/constants";
 import { computeStandings } from "@/lib/standings";
+import { computeCurrentRound } from "@/lib/rounds";
 import type { Tables } from "@/integrations/supabase/types";
+
 
 type MatchResult = Tables<"match_results">;
 type Player = Tables<"players">;
@@ -30,6 +32,8 @@ export default function StandingsTab({ tournamentId }: Props) {
   const [players, setPlayers] = useState<Player[]>([]);
   const [phaseStatuses, setPhaseStatuses] = useState<Tables<"phase_status">[]>([]);
   const [selectedFase, setSelectedFase] = useState<string>("Fase de Grupos");
+  const [matchups, setMatchups] = useState<Tables<"matchups">[]>([]);
+  const [numeroRodadas, setNumeroRodadas] = useState<number | null>(null);
 
   const loadPhaseStatuses = () => {
     supabase.from("phase_status").select("*").eq("tournament_id", tournamentId).then(({ data }) => {
@@ -41,12 +45,17 @@ export default function StandingsTab({ tournamentId }: Props) {
     Promise.all([
       supabase.from("match_results").select("*").eq("tournament_id", tournamentId),
       supabase.from("players").select("*").eq("tournament_id", tournamentId),
-    ]).then(([r, p]) => {
+      supabase.from("matchups").select("*").eq("tournament_id", tournamentId),
+      supabase.from("tournaments").select("numero_rodadas").eq("id", tournamentId).maybeSingle(),
+    ]).then(([r, p, m, t]) => {
       if (r.data) setResults(r.data);
       if (p.data) setPlayers(p.data);
+      if (m.data) setMatchups(m.data);
+      if (t.data) setNumeroRodadas((t.data as any).numero_rodadas ?? null);
     });
     loadPhaseStatuses();
   }, [tournamentId]);
+
 
   const currentPhaseStatus = phaseStatuses.find(p => p.fase === selectedFase)?.status || "em_andamento";
   const isConcluded = currentPhaseStatus === "concluida";
@@ -178,6 +187,24 @@ export default function StandingsTab({ tournamentId }: Props) {
           </Button>
         )}
       </div>
+
+      {selectedFase === "Fase de Grupos" && !isConcluded && (() => {
+        const { phaseComplete, totalRounds } = computeCurrentRound(matchups as any, results as any, numeroRodadas);
+        if (!phaseComplete || !totalRounds) return null;
+        return (
+          <Card className="border-primary/40 bg-primary/5">
+            <CardContent className="py-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+              <p className="text-sm">
+                Todas as <strong>{totalRounds} rodadas</strong> da Fase de Grupos têm resultado registrado. Deseja encerrar a fase?
+              </p>
+              <Button size="sm" onClick={togglePhaseStatus}>
+                <Lock className="h-4 w-4 mr-1" /> Encerrar Fase de Grupos
+              </Button>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
 
       {totalRows === 0 ? (
         <Card>

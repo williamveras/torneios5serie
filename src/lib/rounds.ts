@@ -99,13 +99,28 @@ export function computeCurrentRound(
       rodada: r,
       totalJogos,
       jogosConcluidos,
-      isComplete: totalJogos > 0 && jogosConcluidos === totalJogos,
+      // A round with no matchups is treated as "nothing to do" → complete
+      // so we don't get stuck waiting on rounds that were never generated.
+      isComplete: totalJogos === 0 || jogosConcluidos === totalJogos,
     });
   }
 
-  const firstIncomplete = roundsState.find((rs) => !rs.isComplete);
+  // currentRound: first round that actually has matchups and isn't complete.
+  // If every round with matchups is complete, fall back to the last round
+  // that has matchups (or totalRounds if none exist yet).
+  const firstIncomplete = roundsState.find(
+    (rs) => rs.totalJogos > 0 && !rs.isComplete,
+  );
   const phaseComplete = roundsState.every((rs) => rs.isComplete);
-  const currentRound = firstIncomplete ? firstIncomplete.rodada : totalRounds;
+  const lastWithMatchups = [...roundsState]
+    .reverse()
+    .find((rs) => rs.totalJogos > 0);
+  const currentRound = firstIncomplete
+    ? firstIncomplete.rodada
+    : lastWithMatchups
+      ? lastWithMatchups.rodada
+      : totalRounds;
+
 
   return { totalRounds, currentRound, phaseComplete, roundsState };
 }

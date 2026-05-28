@@ -10,7 +10,9 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { FASES } from "@/lib/constants";
 import { computeStandings } from "@/lib/standings";
+import { computeCurrentRound } from "@/lib/rounds";
 import type { Tables } from "@/integrations/supabase/types";
+
 
 type MatchResult = Tables<"match_results">;
 type Player = Tables<"players">;

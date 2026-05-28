@@ -161,7 +161,7 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
 
   // Reset rodada selection to "last" when fase changes
   useEffect(() => {
-    setSelectedRodada("__last__");
+    setSelectedRodada("__all__");
   }, [selectedFase]);
 
   const effectiveRodada = useMemo(() => {

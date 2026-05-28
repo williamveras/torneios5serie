@@ -56,6 +56,29 @@ export default function StandingsTab({ tournamentId }: Props) {
     loadPhaseStatuses();
   }, [tournamentId]);
 
+  const grupoStatus = phaseStatuses.find(p => p.fase === "Fase de Grupos")?.status || "em_andamento";
+  const grupoConcluded = grupoStatus === "concluida";
+
+  // Auto-close Fase de Grupos when all rounds are complete
+  useEffect(() => {
+    if (grupoConcluded) return;
+    if (!numeroRodadas) return;
+    if (matchups.length === 0 || results.length === 0) return;
+    const { phaseComplete } = computeCurrentRound(matchups as any, results as any, numeroRodadas);
+    if (!phaseComplete) return;
+
+    const existing = phaseStatuses.find(p => p.fase === "Fase de Grupos");
+    const op = existing
+      ? supabase.from("phase_status").update({ status: "concluida" }).eq("id", existing.id)
+      : supabase.from("phase_status").insert({
+          tournament_id: tournamentId, fase: "Fase de Grupos", status: "concluida",
+        });
+    op.then(({ error }) => {
+      if (error) return;
+      toast.success("Fase de Grupos encerrada automaticamente — todas as rodadas concluídas.");
+      loadPhaseStatuses();
+    });
+  }, [matchups, results, numeroRodadas, phaseStatuses, grupoConcluded, tournamentId]);
 
   const currentPhaseStatus = phaseStatuses.find(p => p.fase === selectedFase)?.status || "em_andamento";
   const isConcluded = currentPhaseStatus === "concluida";

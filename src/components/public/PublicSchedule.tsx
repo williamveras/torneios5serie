@@ -125,9 +125,13 @@ export default function PublicSchedule({ schedules, players, matchups, results =
     return Array.from(map.entries());
   }, [filteredSchedules]);
 
+  const roundLabel = currentRound != null
+    ? `Rodada ${currentRound}${totalRounds ? ` de ${totalRounds}` : ""}${phaseComplete ? " — fase concluída" : ""}`
+    : null;
   const description = currentRound != null
-    ? `Seguem abaixo os confrontos da rodada ${currentRound} e seus respectivos horários.`
+    ? `Seguem abaixo os confrontos da rodada ${currentRound}${totalRounds ? ` (de ${totalRounds})` : ""} e seus respectivos horários.`
     : "Seguem abaixo os confrontos e seus respectivos horários.";
+
 
   return (
     <div className="space-y-4">

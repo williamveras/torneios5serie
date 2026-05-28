@@ -1,0 +1,1 @@
+ALTER TABLE public.tournaments ADD COLUMN numero_rodadas integer;

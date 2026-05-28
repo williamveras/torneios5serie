@@ -1,19 +1,30 @@
-## Filtrar agenda pública para mostrar apenas a rodada atual
+# Plano: número de rodadas e cálculo automático
 
-Na aba **Confrontos** da página pública (`/p/:tournamentId`), atualmente alguns agendamentos de rodadas antigas continuam aparecendo — especialmente os sem data/horário definido e W.O., que caem no bloco "A definir" e nunca somem.
+## 1. Banco de dados
+- Migration: adicionar coluna `numero_rodadas integer` (nullable) em `tournaments`.
+- Após aprovação, atualizar o torneio em andamento via insert tool: `UPDATE tournaments SET numero_rodadas = 7 WHERE ...` (identificar o torneio ativo — provavelmente único existente; se houver mais de um, usar o mais recente por `data_inicio`).
 
-### Comportamento desejado
-- Mostrar **apenas** agendamentos pertencentes à rodada atual (a maior `rodada` existente em `matchups` do torneio).
-- Vale para tudo: confrontos com data futura, sem data, sem horário, W.O., observações — se não for da rodada atual, não aparece.
-- Se não houver rodada atual definida (sem `matchups`), mostra "Nenhum confronto pendente para exibir."
+## 2. Criação de torneio (Dashboard.tsx)
+- Adicionar campo "Número de rodadas (Fase de Grupos)" no formulário de novo torneio (input numérico, mínimo 1, opcional mas recomendado).
+- Salvar `numero_rodadas` no insert.
 
-### Implementação
-Arquivo: `src/components/public/PublicSchedule.tsx`
+## 3. Helper de cálculo (`src/lib/rounds.ts`)
+- Função `computeCurrentRound(matchups, results, numeroRodadas)` retornando:
+  - `totalRounds`: `numero_rodadas` do torneio
+  - `roundsState`: para cada rodada 1..N → `{ rodada, totalJogos, jogosConcluidos, isComplete }`
+  - `currentRound`: menor rodada não concluída (ou N se todas concluídas)
+  - `phaseComplete`: true quando todas as rodadas estão concluídas
+- Critério "jogo concluído": existem 2 linhas em `match_results` para o par de jogadores naquela rodada (uma por jogador).
 
-O componente já calcula `currentRound` e `currentRoundPairs` (Set com chaves `player1_id|player2_id` ordenadas da rodada atual), mas **não usa** essa informação no filtro. Ajustar `filteredSchedules` para:
+## 4. Aplicação na UI
+- **ScheduleTab.tsx** (admin) e **PublicSchedule.tsx**: exibir badge "Rodada X de N" no cabeçalho, e usar `currentRound` calculado em vez de `max(rodada)`.
+- **PublicTournament.tsx**: indicador de progresso da fase ("Rodada X de N").
+- **StandingsTab.tsx**: quando `phaseComplete === true`, mostrar aviso sugerindo encerrar a Fase de Grupos (botão que atualiza `phase_status`).
 
-1. Se `currentRound == null` ou `currentRoundPairs == null` → retornar `[]`.
-2. Manter cada schedule somente se a chave `[s.player1_id, s.player2_id].sort().join("|")` estiver em `currentRoundPairs`.
-3. **Remover** o filtro atual que esconde datas passadas (`s.data_partida < today`) — passa a ser irrelevante, pois a rodada atual já delimita o escopo, e jogos "A definir"/W.O. da rodada atual devem continuar visíveis mesmo se a data já passou.
+## 5. Tarefa adicional solicitada
+- Registrar `numero_rodadas = 7` no torneio que já está em andamento (via insert tool após a migration).
 
-Nenhuma mudança em banco, parsers, admin ou outras abas públicas.
+## Detalhes técnicos
+- `numero_rodadas` é nullable para não quebrar torneios antigos; quando ausente, a UI cai no comportamento atual (`max(rodada)`).
+- Sem alterações em parsers, RLS ou edge functions.
+- Sem mudança em `types.ts` manual — será regenerado automaticamente após a migration.

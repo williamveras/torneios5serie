@@ -339,6 +339,7 @@ export type Database = {
           data_inicio: string
           id: string
           nome: string
+          numero_rodadas: number | null
           regulamento: string | null
           updated_at: string
         }
@@ -348,6 +349,7 @@ export type Database = {
           data_inicio: string
           id?: string
           nome: string
+          numero_rodadas?: number | null
           regulamento?: string | null
           updated_at?: string
         }
@@ -357,6 +359,7 @@ export type Database = {
           data_inicio?: string
           id?: string
           nome?: string
+          numero_rodadas?: number | null
           regulamento?: string | null
           updated_at?: string
         }

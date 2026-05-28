@@ -75,6 +75,8 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
   const [results, setResults] = useState<{ player_id: string; rodada: number; fase: string | null }[]>([]);
   const [numeroRodadas, setNumeroRodadas] = useState<number | null>(null);
 
+  const [grupo, setGrupo] = useState("");
+
   const [player1, setPlayer1] = useState("");
   const [player2, setPlayer2] = useState("");
   const [dateInput, setDateInput] = useState("");

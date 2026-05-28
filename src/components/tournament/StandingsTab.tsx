@@ -30,6 +30,8 @@ export default function StandingsTab({ tournamentId }: Props) {
   const [players, setPlayers] = useState<Player[]>([]);
   const [phaseStatuses, setPhaseStatuses] = useState<Tables<"phase_status">[]>([]);
   const [selectedFase, setSelectedFase] = useState<string>("Fase de Grupos");
+  const [matchups, setMatchups] = useState<Tables<"matchups">[]>([]);
+  const [numeroRodadas, setNumeroRodadas] = useState<number | null>(null);
 
   const loadPhaseStatuses = () => {
     supabase.from("phase_status").select("*").eq("tournament_id", tournamentId).then(({ data }) => {
@@ -41,12 +43,17 @@ export default function StandingsTab({ tournamentId }: Props) {
     Promise.all([
       supabase.from("match_results").select("*").eq("tournament_id", tournamentId),
       supabase.from("players").select("*").eq("tournament_id", tournamentId),
-    ]).then(([r, p]) => {
+      supabase.from("matchups").select("*").eq("tournament_id", tournamentId),
+      supabase.from("tournaments").select("numero_rodadas").eq("id", tournamentId).maybeSingle(),
+    ]).then(([r, p, m, t]) => {
       if (r.data) setResults(r.data);
       if (p.data) setPlayers(p.data);
+      if (m.data) setMatchups(m.data);
+      if (t.data) setNumeroRodadas((t.data as any).numero_rodadas ?? null);
     });
     loadPhaseStatuses();
   }, [tournamentId]);
+
 
   const currentPhaseStatus = phaseStatuses.find(p => p.fase === selectedFase)?.status || "em_andamento";
   const isConcluded = currentPhaseStatus === "concluida";

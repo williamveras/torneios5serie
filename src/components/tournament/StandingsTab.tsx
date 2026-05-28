@@ -211,22 +211,6 @@ export default function StandingsTab({ tournamentId }: Props) {
         )}
       </div>
 
-      {selectedFase === "Fase de Grupos" && !isConcluded && (() => {
-        const { phaseComplete, totalRounds } = computeCurrentRound(matchups as any, results as any, numeroRodadas);
-        if (!phaseComplete || !totalRounds) return null;
-        return (
-          <Card className="border-primary/40 bg-primary/5">
-            <CardContent className="py-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-              <p className="text-sm">
-                Todas as <strong>{totalRounds} rodadas</strong> da Fase de Grupos têm resultado registrado. Deseja encerrar a fase?
-              </p>
-              <Button size="sm" onClick={togglePhaseStatus}>
-                <Lock className="h-4 w-4 mr-1" /> Encerrar Fase de Grupos
-              </Button>
-            </CardContent>
-          </Card>
-        );
-      })()}
 
 
       {totalRows === 0 ? (

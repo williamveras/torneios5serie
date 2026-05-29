@@ -63,7 +63,7 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
   const load = async () => {
     setLoading(true);
     const [{ data: rs }, { data: ps }, { data: prs }] = await Promise.all([
-      supabase.from("match_results").select("*").eq("tournament_id", tournamentId).order("created_at", { ascending: false }),
+      fetchAllMatchResults(tournamentId).then(data => ({ data: [...data].sort((a, b) => b.created_at.localeCompare(a.created_at)) })),
       supabase.from("players").select("*").eq("tournament_id", tournamentId),
       supabase.from("profiles").select("*"),
     ]);

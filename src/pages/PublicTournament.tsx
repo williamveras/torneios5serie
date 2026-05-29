@@ -51,7 +51,7 @@ export default function PublicTournament() {
     Promise.all([
       supabase.from("tournaments").select("*").eq("id", tournamentId).maybeSingle(),
       (supabase as any).rpc("get_players_public", { _tournament_id: tournamentId }),
-      supabase.from("match_results").select("*").eq("tournament_id", tournamentId),
+      fetchAllMatchResults(tournamentId).then(data => ({ data })),
       supabase.from("match_schedule").select("*").eq("tournament_id", tournamentId),
       supabase.from("phase_status").select("*").eq("tournament_id", tournamentId),
       (supabase as any).rpc("get_moderators_public", { _tournament_id: tournamentId }),

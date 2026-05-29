@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllMatchResults } from "@/lib/fetchAll";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart3, Download, ListChecks, Loader2 } from "lucide-react";
@@ -35,7 +36,7 @@ export default function StatsTab({ tournamentId }: Props) {
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      supabase.from("match_results").select("*").eq("tournament_id", tournamentId),
+      fetchAllMatchResults(tournamentId).then(data => ({ data })),
       supabase.from("players").select("*").eq("tournament_id", tournamentId),
       supabase.from("profiles").select("*"),
     ]).then(([{ data: rs }, { data: ps }, { data: prs }]) => {

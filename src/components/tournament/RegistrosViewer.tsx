@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllMatchResults } from "@/lib/fetchAll";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
@@ -62,7 +63,7 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
   const load = async () => {
     setLoading(true);
     const [{ data: rs }, { data: ps }, { data: prs }] = await Promise.all([
-      supabase.from("match_results").select("*").eq("tournament_id", tournamentId).order("created_at", { ascending: false }),
+      fetchAllMatchResults(tournamentId).then(data => ({ data: [...data].sort((a, b) => b.created_at.localeCompare(a.created_at)) })),
       supabase.from("players").select("*").eq("tournament_id", tournamentId),
       supabase.from("profiles").select("*"),
     ]);

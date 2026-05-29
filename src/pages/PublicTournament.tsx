@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllMatchResults } from "@/lib/fetchAll";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Trophy, Loader2 } from "lucide-react";
@@ -51,7 +52,7 @@ export default function PublicTournament() {
     Promise.all([
       supabase.from("tournaments").select("*").eq("id", tournamentId).maybeSingle(),
       (supabase as any).rpc("get_players_public", { _tournament_id: tournamentId }),
-      supabase.from("match_results").select("*").eq("tournament_id", tournamentId),
+      fetchAllMatchResults(tournamentId).then(data => ({ data })),
       supabase.from("match_schedule").select("*").eq("tournament_id", tournamentId),
       supabase.from("phase_status").select("*").eq("tournament_id", tournamentId),
       (supabase as any).rpc("get_moderators_public", { _tournament_id: tournamentId }),

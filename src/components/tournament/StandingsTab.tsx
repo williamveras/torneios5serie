@@ -43,7 +43,7 @@ export default function StandingsTab({ tournamentId }: Props) {
 
   useEffect(() => {
     Promise.all([
-      supabase.from("match_results").select("*").eq("tournament_id", tournamentId),
+      fetchAllMatchResults(tournamentId).then(data => ({ data })),
       supabase.from("players").select("*").eq("tournament_id", tournamentId),
       supabase.from("matchups").select("*").eq("tournament_id", tournamentId),
       supabase.from("tournaments").select("numero_rodadas").eq("id", tournamentId).maybeSingle(),

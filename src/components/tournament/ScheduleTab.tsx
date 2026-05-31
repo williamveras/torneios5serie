@@ -486,67 +486,104 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
         )}
       </h2>
 
-      {/* Visualização — agrupada por Rodada → Data → Grupo (todas as rodadas) */}
+      {/* Visualização — rodada atual em destaque, demais rodadas recolhidas */}
       {sortedRoundKeys.length === 0 ? (
         <p className="text-center text-muted-foreground py-8">Nenhuma partida agendada.</p>
       ) : (
-        sortedRoundKeys.map((rk) => {
-          const byDate = groupedByRound[rk];
-          const sortedDates = Object.keys(byDate).sort((a, b) => {
-            if (a === NO_DATE_KEY) return 1;
-            if (b === NO_DATE_KEY) return -1;
-            return a.localeCompare(b);
-          });
-          const roundLabel = rk === NO_ROUND_KEY ? "Sem rodada definida" : `Rodada ${rk}`;
-          return (
-            <div key={rk} className="space-y-3">
-              <h3 className="text-lg font-semibold border-b pb-1">{roundLabel}</h3>
-              {sortedDates.map((dk) => {
-                const grupos = Object.keys(byDate[dk]).sort((a, b) => {
-                  const an = parseInt(a, 10);
-                  const bn = parseInt(b, 10);
-                  if (!isNaN(an) && !isNaN(bn)) return an - bn;
-                  return a.localeCompare(b);
-                });
-                return (
-                  <Card key={dk}>
-                    <CardHeader>
-                      <CardTitle className="text-lg">{formatDateTitle(dk)}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {grupos.map((g) => (
-                        <div key={g}>
-                          <h3 className="font-semibold text-sm mb-2">
-                            {/^\d+$/.test(g) ? `Grupo ${g}` : g}
-                          </h3>
-                          <div className="space-y-1 pl-2">
-                            {byDate[dk][g].map((s) => (
-                              <div key={s.id} className="flex items-center justify-between py-1.5 px-3 rounded-md bg-muted/50">
-                                <span className="text-sm">
-                                  {getPlayerName(s.player1_id)} e {getPlayerName(s.player2_id)}:{" "}
-                                  <strong>{s.horario ? s.horario.slice(0, 5) : (s.observacao || "—")}</strong>
-                                </span>
-                                <div className="flex gap-1">
-                                  <Button variant="outline" size="sm" className="h-7" onClick={() => openEdit(s)}>
-                                    <CalendarClock className="h-3.5 w-3.5 mr-1" /> Realocar
-                                  </Button>
-                                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(s.id)}>
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </Button>
+        (() => {
+          const currentKey = currentRound != null ? String(currentRound) : null;
+          const orderedKeys = [
+            ...(currentKey && sortedRoundKeys.includes(currentKey) ? [currentKey] : []),
+            ...sortedRoundKeys.filter((k) => k !== currentKey),
+          ];
+          return orderedKeys.map((rk) => {
+            const byDate = groupedByRound[rk];
+            const sortedDates = Object.keys(byDate).sort((a, b) => {
+              if (a === NO_DATE_KEY) return 1;
+              if (b === NO_DATE_KEY) return -1;
+              return a.localeCompare(b);
+            });
+            const isCurrent = rk === currentKey;
+            const roundLabel = rk === NO_ROUND_KEY ? "Sem rodada definida" : `Rodada ${rk}`;
+            const totalJogos = sortedDates.reduce(
+              (acc, dk) => acc + Object.values(byDate[dk]).reduce((a, arr) => a + arr.length, 0),
+              0,
+            );
+
+            const content = (
+              <div className="space-y-3">
+                {sortedDates.map((dk) => {
+                  const grupos = Object.keys(byDate[dk]).sort((a, b) => {
+                    const an = parseInt(a, 10);
+                    const bn = parseInt(b, 10);
+                    if (!isNaN(an) && !isNaN(bn)) return an - bn;
+                    return a.localeCompare(b);
+                  });
+                  return (
+                    <Card key={dk}>
+                      <CardHeader>
+                        <CardTitle className="text-lg">{formatDateTitle(dk)}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {grupos.map((g) => (
+                          <div key={g}>
+                            <h3 className="font-semibold text-sm mb-2">
+                              {/^\d+$/.test(g) ? `Grupo ${g}` : g}
+                            </h3>
+                            <div className="space-y-1 pl-2">
+                              {byDate[dk][g].map((s) => (
+                                <div key={s.id} className="flex items-center justify-between py-1.5 px-3 rounded-md bg-muted/50">
+                                  <span className="text-sm">
+                                    {getPlayerName(s.player1_id)} e {getPlayerName(s.player2_id)}:{" "}
+                                    <strong>{s.horario ? s.horario.slice(0, 5) : (s.observacao || "—")}</strong>
+                                  </span>
+                                  <div className="flex gap-1">
+                                    <Button variant="outline" size="sm" className="h-7" onClick={() => openEdit(s)}>
+                                      <CalendarClock className="h-3.5 w-3.5 mr-1" /> Realocar
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(s.id)}>
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          );
-        })
+                        ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            );
+
+            if (isCurrent) {
+              return (
+                <div key={rk} className="space-y-3">
+                  <h3 className="text-lg font-semibold border-b pb-1">
+                    {roundLabel} <span className="text-sm font-normal text-muted-foreground">(rodada atual)</span>
+                  </h3>
+                  {content}
+                </div>
+              );
+            }
+
+            return (
+              <Collapsible key={rk}>
+                <CollapsibleTrigger className="flex w-full items-center justify-between border-b pb-1 group">
+                  <h3 className="text-lg font-semibold">
+                    {roundLabel}{" "}
+                    <span className="text-sm font-normal text-muted-foreground">({totalJogos} jogos)</span>
+                  </h3>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3">{content}</CollapsibleContent>
+              </Collapsible>
+            );
+          });
+        })()
       )}
+
 
 
 

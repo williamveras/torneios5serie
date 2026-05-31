@@ -143,9 +143,7 @@ export default function PublicSchedule({ schedules, players, matchups, results =
     return Array.from(map.entries());
   };
 
-  const description = currentRound != null
-    ? `Seguem abaixo os confrontos da rodada ${currentRound}${totalRounds ? ` (de ${totalRounds})` : ""}${phaseComplete ? " — fase concluída" : ""}. Confrontos já registrados de rodadas futuras aparecem em seguida.`
-    : "Seguem abaixo os confrontos e seus respectivos horários.";
+  const description = "Atenção aos confrontos e horários dos jogos ainda a decorrer:";
 
   const totalItems = visibleSchedulesByRound.reduce((acc, r) => acc + r.items.length, 0);
 

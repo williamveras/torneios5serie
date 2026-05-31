@@ -339,16 +339,16 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
   );
 
 
-  // Group schedules by date → grupo. Only the current round is included.
-  function groupedSchedules() {
-    const grouped: Record<string, Record<string, Schedule[]>> = {};
-    if (currentRound == null) return grouped;
+  // Group schedules by round → date → grupo. Admin shows ALL rounds.
+  function groupedSchedulesByRound() {
+    const grouped: Record<string, Record<string, Record<string, Schedule[]>>> = {};
     for (const s of schedules) {
-      if (s.rodada !== currentRound) continue;
+      const roundKey = s.rodada != null ? String(s.rodada) : NO_ROUND_KEY;
       const dateKey = s.data_partida || NO_DATE_KEY;
-      if (!grouped[dateKey]) grouped[dateKey] = {};
-      if (!grouped[dateKey][s.grupo]) grouped[dateKey][s.grupo] = [];
-      grouped[dateKey][s.grupo].push(s);
+      if (!grouped[roundKey]) grouped[roundKey] = {};
+      if (!grouped[roundKey][dateKey]) grouped[roundKey][dateKey] = {};
+      if (!grouped[roundKey][dateKey][s.grupo]) grouped[roundKey][dateKey][s.grupo] = [];
+      grouped[roundKey][dateKey][s.grupo].push(s);
     }
     return grouped;
   }
@@ -361,12 +361,13 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
     return `${capitalized} (${format(d, "dd/MM")})`;
   }
 
-  const grouped = groupedSchedules();
-  const sortedDates = Object.keys(grouped).sort((a, b) => {
-    if (a === NO_DATE_KEY) return 1;
-    if (b === NO_DATE_KEY) return -1;
-    return a.localeCompare(b);
+  const groupedByRound = groupedSchedulesByRound();
+  const sortedRoundKeys = Object.keys(groupedByRound).sort((a, b) => {
+    if (a === NO_ROUND_KEY) return 1;
+    if (b === NO_ROUND_KEY) return -1;
+    return parseInt(a, 10) - parseInt(b, 10);
   });
+
 
   return (
     <div className="space-y-6">
@@ -475,61 +476,76 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
 
       {/* Título separador */}
       <h2 className="text-xl font-semibold pt-2">
-        {currentRound != null
-          ? `Partidas agendadas — Rodada ${currentRound}${totalRounds ? ` de ${totalRounds}` : ""}${phaseComplete ? " (fase concluída)" : ""}`
-          : "Partidas agendadas"}
-
+        Partidas agendadas
+        {currentRound != null && (
+          <span className="text-sm font-normal text-muted-foreground ml-2">
+            (rodada atual: {currentRound}{totalRounds ? ` de ${totalRounds}` : ""}{phaseComplete ? " — fase concluída" : ""})
+          </span>
+        )}
       </h2>
 
-      {/* Visualização — agrupada por Rodada → Grupo → Data (somente rodada atual) */}
-      {currentRound == null ? (
-        <p className="text-center text-muted-foreground py-8">Nenhuma rodada atual definida.</p>
-      ) : sortedDates.length === 0 ? (
-        <p className="text-center text-muted-foreground py-8">Nenhuma partida agendada para a rodada {currentRound}.</p>
+      {/* Visualização — agrupada por Rodada → Data → Grupo (todas as rodadas) */}
+      {sortedRoundKeys.length === 0 ? (
+        <p className="text-center text-muted-foreground py-8">Nenhuma partida agendada.</p>
       ) : (
-        sortedDates.map((dk) => {
-          const grupos = Object.keys(grouped[dk]).sort((a, b) => {
-            const an = parseInt(a, 10);
-            const bn = parseInt(b, 10);
-            if (!isNaN(an) && !isNaN(bn)) return an - bn;
+        sortedRoundKeys.map((rk) => {
+          const byDate = groupedByRound[rk];
+          const sortedDates = Object.keys(byDate).sort((a, b) => {
+            if (a === NO_DATE_KEY) return 1;
+            if (b === NO_DATE_KEY) return -1;
             return a.localeCompare(b);
           });
+          const roundLabel = rk === NO_ROUND_KEY ? "Sem rodada definida" : `Rodada ${rk}`;
           return (
-            <Card key={dk}>
-              <CardHeader>
-                <CardTitle className="text-lg">{formatDateTitle(dk)}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {grupos.map((g) => (
-                  <div key={g}>
-                    <h3 className="font-semibold text-sm mb-2">
-                      {/^\d+$/.test(g) ? `Grupo ${g}` : g}
-                    </h3>
-                    <div className="space-y-1 pl-2">
-                      {grouped[dk][g].map((s) => (
-                        <div key={s.id} className="flex items-center justify-between py-1.5 px-3 rounded-md bg-muted/50">
-                          <span className="text-sm">
-                            {getPlayerName(s.player1_id)} e {getPlayerName(s.player2_id)}:{" "}
-                            <strong>{s.horario ? s.horario.slice(0, 5) : (s.observacao || "—")}</strong>
-                          </span>
-                          <div className="flex gap-1">
-                            <Button variant="outline" size="sm" className="h-7" onClick={() => openEdit(s)}>
-                              <CalendarClock className="h-3.5 w-3.5 mr-1" /> Realocar
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(s.id)}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
+            <div key={rk} className="space-y-3">
+              <h3 className="text-lg font-semibold border-b pb-1">{roundLabel}</h3>
+              {sortedDates.map((dk) => {
+                const grupos = Object.keys(byDate[dk]).sort((a, b) => {
+                  const an = parseInt(a, 10);
+                  const bn = parseInt(b, 10);
+                  if (!isNaN(an) && !isNaN(bn)) return an - bn;
+                  return a.localeCompare(b);
+                });
+                return (
+                  <Card key={dk}>
+                    <CardHeader>
+                      <CardTitle className="text-lg">{formatDateTitle(dk)}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {grupos.map((g) => (
+                        <div key={g}>
+                          <h3 className="font-semibold text-sm mb-2">
+                            {/^\d+$/.test(g) ? `Grupo ${g}` : g}
+                          </h3>
+                          <div className="space-y-1 pl-2">
+                            {byDate[dk][g].map((s) => (
+                              <div key={s.id} className="flex items-center justify-between py-1.5 px-3 rounded-md bg-muted/50">
+                                <span className="text-sm">
+                                  {getPlayerName(s.player1_id)} e {getPlayerName(s.player2_id)}:{" "}
+                                  <strong>{s.horario ? s.horario.slice(0, 5) : (s.observacao || "—")}</strong>
+                                </span>
+                                <div className="flex gap-1">
+                                  <Button variant="outline" size="sm" className="h-7" onClick={() => openEdit(s)}>
+                                    <CalendarClock className="h-3.5 w-3.5 mr-1" /> Realocar
+                                  </Button>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(s.id)}>
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         </div>
                       ))}
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           );
         })
       )}
+
 
 
       {/* Edit Dialog */}

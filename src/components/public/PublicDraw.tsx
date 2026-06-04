@@ -13,10 +13,18 @@ interface PlayerLite {
   nick_playroom: string | null;
 }
 
+interface ScheduledDrawLite {
+  id: string;
+  fase: string;
+  scheduled_at: string;
+  status: string;
+}
+
 interface Props {
   matchups: Matchup[];
   players: PlayerLite[];
   fase: string;
+  scheduledDraws?: ScheduledDrawLite[];
   viewMode?: ViewMode;
 }
 

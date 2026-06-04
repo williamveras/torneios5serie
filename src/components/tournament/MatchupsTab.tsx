@@ -117,6 +117,67 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
     if (data) setMatchups(data);
   }
 
+  async function fetchScheduledDraws() {
+    const { data } = await supabase
+      .from("scheduled_draws")
+      .select("*")
+      .eq("tournament_id", tournamentId)
+      .order("scheduled_at", { ascending: true });
+    if (data) setScheduledDraws(data);
+  }
+
+  async function scheduleDraw() {
+    if (!drawDate || !drawTime) {
+      toast.error("Informe data e horário para o sorteio.");
+      return;
+    }
+    if (mode === "por_grupo" && !hasGroups) {
+      toast.error("Defina os grupos dos jogadores antes de agendar o sorteio por grupo.");
+      return;
+    }
+    // Parse as local time
+    const [y, m, d] = drawDate.split("-").map(Number);
+    const [hh, mm] = drawTime.split(":").map(Number);
+    const when = new Date(y, (m || 1) - 1, d || 1, hh || 0, mm || 0, 0, 0);
+    if (isNaN(when.getTime())) {
+      toast.error("Data ou horário inválido.");
+      return;
+    }
+    if (when.getTime() <= Date.now()) {
+      toast.error("O horário deve ser no futuro.");
+      return;
+    }
+    setSchedulingDraw(true);
+    const { error } = await supabase.from("scheduled_draws").insert({
+      tournament_id: tournamentId,
+      fase,
+      mode,
+      scheduled_at: when.toISOString(),
+      created_by: user?.id ?? null,
+    });
+    setSchedulingDraw(false);
+    if (error) {
+      toast.error("Erro ao agendar sorteio: " + error.message);
+      return;
+    }
+    toast.success("Sorteio agendado!");
+    setDrawDate("");
+    setDrawTime("");
+    fetchScheduledDraws();
+  }
+
+  async function cancelScheduledDraw(id: string) {
+    const { error } = await supabase
+      .from("scheduled_draws")
+      .update({ status: "cancelled" })
+      .eq("id", id);
+    if (error) toast.error("Erro ao cancelar: " + error.message);
+    else {
+      toast.success("Sorteio cancelado.");
+      fetchScheduledDraws();
+    }
+  }
+
   function getPlayerName(id: string) {
     const p = players.find((p) => p.id === id);
     return p?.nick_playroom || p?.nome_completo || "—";

@@ -421,6 +421,26 @@ export type Database = {
           tournament_id: string
         }[]
       }
+      register_player_via_token: {
+        Args: {
+          _comentario: string
+          _email: string
+          _nick_playroom: string
+          _nome_completo: string
+          _preferencia_horarios: string
+          _token: string
+          _whatsapp: string
+        }
+        Returns: string
+      }
+      validate_registration_token: {
+        Args: { _token: string }
+        Returns: {
+          expires_at: string
+          tournament_id: string
+          tournament_name: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

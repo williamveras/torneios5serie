@@ -40,6 +40,7 @@ export default function PublicTournament() {
   const [results, setResults] = useState<MatchResult[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [matchups, setMatchups] = useState<Matchup[]>([]);
+  const [scheduledDraws, setScheduledDraws] = useState<ScheduledDraw[]>([]);
   const [phaseStatuses, setPhaseStatuses] = useState<PhaseStatus[]>([]);
   const [moderators, setModerators] = useState<ModeratorLite[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,7 +63,8 @@ export default function PublicTournament() {
       supabase.from("phase_status").select("*").eq("tournament_id", tournamentId),
       (supabase as any).rpc("get_moderators_public", { _tournament_id: tournamentId }),
       supabase.from("matchups").select("*").eq("tournament_id", tournamentId),
-    ]).then(([t, p, r, s, ps, m, mu]) => {
+      supabase.from("scheduled_draws").select("*").eq("tournament_id", tournamentId),
+    ]).then(([t, p, r, s, ps, m, mu, sd]) => {
       if (cancelled) return;
       if (!t.data) { setNotFound(true); setLoading(false); return; }
       setTournament(t.data);
@@ -72,6 +74,7 @@ export default function PublicTournament() {
       setPhaseStatuses(ps.data || []);
       setModerators(((m.data as unknown) as ModeratorLite[]) || []);
       setMatchups(mu.data || []);
+      setScheduledDraws(sd.data || []);
       setLoading(false);
     });
 

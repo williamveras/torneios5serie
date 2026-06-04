@@ -99,6 +99,15 @@ export default function PublicTournament() {
     );
   }
 
+  // Latest concluded fase (by FASES order) drives the tab label.
+  let latestConcluded: string | null = null;
+  for (let i = FASES.length - 1; i >= 0; i--) {
+    const f = FASES[i];
+    if (phaseStatuses.find(p => p.fase === f)?.status === "concluida") { latestConcluded = f; break; }
+  }
+  const nextFaseLabel = latestConcluded ? nextPhaseName(latestConcluded) : "";
+  const standingsTabLabel = latestConcluded && nextFaseLabel ? `Classificados (${nextFaseLabel})` : "Classificação";
+
   return (
     <div className="public-page min-h-screen bg-muted/30">
       <header className="border-b bg-background">
@@ -112,7 +121,6 @@ export default function PublicTournament() {
       </header>
 
       <main className="max-w-5xl mx-auto px-3 py-6 sm:px-4">
-        {(() => null)()}
         <Tabs defaultValue="results" activationMode="manual">
           <TabsList className="mb-4 grid grid-cols-4 w-full h-auto gap-1">
             <TabsTrigger value="results" className="text-xs sm:text-sm py-2">Resultados</TabsTrigger>

@@ -135,10 +135,13 @@ export default function PublicTournament() {
 
       <main className="max-w-5xl mx-auto px-3 py-6 sm:px-4">
         <Tabs defaultValue="results" activationMode="manual">
-          <TabsList className="mb-4 grid grid-cols-4 w-full h-auto gap-1">
+          <TabsList className={`mb-4 grid w-full h-auto gap-1 ${showDrawTab ? "grid-cols-2 sm:grid-cols-5" : "grid-cols-4"}`}>
             <TabsTrigger value="results" className="text-xs sm:text-sm py-2">Resultados</TabsTrigger>
             <TabsTrigger value="standings" className="text-xs sm:text-sm py-2">{standingsTabLabel}</TabsTrigger>
             <TabsTrigger value="schedule" className="text-xs sm:text-sm py-2">Confrontos</TabsTrigger>
+            {showDrawTab && (
+              <TabsTrigger value="draw" className="text-xs sm:text-sm py-2">{drawTabLabel}</TabsTrigger>
+            )}
             <TabsTrigger value="regulamento" className="text-xs sm:text-sm py-2">Regulamento</TabsTrigger>
           </TabsList>
 

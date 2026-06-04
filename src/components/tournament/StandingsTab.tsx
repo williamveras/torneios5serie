@@ -143,6 +143,13 @@ export default function StandingsTab({ tournamentId }: Props) {
 
   const totalRows = sections.reduce((acc, s) => acc + s.rows.length, 0);
 
+  const qualifiers = useMemo(
+    () => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick),
+    [filteredByFase, players],
+  );
+  const nextFase = nextPhaseName(selectedFase);
+  const showQualifiers = isConcluded && hasAnyGroup && !!nextFase;
+
   const exportToXlsx = () => {
     const wb = XLSX.utils.book_new();
 
@@ -223,6 +230,11 @@ export default function StandingsTab({ tournamentId }: Props) {
             <p>Nenhum resultado registrado para esta fase.</p>
           </CardContent>
         </Card>
+      ) : showQualifiers ? (
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold">Classificados para a {nextFase}</h2>
+          <QualifiersView qualifiers={qualifiers} />
+        </div>
       ) : (
         <div className="space-y-6">
           {sections.map(sec => (

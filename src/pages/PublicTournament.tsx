@@ -164,6 +164,14 @@ export default function PublicTournament() {
             <PublicSchedule schedules={schedules} players={players} matchups={matchups} results={results} numeroRodadas={(tournament as any).numero_rodadas ?? null} viewMode={scheduleView} />
 
           </TabsContent>
+          {showDrawTab && drawFase && (
+            <TabsContent value="draw">
+              <div className="flex justify-end mb-3">
+                <ViewModeToggle value={drawView} onChange={setDrawView} />
+              </div>
+              <PublicDraw matchups={matchups} players={players} fase={drawFase} viewMode={drawView} />
+            </TabsContent>
+          )}
           <TabsContent value="regulamento">
             <PublicRegulamento regulamento={tournament.regulamento ?? null} />
           </TabsContent>

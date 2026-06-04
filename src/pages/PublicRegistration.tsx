@@ -10,7 +10,6 @@ import { toast } from "sonner";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 
 type LinkInfo = {
-  id: string;
   tournament_id: string;
   expires_at: string;
   tournament_name?: string;
@@ -34,45 +33,36 @@ export default function PublicRegistration() {
   useEffect(() => {
     (async () => {
       if (!token) { setError("Link inválido."); setLoading(false); return; }
-      const { data, error: err } = await supabase
-        .from("registration_links")
-        .select("id, tournament_id, expires_at")
-        .eq("token", token)
-        .maybeSingle();
-      if (err || !data) {
-        setError("Link inválido ou não encontrado.");
+      const { data, error: err } = await (supabase as any).rpc("validate_registration_token", { _token: token });
+      if (err || !data || data.length === 0) {
+        setError("Link inválido, não encontrado ou expirado.");
         setLoading(false);
         return;
       }
-      if (new Date(data.expires_at) <= new Date()) {
-        setError("Este link de inscrição expirou.");
-        setLoading(false);
-        return;
-      }
-      const { data: t } = await supabase
-        .from("tournaments")
-        .select("nome")
-        .eq("id", data.tournament_id)
-        .maybeSingle();
-      setLink({ ...data, tournament_name: t?.nome });
+      const row = data[0];
+      setLink({
+        tournament_id: row.tournament_id,
+        expires_at: row.expires_at,
+        tournament_name: row.tournament_name,
+      });
       setLoading(false);
     })();
   }, [token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!link) return;
+    if (!link || !token) return;
     if (!nome.trim()) { toast.error("Informe o nome completo"); return; }
     if (!email.trim()) { toast.error("Informe o e-mail"); return; }
     setSubmitting(true);
-    const { error: err } = await supabase.from("players").insert({
-      tournament_id: link.tournament_id,
-      nome_completo: nome.trim(),
-      nick_playroom: nick.trim() || null,
-      email: email.trim(),
-      whatsapp: whats.trim() || null,
-      preferencia_horarios: horarios.trim() || null,
-      comentario: comentario.trim() || null,
+    const { error: err } = await (supabase as any).rpc("register_player_via_token", {
+      _token: token,
+      _nome_completo: nome.trim(),
+      _nick_playroom: nick.trim() || null,
+      _email: email.trim(),
+      _whatsapp: whats.trim() || null,
+      _preferencia_horarios: horarios.trim() || null,
+      _comentario: comentario.trim() || null,
     });
     setSubmitting(false);
     if (err) {

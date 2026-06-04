@@ -67,8 +67,10 @@ function roundRobin(playerIds: string[]): Array<Array<[string, string | null]>> 
 }
 
 export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) {
+  const { user } = useAuth();
   const [players, setPlayers] = useState<Player[]>([]);
   const [matchups, setMatchups] = useState<Matchup[]>([]);
+  const [scheduledDraws, setScheduledDraws] = useState<ScheduledDraw[]>([]);
   const [fase, setFase] = useState<Fase>("Fase de Grupos");
   const [mode, setMode] = useState<Mode>("por_grupo");
   const [rodadaGeral, setRodadaGeral] = useState("");
@@ -76,6 +78,15 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
   const [saving, setSaving] = useState(false);
   const [confirmReplace, setConfirmReplace] = useState<{ existingCount: number } | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [drawDate, setDrawDate] = useState("");
+  const [drawTime, setDrawTime] = useState("");
+  const [schedulingDraw, setSchedulingDraw] = useState(false);
+
+  useEffect(() => {
+    fetchPlayers();
+    fetchMatchups();
+    fetchScheduledDraws();
+  }, [tournamentId]);
 
   useEffect(() => {
     fetchPlayers();

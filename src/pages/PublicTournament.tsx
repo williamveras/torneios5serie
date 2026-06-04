@@ -122,7 +122,7 @@ export default function PublicTournament() {
     const hasPending = scheduledDraws.some(s => s.fase === f && s.status === "pending");
     if (hasMatchups || hasPending) { drawFase = f; break; }
   }
-  const showDrawTab = drawFase != null;
+  const showDrawTab = false; // drawFase != null;
   const drawTabLabel = drawFase ? `Sorteio dos confrontos - ${drawFase}` : "";
 
   return (

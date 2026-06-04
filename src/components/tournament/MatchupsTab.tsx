@@ -7,10 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Shuffle, Trash2, CalendarPlus, Wand2, Save, RefreshCw } from "lucide-react";
+import { Shuffle, Trash2, CalendarPlus, Wand2, Save, RefreshCw, Clock, X } from "lucide-react";
 import { toast } from "sonner";
 import { FASES, type Fase } from "@/lib/constants";
+import { useAuth } from "@/hooks/useAuth";
 import type { Tables } from "@/integrations/supabase/types";
+
+type ScheduledDraw = Tables<"scheduled_draws">;
 
 type Player = Tables<"players">;
 type Matchup = Tables<"matchups">;

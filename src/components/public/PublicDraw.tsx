@@ -44,7 +44,7 @@ const scrollLine = "public-scroll-line";
 const keepTogether = (text: string | number) =>
   String(text).replace(/ /g, "\u00A0").replace(/-/g, "\u2011");
 
-export default function PublicDraw({ matchups, players, fase, viewMode = "list" }: Props) {
+export default function PublicDraw({ matchups, players, fase, scheduledDraws = [], viewMode = "list" }: Props) {
   const playerMap = useMemo(() => {
     const m = new Map<string, PlayerLite>();
     players.forEach(p => m.set(p.id, p));

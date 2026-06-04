@@ -110,6 +110,17 @@ export default function PublicTournament() {
   const nextFaseLabel = latestConcluded ? nextPhaseName(latestConcluded) : "";
   const standingsTabLabel = latestConcluded && nextFaseLabel ? `Classificados (${nextFaseLabel})` : "Classificação";
 
+  // Latest fase (by FASES order) that has matchups — drives the "Sorteio" tab.
+  let drawFase: string | null = null;
+  for (let i = FASES.length - 1; i >= 0; i--) {
+    const f = FASES[i];
+    if (matchups.some(m => (m.fase || "Fase de Grupos") === f)) { drawFase = f; break; }
+  }
+  // Only show the draw tab when there is a fase beyond Fase de Grupos
+  // (Fase de Grupos matchups are already covered by the "Confrontos" tab).
+  const showDrawTab = drawFase != null && drawFase !== "Fase de Grupos";
+  const drawTabLabel = drawFase ? `Sorteio dos confrontos - ${drawFase}` : "";
+
   return (
     <div className="public-page min-h-screen bg-muted/30">
       <header className="border-b bg-background">

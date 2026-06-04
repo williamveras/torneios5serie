@@ -20,6 +20,7 @@ type MatchResult = Tables<"match_results">;
 type Schedule = Tables<"match_schedule">;
 type PhaseStatus = Tables<"phase_status">;
 type Matchup = Tables<"matchups">;
+type ScheduledDraw = Tables<"scheduled_draws">;
 
 interface PlayerLite {
   id: string;

@@ -10,6 +10,8 @@ import PublicSchedule from "@/components/public/PublicSchedule";
 import PublicResults from "@/components/public/PublicResults";
 import PublicStandings from "@/components/public/PublicStandings";
 import PublicRegulamento from "@/components/public/PublicRegulamento";
+import { FASES } from "@/lib/constants";
+import { nextPhaseName } from "@/lib/qualifiers";
 import ViewModeToggle, { type ViewMode } from "@/components/public/ViewModeToggle";
 
 type Tournament = Tables<"tournaments">;
@@ -97,6 +99,15 @@ export default function PublicTournament() {
     );
   }
 
+  // Latest concluded fase (by FASES order) drives the tab label.
+  let latestConcluded: string | null = null;
+  for (let i = FASES.length - 1; i >= 0; i--) {
+    const f = FASES[i];
+    if (phaseStatuses.find(p => p.fase === f)?.status === "concluida") { latestConcluded = f; break; }
+  }
+  const nextFaseLabel = latestConcluded ? nextPhaseName(latestConcluded) : "";
+  const standingsTabLabel = latestConcluded && nextFaseLabel ? `Classificados (${nextFaseLabel})` : "Classificação";
+
   return (
     <div className="public-page min-h-screen bg-muted/30">
       <header className="border-b bg-background">
@@ -113,7 +124,7 @@ export default function PublicTournament() {
         <Tabs defaultValue="results" activationMode="manual">
           <TabsList className="mb-4 grid grid-cols-4 w-full h-auto gap-1">
             <TabsTrigger value="results" className="text-xs sm:text-sm py-2">Resultados</TabsTrigger>
-            <TabsTrigger value="standings" className="text-xs sm:text-sm py-2">Classificação</TabsTrigger>
+            <TabsTrigger value="standings" className="text-xs sm:text-sm py-2">{standingsTabLabel}</TabsTrigger>
             <TabsTrigger value="schedule" className="text-xs sm:text-sm py-2">Confrontos</TabsTrigger>
             <TabsTrigger value="regulamento" className="text-xs sm:text-sm py-2">Regulamento</TabsTrigger>
           </TabsList>

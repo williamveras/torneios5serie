@@ -9,6 +9,8 @@ import { AlertTriangle, CheckCircle2, BarChart3, Download } from "lucide-react";
 import * as XLSX from "xlsx";
 import { FASES } from "@/lib/constants";
 import { computeStandings } from "@/lib/standings";
+import { computeQualifiers, nextPhaseName } from "@/lib/qualifiers";
+import QualifiersView from "@/components/QualifiersView";
 import type { ViewMode } from "./ViewModeToggle";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -91,6 +93,14 @@ export default function PublicStandings({ results, players, phaseStatuses, viewM
 
   const phaseStatus = phaseStatuses.find(p => p.fase === selectedFase)?.status || "em_andamento";
   const isInProgress = phaseStatus === "em_andamento" && totalRows > 0;
+  const isConcluded = phaseStatus === "concluida";
+
+  const qualifiers = useMemo(
+    () => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick),
+    [filteredByFase, players],
+  );
+  const nextFase = nextPhaseName(selectedFase);
+  const showQualifiers = isConcluded && hasAnyGroup && !!nextFase && totalRows > 0;
 
   const exportToXlsx = () => {
     const wb = XLSX.utils.book_new();
@@ -164,6 +174,11 @@ export default function PublicStandings({ results, players, phaseStatuses, viewM
             <p>Nenhum resultado registrado para esta fase.</p>
           </CardContent>
         </Card>
+      ) : showQualifiers ? (
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold">Classificados para a {nextFase}</h2>
+          <QualifiersView qualifiers={qualifiers} />
+        </div>
       ) : viewMode === "table" ? (
         <div className="space-y-6">
           {sections.map(sec => (

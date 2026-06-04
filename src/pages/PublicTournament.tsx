@@ -10,6 +10,7 @@ import PublicSchedule from "@/components/public/PublicSchedule";
 import PublicResults from "@/components/public/PublicResults";
 import PublicStandings from "@/components/public/PublicStandings";
 import PublicRegulamento from "@/components/public/PublicRegulamento";
+import PublicDraw from "@/components/public/PublicDraw";
 import { FASES } from "@/lib/constants";
 import { nextPhaseName } from "@/lib/qualifiers";
 import ViewModeToggle, { type ViewMode } from "@/components/public/ViewModeToggle";
@@ -45,6 +46,7 @@ export default function PublicTournament() {
   const [resultsView, setResultsView] = useState<ViewMode>("list");
   const [standingsView, setStandingsView] = useState<ViewMode>("list");
   const [scheduleView, setScheduleView] = useState<ViewMode>("list");
+  const [drawView, setDrawView] = useState<ViewMode>("list");
 
   useEffect(() => {
     if (!tournamentId) return;
@@ -108,6 +110,17 @@ export default function PublicTournament() {
   const nextFaseLabel = latestConcluded ? nextPhaseName(latestConcluded) : "";
   const standingsTabLabel = latestConcluded && nextFaseLabel ? `Classificados (${nextFaseLabel})` : "Classificação";
 
+  // Latest fase (by FASES order) that has matchups — drives the "Sorteio" tab.
+  let drawFase: string | null = null;
+  for (let i = FASES.length - 1; i >= 0; i--) {
+    const f = FASES[i];
+    if (matchups.some(m => (m.fase || "Fase de Grupos") === f)) { drawFase = f; break; }
+  }
+  // Only show the draw tab when there is a fase beyond Fase de Grupos
+  // (Fase de Grupos matchups are already covered by the "Confrontos" tab).
+  const showDrawTab = drawFase != null && drawFase !== "Fase de Grupos";
+  const drawTabLabel = drawFase ? `Sorteio dos confrontos - ${drawFase}` : "";
+
   return (
     <div className="public-page min-h-screen bg-muted/30">
       <header className="border-b bg-background">
@@ -122,10 +135,13 @@ export default function PublicTournament() {
 
       <main className="max-w-5xl mx-auto px-3 py-6 sm:px-4">
         <Tabs defaultValue="results" activationMode="manual">
-          <TabsList className="mb-4 grid grid-cols-4 w-full h-auto gap-1">
+          <TabsList className={`mb-4 grid w-full h-auto gap-1 ${showDrawTab ? "grid-cols-2 sm:grid-cols-5" : "grid-cols-4"}`}>
             <TabsTrigger value="results" className="text-xs sm:text-sm py-2">Resultados</TabsTrigger>
             <TabsTrigger value="standings" className="text-xs sm:text-sm py-2">{standingsTabLabel}</TabsTrigger>
             <TabsTrigger value="schedule" className="text-xs sm:text-sm py-2">Confrontos</TabsTrigger>
+            {showDrawTab && (
+              <TabsTrigger value="draw" className="text-xs sm:text-sm py-2">{drawTabLabel}</TabsTrigger>
+            )}
             <TabsTrigger value="regulamento" className="text-xs sm:text-sm py-2">Regulamento</TabsTrigger>
           </TabsList>
 
@@ -148,6 +164,14 @@ export default function PublicTournament() {
             <PublicSchedule schedules={schedules} players={players} matchups={matchups} results={results} numeroRodadas={(tournament as any).numero_rodadas ?? null} viewMode={scheduleView} />
 
           </TabsContent>
+          {showDrawTab && drawFase && (
+            <TabsContent value="draw">
+              <div className="flex justify-end mb-3">
+                <ViewModeToggle value={drawView} onChange={setDrawView} />
+              </div>
+              <PublicDraw matchups={matchups} players={players} fase={drawFase} viewMode={drawView} />
+            </TabsContent>
+          )}
           <TabsContent value="regulamento">
             <PublicRegulamento regulamento={tournament.regulamento ?? null} />
           </TabsContent>

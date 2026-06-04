@@ -81,6 +81,31 @@ export default function PublicDraw({ matchups, players, fase, scheduledDraws = [
   }, [faseMatchups]);
 
   if (faseMatchups.length === 0) {
+    const pending = scheduledDraws
+      .filter((s) => s.fase === fase && s.status === "pending")
+      .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime())[0];
+    if (pending) {
+      const dt = new Date(pending.scheduled_at);
+      return (
+        <Card>
+          <CardContent className="py-12 text-center space-y-2">
+            <Shuffle className="h-10 w-10 mx-auto mb-3 text-primary opacity-60" />
+            <p className="text-lg font-semibold">Sorteio agendado</p>
+            <p className="text-muted-foreground">
+              O sorteio da <strong>{fase}</strong> será realizado automaticamente pelo sistema em:
+            </p>
+            <p className="text-xl font-semibold">
+              {dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
+              {" às "}
+              {dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+            </p>
+            <p className="text-xs text-muted-foreground pt-2">
+              Volte nesta página após o horário para ver os confrontos sorteados.
+            </p>
+          </CardContent>
+        </Card>
+      );
+    }
     return (
       <Card>
         <CardContent className="py-12 text-center text-muted-foreground">

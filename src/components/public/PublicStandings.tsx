@@ -93,6 +93,14 @@ export default function PublicStandings({ results, players, phaseStatuses, viewM
 
   const phaseStatus = phaseStatuses.find(p => p.fase === selectedFase)?.status || "em_andamento";
   const isInProgress = phaseStatus === "em_andamento" && totalRows > 0;
+  const isConcluded = phaseStatus === "concluida";
+
+  const qualifiers = useMemo(
+    () => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick),
+    [filteredByFase, players],
+  );
+  const nextFase = nextPhaseName(selectedFase);
+  const showQualifiers = isConcluded && hasAnyGroup && !!nextFase && totalRows > 0;
 
   const exportToXlsx = () => {
     const wb = XLSX.utils.book_new();

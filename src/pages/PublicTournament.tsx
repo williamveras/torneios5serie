@@ -10,6 +10,8 @@ import PublicSchedule from "@/components/public/PublicSchedule";
 import PublicResults from "@/components/public/PublicResults";
 import PublicStandings from "@/components/public/PublicStandings";
 import PublicRegulamento from "@/components/public/PublicRegulamento";
+import { FASES } from "@/lib/constants";
+import { nextPhaseName } from "@/lib/qualifiers";
 import ViewModeToggle, { type ViewMode } from "@/components/public/ViewModeToggle";
 
 type Tournament = Tables<"tournaments">;

@@ -173,7 +173,7 @@ export default function PublicTournament() {
               <div className="flex justify-end mb-3">
                 <ViewModeToggle value={drawView} onChange={setDrawView} />
               </div>
-              <PublicDraw matchups={matchups} players={players} fase={drawFase} viewMode={drawView} />
+              <PublicDraw matchups={matchups} players={players} fase={drawFase} scheduledDraws={scheduledDraws} viewMode={drawView} />
             </TabsContent>
           )}
           <TabsContent value="regulamento">

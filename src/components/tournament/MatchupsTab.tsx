@@ -393,6 +393,50 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
             )}
           </div>
 
+          {/* Scheduled draw */}
+          <div className="pt-3 border-t space-y-2">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <p className="text-sm font-medium">Agendar sorteio automático</p>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              O sistema realizará o sorteio automaticamente na data e horário informados, substituindo os confrontos existentes da fase selecionada.
+            </p>
+            <div className="flex flex-wrap gap-2 items-end">
+              <div>
+                <Label htmlFor="draw-date" className="text-xs">Data</Label>
+                <Input id="draw-date" type="date" value={drawDate} onChange={(e) => setDrawDate(e.target.value)} className="w-40" />
+              </div>
+              <div>
+                <Label htmlFor="draw-time" className="text-xs">Horário</Label>
+                <Input id="draw-time" type="time" value={drawTime} onChange={(e) => setDrawTime(e.target.value)} className="w-32" />
+              </div>
+              <Button variant="secondary" onClick={scheduleDraw} disabled={schedulingDraw}>
+                <Clock className="h-4 w-4 mr-1" /> {schedulingDraw ? "Agendando..." : "Agendar sorteio"}
+              </Button>
+            </div>
+          </div>
+
+          {/* Pending scheduled draws */}
+          {scheduledDraws.filter((s) => s.status === "pending").length > 0 && (
+            <div className="space-y-2 pt-2 border-t">
+              <p className="text-sm font-medium">Sorteios agendados</p>
+              {scheduledDraws.filter((s) => s.status === "pending").map((s) => {
+                const dt = new Date(s.scheduled_at);
+                return (
+                  <div key={s.id} className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2 text-sm">
+                    <span>
+                      <strong>{s.fase}</strong> — {s.mode === "geral" ? "Geral" : "Por grupo"} · {dt.toLocaleDateString("pt-BR")} às {dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => cancelScheduledDraw(s.id)} aria-label="Cancelar">
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           {/* Drafts preview */}
           {drafts.length > 0 && (
             <div className="space-y-3 pt-2 border-t">

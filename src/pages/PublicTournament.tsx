@@ -46,6 +46,7 @@ export default function PublicTournament() {
   const [resultsView, setResultsView] = useState<ViewMode>("list");
   const [standingsView, setStandingsView] = useState<ViewMode>("list");
   const [scheduleView, setScheduleView] = useState<ViewMode>("list");
+  const [drawView, setDrawView] = useState<ViewMode>("list");
 
   useEffect(() => {
     if (!tournamentId) return;

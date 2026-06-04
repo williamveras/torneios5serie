@@ -9,6 +9,8 @@ import { AlertTriangle, CheckCircle2, BarChart3, Download } from "lucide-react";
 import * as XLSX from "xlsx";
 import { FASES } from "@/lib/constants";
 import { computeStandings } from "@/lib/standings";
+import { computeQualifiers, nextPhaseName } from "@/lib/qualifiers";
+import QualifiersView from "@/components/QualifiersView";
 import type { ViewMode } from "./ViewModeToggle";
 import type { Tables } from "@/integrations/supabase/types";
 

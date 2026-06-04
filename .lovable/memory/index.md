@@ -18,4 +18,5 @@ Track users via profiles to display who registers match results.
 - [Match Scheduling](mem://features/match-scheduling) — Agenda format, hierarchical grouping by Group and Date
 - [Matchups Generator](mem://features/matchups-generator) — Aba Confrontos: gera pares por fase (round-robin ou geral), sem data/hora
 - [Group Management](mem://features/group-management) — Automatic/manual grouping, balance rules, and direct elimination transition
+- [Scheduled Draws](mem://features/scheduled-draws) — Agendamento automático de sorteios via pg_cron + aviso público
 - [Public Page](mem://features/public-page) — Public read-only route /p/:id with phase_status banner and players_public view

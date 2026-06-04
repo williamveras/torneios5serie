@@ -332,6 +332,48 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_draws: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          error_message: string | null
+          executed_at: string | null
+          fase: string
+          id: string
+          mode: string
+          scheduled_at: string
+          status: string
+          tournament_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          executed_at?: string | null
+          fase: string
+          id?: string
+          mode: string
+          scheduled_at: string
+          status?: string
+          tournament_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          executed_at?: string | null
+          fase?: string
+          id?: string
+          mode?: string
+          scheduled_at?: string
+          status?: string
+          tournament_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tournaments: {
         Row: {
           created_at: string
@@ -404,6 +446,7 @@ export type Database = {
       }
     }
     Functions: {
+      execute_scheduled_draws: { Args: never; Returns: undefined }
       get_moderators_public: {
         Args: { _tournament_id: string }
         Returns: {

@@ -7,10 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Shuffle, Trash2, CalendarPlus, Wand2, Save, RefreshCw } from "lucide-react";
+import { Shuffle, Trash2, CalendarPlus, Wand2, Save, RefreshCw, Clock, X } from "lucide-react";
 import { toast } from "sonner";
 import { FASES, type Fase } from "@/lib/constants";
+import { useAuth } from "@/hooks/useAuth";
 import type { Tables } from "@/integrations/supabase/types";
+
+type ScheduledDraw = Tables<"scheduled_draws">;
 
 type Player = Tables<"players">;
 type Matchup = Tables<"matchups">;
@@ -64,8 +67,10 @@ function roundRobin(playerIds: string[]): Array<Array<[string, string | null]>> 
 }
 
 export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) {
+  const { user } = useAuth();
   const [players, setPlayers] = useState<Player[]>([]);
   const [matchups, setMatchups] = useState<Matchup[]>([]);
+  const [scheduledDraws, setScheduledDraws] = useState<ScheduledDraw[]>([]);
   const [fase, setFase] = useState<Fase>("Fase de Grupos");
   const [mode, setMode] = useState<Mode>("por_grupo");
   const [rodadaGeral, setRodadaGeral] = useState("");
@@ -73,6 +78,15 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
   const [saving, setSaving] = useState(false);
   const [confirmReplace, setConfirmReplace] = useState<{ existingCount: number } | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [drawDate, setDrawDate] = useState("");
+  const [drawTime, setDrawTime] = useState("");
+  const [schedulingDraw, setSchedulingDraw] = useState(false);
+
+  useEffect(() => {
+    fetchPlayers();
+    fetchMatchups();
+    fetchScheduledDraws();
+  }, [tournamentId]);
 
   useEffect(() => {
     fetchPlayers();
@@ -101,6 +115,67 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
       .eq("tournament_id", tournamentId)
       .order("created_at");
     if (data) setMatchups(data);
+  }
+
+  async function fetchScheduledDraws() {
+    const { data } = await supabase
+      .from("scheduled_draws")
+      .select("*")
+      .eq("tournament_id", tournamentId)
+      .order("scheduled_at", { ascending: true });
+    if (data) setScheduledDraws(data);
+  }
+
+  async function scheduleDraw() {
+    if (!drawDate || !drawTime) {
+      toast.error("Informe data e horário para o sorteio.");
+      return;
+    }
+    if (mode === "por_grupo" && !hasGroups) {
+      toast.error("Defina os grupos dos jogadores antes de agendar o sorteio por grupo.");
+      return;
+    }
+    // Parse as local time
+    const [y, m, d] = drawDate.split("-").map(Number);
+    const [hh, mm] = drawTime.split(":").map(Number);
+    const when = new Date(y, (m || 1) - 1, d || 1, hh || 0, mm || 0, 0, 0);
+    if (isNaN(when.getTime())) {
+      toast.error("Data ou horário inválido.");
+      return;
+    }
+    if (when.getTime() <= Date.now()) {
+      toast.error("O horário deve ser no futuro.");
+      return;
+    }
+    setSchedulingDraw(true);
+    const { error } = await supabase.from("scheduled_draws").insert({
+      tournament_id: tournamentId,
+      fase,
+      mode,
+      scheduled_at: when.toISOString(),
+      created_by: user?.id ?? null,
+    });
+    setSchedulingDraw(false);
+    if (error) {
+      toast.error("Erro ao agendar sorteio: " + error.message);
+      return;
+    }
+    toast.success("Sorteio agendado!");
+    setDrawDate("");
+    setDrawTime("");
+    fetchScheduledDraws();
+  }
+
+  async function cancelScheduledDraw(id: string) {
+    const { error } = await supabase
+      .from("scheduled_draws")
+      .update({ status: "cancelled" })
+      .eq("id", id);
+    if (error) toast.error("Erro ao cancelar: " + error.message);
+    else {
+      toast.success("Sorteio cancelado.");
+      fetchScheduledDraws();
+    }
   }
 
   function getPlayerName(id: string) {
@@ -317,6 +392,50 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
               </>
             )}
           </div>
+
+          {/* Scheduled draw */}
+          <div className="pt-3 border-t space-y-2">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <p className="text-sm font-medium">Agendar sorteio automático</p>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              O sistema realizará o sorteio automaticamente na data e horário informados, substituindo os confrontos existentes da fase selecionada.
+            </p>
+            <div className="flex flex-wrap gap-2 items-end">
+              <div>
+                <Label htmlFor="draw-date" className="text-xs">Data</Label>
+                <Input id="draw-date" type="date" value={drawDate} onChange={(e) => setDrawDate(e.target.value)} className="w-40" />
+              </div>
+              <div>
+                <Label htmlFor="draw-time" className="text-xs">Horário</Label>
+                <Input id="draw-time" type="time" value={drawTime} onChange={(e) => setDrawTime(e.target.value)} className="w-32" />
+              </div>
+              <Button variant="secondary" onClick={scheduleDraw} disabled={schedulingDraw}>
+                <Clock className="h-4 w-4 mr-1" /> {schedulingDraw ? "Agendando..." : "Agendar sorteio"}
+              </Button>
+            </div>
+          </div>
+
+          {/* Pending scheduled draws */}
+          {scheduledDraws.filter((s) => s.status === "pending").length > 0 && (
+            <div className="space-y-2 pt-2 border-t">
+              <p className="text-sm font-medium">Sorteios agendados</p>
+              {scheduledDraws.filter((s) => s.status === "pending").map((s) => {
+                const dt = new Date(s.scheduled_at);
+                return (
+                  <div key={s.id} className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2 text-sm">
+                    <span>
+                      <strong>{s.fase}</strong> — {s.mode === "geral" ? "Geral" : "Por grupo"} · {dt.toLocaleDateString("pt-BR")} às {dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => cancelScheduledDraw(s.id)} aria-label="Cancelar">
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           {/* Drafts preview */}
           {drafts.length > 0 && (

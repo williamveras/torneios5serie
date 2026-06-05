@@ -402,9 +402,12 @@ export default function PublicResults({ results, players, matchups = [], phaseSt
                                 const p2 = c.players[1];
                                 const nome1 = displayName(p1.player_id);
                                 const nome2 = p2 ? displayName(p2.player_id) : null;
+                                const mesa = !isFaseDeGrupos && p2
+                                  ? mesaMap.get(pairKey(p1.player_id, p2.player_id))
+                                  : undefined;
                                 const localizacao = isFaseDeGrupos
                                   ? `rodada ${c.rodada}, grupo ${c.grupo}`
-                                  : `rodada ${c.rodada}`;
+                                  : (mesa ? `mesa ${mesa}` : `confronto avulso`);
                                 const tituloConfronto = incompleto
                                   ? `${nome1} (registro avulso) — ${localizacao}`
                                   : `${nome1} x ${nome2}, ${localizacao}`;

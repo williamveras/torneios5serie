@@ -442,6 +442,37 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
             <div className="space-y-3 pt-2 border-t">
               <p className="text-sm font-medium">Pré-visualização ({drafts.filter(d => d.player2_id).length} confrontos)</p>
               {(() => {
+                const isGroupFase = fase === "Fase de Grupos";
+                if (!isGroupFase) {
+                  // Mata-mata: render as Mesa N list, ignore group sub-header
+                  const valid = drafts.filter((d) => d.player2_id);
+                  return (
+                    <div className="rounded-md border p-3 bg-muted/30 space-y-1">
+                      {valid.map((d, i) => {
+                        const idx = drafts.indexOf(d);
+                        return (
+                          <div key={idx} className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground w-16 shrink-0">Mesa {i + 1}</span>
+                            <div className="flex-1">
+                              <DraftRow d={d} idx={idx} getPlayerName={getPlayerName} onRemove={removeDraft} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {drafts.filter((d) => !d.player2_id).map((d) => {
+                        const idx = drafts.indexOf(d);
+                        return (
+                          <div key={idx} className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground w-16 shrink-0">BYE</span>
+                            <div className="flex-1">
+                              <DraftRow d={d} idx={idx} getPlayerName={getPlayerName} onRemove={removeDraft} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                }
                 const byGroup = new Map<string, Array<{ d: DraftMatch; idx: number }>>();
                 drafts.forEach((d, idx) => {
                   const list = byGroup.get(d.grupo) || [];
@@ -465,9 +496,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
                   const rounds = [...byRound.keys()].sort((a, b) => a - b);
                   return (
                     <div key={g} className="rounded-md border p-3 bg-muted/30">
-                      <p className="font-semibold text-sm mb-2">
-                        {fase === "Fase de Grupos" ? `Grupo ${g}` : g}
-                      </p>
+                      <p className="font-semibold text-sm mb-2">Grupo {g}</p>
                       {rounds.map((r) => (
                         <div key={r} className="mb-2">
                           <p className="text-xs text-muted-foreground mb-1">Rodada {r}</p>

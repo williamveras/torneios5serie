@@ -13,6 +13,7 @@ import { FASES } from "@/lib/constants";
 import { computeStandings } from "@/lib/standings";
 import { computeQualifiers, nextPhaseName } from "@/lib/qualifiers";
 import QualifiersView from "@/components/QualifiersView";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { computeCurrentRound } from "@/lib/rounds";
 import type { Tables } from "@/integrations/supabase/types";
 

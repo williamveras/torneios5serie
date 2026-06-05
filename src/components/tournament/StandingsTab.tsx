@@ -13,6 +13,7 @@ import { FASES } from "@/lib/constants";
 import { computeStandings } from "@/lib/standings";
 import { computeQualifiers, nextPhaseName } from "@/lib/qualifiers";
 import QualifiersView from "@/components/QualifiersView";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { computeCurrentRound } from "@/lib/rounds";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -230,47 +231,69 @@ export default function StandingsTab({ tournamentId }: Props) {
             <p>Nenhum resultado registrado para esta fase.</p>
           </CardContent>
         </Card>
-      ) : showQualifiers ? (
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold">Classificados para a {nextFase}</h2>
-          <QualifiersView qualifiers={qualifiers} />
-        </div>
       ) : (
-        <div className="space-y-6">
-          {sections.map(sec => (
-            <section key={sec.grupo || "__no_group__"}>
-              {hasAnyGroup && (
-                <h3 className="font-semibold text-lg mb-2">
-                  Grupo {sec.grupo}
-                </h3>
-              )}
-              <div className="rounded-lg border bg-background">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-16">#</TableHead>
-                      <TableHead>Nick</TableHead>
-                      <TableHead className="text-right">Pts Vitória</TableHead>
-                      <TableHead className="text-right">Pts Mesa</TableHead>
-                      <TableHead>Penalidades</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sec.rows.map(s => (
-                      <TableRow key={s.playerId} className={s.hasPenalty ? "bg-destructive/5" : ""}>
-                        <TableCell className="font-bold tabular-nums">{s.position}º</TableCell>
-                        <TableCell className="font-medium">{s.nick || s.playerName}</TableCell>
-                        <TableCell className="text-right tabular-nums">{s.pontosJogo}</TableCell>
-                        <TableCell className="text-right tabular-nums">{s.pontosMesa}</TableCell>
-                        <TableCell className={s.hasPenalty ? "text-destructive" : "text-muted-foreground"}>{s.penalidades}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+        (() => {
+          const fullList = (
+            <div className="space-y-6">
+              {sections.map(sec => (
+                <section key={sec.grupo || "__no_group__"}>
+                  {hasAnyGroup && (
+                    <h3 className="font-semibold text-lg mb-2">
+                      Grupo {sec.grupo}
+                    </h3>
+                  )}
+                  <div className="rounded-lg border bg-background">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-16">#</TableHead>
+                          <TableHead>Nick</TableHead>
+                          <TableHead className="text-right">Pts Vitória</TableHead>
+                          <TableHead className="text-right">Pts Mesa</TableHead>
+                          <TableHead>Penalidades</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {sec.rows.map(s => (
+                          <TableRow key={s.playerId} className={s.hasPenalty ? "bg-destructive/5" : ""}>
+                            <TableCell className="font-bold tabular-nums">{s.position}º</TableCell>
+                            <TableCell className="font-medium">{s.nick || s.playerName}</TableCell>
+                            <TableCell className="text-right tabular-nums">{s.pontosJogo}</TableCell>
+                            <TableCell className="text-right tabular-nums">{s.pontosMesa}</TableCell>
+                            <TableCell className={s.hasPenalty ? "text-destructive" : "text-muted-foreground"}>{s.penalidades}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </section>
+              ))}
+            </div>
+          );
+
+          if (showQualifiers) {
+            return (
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <h2 className="text-xl font-bold">Classificados para a {nextFase}</h2>
+                  <QualifiersView qualifiers={qualifiers} />
+                </div>
+                <Accordion type="single" collapsible className="rounded-md border bg-background px-4">
+                  <AccordionItem value="full-list" className="border-b-0">
+                    <AccordionTrigger className="text-left">
+                      Lista completa de jogadores e suas respectivas posições no torneio
+                    </AccordionTrigger>
+                    <AccordionContent className="pt-2">
+                      {fullList}
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </div>
-            </section>
-          ))}
-        </div>
+            );
+          }
+
+          return fullList;
+        })()
       )}
     </div>
   );

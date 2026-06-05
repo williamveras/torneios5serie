@@ -341,6 +341,25 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
     numeroRodadas,
   );
 
+  // Mesa number lookup for mata-mata fases (matchup creation order = mesa)
+  const mesaByPair = (() => {
+    const map = new Map<string, number>(); // key: `${fase}|${sorted-pair}` -> mesa
+    const counters = new Map<string, number>();
+    matchups.forEach((mu) => {
+      const f = mu.fase || "Fase de Grupos";
+      if (f === "Fase de Grupos") return;
+      const next = (counters.get(f) || 0) + 1;
+      counters.set(f, next);
+      const pair = [mu.player1_id, mu.player2_id].sort().join("|");
+      map.set(`${f}|${pair}`, next);
+    });
+    return map;
+  })();
+  const getMesa = (fase: string, p1: string, p2: string): number | null => {
+    const pair = [p1, p2].sort().join("|");
+    return mesaByPair.get(`${fase}|${pair}`) ?? null;
+  };
+
 
   // Group schedules by round → date → grupo. Admin shows ALL rounds.
   function groupedSchedulesByRound() {

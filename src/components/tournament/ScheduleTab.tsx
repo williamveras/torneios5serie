@@ -466,17 +466,29 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="schedule-grupo">Grupo</Label>
-              <Input
-                id="schedule-grupo"
-                type="text"
-                value={grupo ? (/^\d+$/.test(grupo) ? `Grupo ${grupo}` : grupo) : ""}
-                readOnly
-                placeholder="Preenchido automaticamente ao escolher o jogador"
-                className="bg-muted"
-              />
-            </div>
+            {(() => {
+              const isGroupG = grupo && /^\d+$/.test(grupo);
+              const mesa = !isGroupG && grupo && player1 && player2 ? getMesa(grupo, player1, player2) : null;
+              const label = isGroupG ? "Grupo" : "Mesa";
+              const displayValue = !grupo
+                ? ""
+                : isGroupG
+                  ? `Grupo ${grupo}`
+                  : (mesa != null ? `Mesa ${mesa} (${grupo})` : grupo);
+              return (
+                <div>
+                  <Label htmlFor="schedule-grupo">{label}</Label>
+                  <Input
+                    id="schedule-grupo"
+                    type="text"
+                    value={displayValue}
+                    readOnly
+                    placeholder="Preenchido automaticamente ao escolher o jogador"
+                    className="bg-muted"
+                  />
+                </div>
+              );
+            })()}
             <div>
               <Label htmlFor="schedule-rodada">Rodada (opcional)</Label>
               <Input

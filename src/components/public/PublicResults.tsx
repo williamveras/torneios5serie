@@ -114,9 +114,15 @@ const formatDayLabel = (d: Date) => {
   return `Jogos de ${weekday} (${p.day}/${p.month})`;
 };
 
-export default function PublicResults({ results, players, phaseStatuses, moderators, viewMode = "list" }: Props) {
-  const [selectedFase, setSelectedFase] = useState<string>("Fase de Grupos");
+export default function PublicResults({ results, players, matchups = [], phaseStatuses, moderators, viewMode = "list" }: Props) {
+  const activeFase = useMemo(() => getActivePublicPhase(phaseStatuses), [phaseStatuses]);
+  const [selectedFase, setSelectedFase] = useState<string>(activeFase);
   const [selectedRodada, setSelectedRodada] = useState<string>("__all__");
+
+  // When phaseStatuses changes (e.g., a phase is concluded), realign default
+  useEffect(() => {
+    setSelectedFase(activeFase);
+  }, [activeFase]);
 
   const playerMap = useMemo(() => {
     const m = new Map<string, PlayerLite>();
@@ -152,17 +158,23 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
     [results, selectedFase],
   );
 
-  const isFaseDeGrupos = selectedFase === "Fase de Grupos";
+  const isFaseDeGrupos = isGroupPhase(selectedFase);
+
+  // Mesa map for non-group phases (matchup order = mesa number)
+  const mesaMap = useMemo(
+    () => buildMesaMap(matchups as any, selectedFase),
+    [matchups, selectedFase],
+  );
 
   const availableRodadas = useMemo(() => {
+    if (!isFaseDeGrupos) return [] as number[];
     const set = new Set<number>();
     filtered.forEach(r => set.add(r.rodada));
     return Array.from(set).sort((a, b) => a - b);
-  }, [filtered]);
+  }, [filtered, isFaseDeGrupos]);
 
   const lastRodada = availableRodadas.length > 0 ? availableRodadas[availableRodadas.length - 1] : null;
 
-  // Reset rodada selection to "last" when fase changes
   useEffect(() => {
     setSelectedRodada("__all__");
   }, [selectedFase]);
@@ -205,16 +217,27 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
     );
   }, [rodadaFiltered]);
 
-  // Group confrontos by rodada (desc), then by day (most recent first) inside each rodada
+  // Compute grouping key for each confronto: rodada (group phase) or mesa (non-group)
+  const confrontoGroupKey = (c: Confronto): number => {
+    if (isFaseDeGrupos) return c.rodada;
+    if (c.players.length < 2) return 0;
+    const mesa = mesaMap.get(pairKey(c.players[0].player_id, c.players[1].player_id));
+    return mesa ?? 0;
+  };
+
+  const groupLabel = (n: number) => isFaseDeGrupos ? `Rodada ${n}` : (n > 0 ? `Mesa ${n}` : "Sem mesa");
+
+  // Group confrontos by rodada/mesa (desc), then by day (most recent first)
   const rodadasGroups = useMemo(() => {
     const rodMap = new Map<number, Map<string, { key: string; date: Date; confrontos: Confronto[] }>>();
     for (const c of confrontos) {
       const d = new Date(c.created_at);
       const dayKey = formatDayKey(d);
-      let dayMap = rodMap.get(c.rodada);
+      const gk = confrontoGroupKey(c);
+      let dayMap = rodMap.get(gk);
       if (!dayMap) {
         dayMap = new Map();
-        rodMap.set(c.rodada, dayMap);
+        rodMap.set(gk, dayMap);
       }
       const existing = dayMap.get(dayKey);
       if (existing) {
@@ -224,12 +247,13 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
       }
     }
     return Array.from(rodMap.entries())
-      .sort((a, b) => b[0] - a[0])
+      .sort((a, b) => isFaseDeGrupos ? b[0] - a[0] : a[0] - b[0])
       .map(([rodada, dayMap]) => ({
         rodada,
         dias: Array.from(dayMap.values()).sort((a, b) => b.key.localeCompare(a.key)),
       }));
-  }, [confrontos]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [confrontos, isFaseDeGrupos, mesaMap]);
 
   const defaultOpenRodadas = useMemo<string[]>(
     () => [],

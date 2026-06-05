@@ -533,13 +533,52 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
             if (!isNaN(na) && !isNaN(nb)) return na - nb;
             return a.localeCompare(b);
           });
+          const isGroupFase = f === "Fase de Grupos";
+          // For non-group fases, render as a flat Mesa N list ordered by created_at
+          const eliminationList = !isGroupFase
+            ? matchups
+                .filter((m) => m.fase === f)
+                .slice()
+                .sort((a, b) => a.created_at.localeCompare(b.created_at))
+            : [];
           return (
             <Card key={f}>
               <CardHeader>
                 <CardTitle className="text-lg">{f}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {groups.map((g) => {
+                {!isGroupFase ? (
+                  <div className="space-y-1">
+                    {eliminationList.map((m, i) => (
+                      <div key={m.id} className="flex items-center justify-between py-1.5 px-3 rounded-md bg-muted/50">
+                        <span className="text-sm">
+                          <span className="text-muted-foreground mr-2">Mesa {i + 1}:</span>
+                          {getPlayerName(m.player1_id)} <span className="text-muted-foreground">vs</span> {getPlayerName(m.player2_id)}
+                        </span>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7"
+                            onClick={() => onScheduleMatchup(m.player1_id, m.player2_id, m.grupo)}
+                          >
+                            <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Agendar partida
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-destructive"
+                            onClick={() => setDeleteId(m.id)}
+                            aria-label="Remover confronto"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  groups.map((g) => {
                   const list = grouped[f][g];
                   const byRound = new Map<number | "_", Matchup[]>();
                   list.forEach((m) => {
@@ -555,9 +594,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
                   });
                   return (
                     <div key={g}>
-                      <h4 className="font-semibold text-sm mb-2">
-                        {f === "Fase de Grupos" ? `Grupo ${g}` : g}
-                      </h4>
+                      <h4 className="font-semibold text-sm mb-2">Grupo {g}</h4>
                       {keys.map((k) => (
                         <div key={String(k)} className="mb-2">
                           {k !== "_" && (
@@ -595,7 +632,8 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
                       ))}
                     </div>
                   );
-                })}
+                  })
+                )}
               </CardContent>
             </Card>
           );

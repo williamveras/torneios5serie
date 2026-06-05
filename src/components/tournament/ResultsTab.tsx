@@ -116,7 +116,7 @@ export default function ResultsTab({ tournamentId }: Props) {
   };
 
   const handleSave = async () => {
-    if (!rodada.trim()) { toast.error("Informe a rodada"); return; }
+    if (!rodada.trim()) { toast.error(isFaseDeGrupos ? "Informe a rodada" : "Informe a mesa"); return; }
     if (results.some(r => !r.player_id || !r.pontos_jogo || !r.pontos_mesa)) {
       toast.error("Preencha todos os campos obrigatórios"); return;
     }
@@ -186,8 +186,8 @@ export default function ResultsTab({ tournamentId }: Props) {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="rodada-input">Rodada</Label>
-            <Input id="rodada-input" type="number" min={1} value={rodada} onChange={e => setRodada(e.target.value)} placeholder="Ex: 1" />
+            <Label htmlFor="rodada-input">{isFaseDeGrupos ? "Rodada" : "Mesa"}</Label>
+            <Input id="rodada-input" type="number" min={1} value={rodada} onChange={e => setRodada(e.target.value)} placeholder={isFaseDeGrupos ? "Ex: 1" : "Ex: 1, 2, 3..."} />
           </div>
         </div>
 

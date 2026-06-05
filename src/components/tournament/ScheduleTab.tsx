@@ -75,7 +75,7 @@ const GRUPOS = Array.from({ length: 30 }, (_, i) => String(i + 1));
 export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlayer2Id, prefillGrupo, onPrefillConsumed }: Props) {
   const [players, setPlayers] = useState<Player[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [matchups, setMatchups] = useState<{ player1_id: string; player2_id: string; rodada: number | null; fase: string | null }[]>([]);
+  const [matchups, setMatchups] = useState<{ player1_id: string; player2_id: string; rodada: number | null; fase: string | null; created_at: string }[]>([]);
   const [results, setResults] = useState<{ player_id: string; rodada: number; fase: string | null }[]>([]);
   const [numeroRodadas, setNumeroRodadas] = useState<number | null>(null);
 
@@ -116,8 +116,9 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
   async function fetchMatchups() {
     const { data } = await supabase
       .from("matchups")
-      .select("player1_id, player2_id, rodada, fase")
-      .eq("tournament_id", tournamentId);
+      .select("player1_id, player2_id, rodada, fase, created_at")
+      .eq("tournament_id", tournamentId)
+      .order("created_at", { ascending: true });
     if (data) setMatchups(data as any);
   }
 
@@ -340,6 +341,25 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
     numeroRodadas,
   );
 
+  // Mesa number lookup for mata-mata fases (matchup creation order = mesa)
+  const mesaByPair = (() => {
+    const map = new Map<string, number>(); // key: `${fase}|${sorted-pair}` -> mesa
+    const counters = new Map<string, number>();
+    matchups.forEach((mu) => {
+      const f = mu.fase || "Fase de Grupos";
+      if (f === "Fase de Grupos") return;
+      const next = (counters.get(f) || 0) + 1;
+      counters.set(f, next);
+      const pair = [mu.player1_id, mu.player2_id].sort().join("|");
+      map.set(`${f}|${pair}`, next);
+    });
+    return map;
+  })();
+  const getMesa = (fase: string, p1: string, p2: string): number | null => {
+    const pair = [p1, p2].sort().join("|");
+    return mesaByPair.get(`${fase}|${pair}`) ?? null;
+  };
+
 
   // Group schedules by round → date → grupo. Admin shows ALL rounds.
   function groupedSchedulesByRound() {
@@ -446,17 +466,29 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="schedule-grupo">Grupo</Label>
-              <Input
-                id="schedule-grupo"
-                type="text"
-                value={grupo ? (/^\d+$/.test(grupo) ? `Grupo ${grupo}` : grupo) : ""}
-                readOnly
-                placeholder="Preenchido automaticamente ao escolher o jogador"
-                className="bg-muted"
-              />
-            </div>
+            {(() => {
+              const isGroupG = grupo && /^\d+$/.test(grupo);
+              const mesa = !isGroupG && grupo && player1 && player2 ? getMesa(grupo, player1, player2) : null;
+              const label = isGroupG ? "Grupo" : "Mesa";
+              const displayValue = !grupo
+                ? ""
+                : isGroupG
+                  ? `Grupo ${grupo}`
+                  : (mesa != null ? `Mesa ${mesa} (${grupo})` : grupo);
+              return (
+                <div>
+                  <Label htmlFor="schedule-grupo">{label}</Label>
+                  <Input
+                    id="schedule-grupo"
+                    type="text"
+                    value={displayValue}
+                    readOnly
+                    placeholder="Preenchido automaticamente ao escolher o jogador"
+                    className="bg-muted"
+                  />
+                </div>
+              );
+            })()}
             <div>
               <Label htmlFor="schedule-rodada">Rodada (opcional)</Label>
               <Input
@@ -525,31 +557,40 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
                         <CardTitle className="text-lg">{formatDateTitle(dk)}</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
-                        {grupos.map((g) => (
-                          <div key={g}>
-                            <h3 className="font-semibold text-sm mb-2">
-                              {/^\d+$/.test(g) ? `Grupo ${g}` : g}
-                            </h3>
-                            <div className="space-y-1 pl-2">
-                              {byDate[dk][g].map((s) => (
-                                <div key={s.id} className="flex items-center justify-between py-1.5 px-3 rounded-md bg-muted/50">
-                                  <span className="text-sm">
-                                    {getPlayerName(s.player1_id)} e {getPlayerName(s.player2_id)}:{" "}
-                                    <strong>{s.horario ? s.horario.slice(0, 5) : (s.observacao || "—")}</strong>
-                                  </span>
-                                  <div className="flex gap-1">
-                                    <Button variant="outline" size="sm" className="h-7" onClick={() => openEdit(s)}>
-                                      <CalendarClock className="h-3.5 w-3.5 mr-1" /> Realocar
-                                    </Button>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(s.id)}>
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              ))}
+                        {grupos.map((g) => {
+                          const isGroupG = /^\d+$/.test(g);
+                          return (
+                            <div key={g}>
+                              {isGroupG && (
+                                <h3 className="font-semibold text-sm mb-2">Grupo {g}</h3>
+                              )}
+                              <div className={`space-y-1 ${isGroupG ? "pl-2" : ""}`}>
+                                {byDate[dk][g].map((s) => {
+                                  const mesa = !isGroupG ? getMesa(g, s.player1_id, s.player2_id) : null;
+                                  return (
+                                    <div key={s.id} className="flex items-center justify-between py-1.5 px-3 rounded-md bg-muted/50">
+                                      <span className="text-sm">
+                                        {mesa != null && (
+                                          <span className="text-muted-foreground mr-2">Mesa {mesa}:</span>
+                                        )}
+                                        {getPlayerName(s.player1_id)} e {getPlayerName(s.player2_id)}:{" "}
+                                        <strong>{s.horario ? s.horario.slice(0, 5) : (s.observacao || "—")}</strong>
+                                      </span>
+                                      <div className="flex gap-1">
+                                        <Button variant="outline" size="sm" className="h-7" onClick={() => openEdit(s)}>
+                                          <CalendarClock className="h-3.5 w-3.5 mr-1" /> Realocar
+                                        </Button>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(s.id)}>
+                                          <Trash2 className="h-3.5 w-3.5" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </CardContent>
                     </Card>
                   );

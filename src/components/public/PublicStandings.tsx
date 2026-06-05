@@ -177,7 +177,7 @@ export default function PublicStandings({ results, players, phaseStatuses, viewM
       ) : showQualifiers ? (
         <div className="space-y-4">
           <h2 className="text-xl font-bold">Classificados para a {nextFase}</h2>
-          <QualifiersView qualifiers={qualifiers} />
+          <QualifiersView qualifiers={qualifiers} viewMode={viewMode} />
         </div>
       ) : viewMode === "table" ? (
         <div className="space-y-6">

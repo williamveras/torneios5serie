@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { AlertTriangle, CheckCircle2, BarChart3, Download } from "lucide-react";
 import * as XLSX from "xlsx";
 import { FASES } from "@/lib/constants";

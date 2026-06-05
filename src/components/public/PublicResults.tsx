@@ -304,11 +304,14 @@ export default function PublicResults({ results, players, matchups = [], phaseSt
       ) : (
         <>
           <p className="text-sm text-muted-foreground">
-            Acompanhe aqui os resultados individuais dos confrontos já ocorridos. Toque em uma rodada para expandir.
+            {isFaseDeGrupos
+              ? "Acompanhe aqui os resultados individuais dos confrontos já ocorridos. Toque em uma rodada para expandir."
+              : `Resultados da ${selectedFase}, organizados por Mesa. Toque em uma mesa para expandir.`}
           </p>
           <Accordion type="multiple" defaultValue={defaultOpenRodadas} className="space-y-2">
             {rodadasGroups.map(group => {
               const totalConfrontos = group.dias.reduce((acc, d) => acc + d.confrontos.length, 0);
+              const headerLabel = groupLabel(group.rodada);
               return (
                 <AccordionItem
                   key={`rodada-${group.rodada}`}
@@ -317,7 +320,7 @@ export default function PublicResults({ results, players, matchups = [], phaseSt
                 >
                   <AccordionTrigger className="px-4 py-3 hover:no-underline">
                     <div className="flex items-center gap-3 text-left">
-                      <span className="text-base font-semibold">Rodada {group.rodada}</span>
+                      <span className="text-base font-semibold">{headerLabel}</span>
                       <span className="text-xs text-muted-foreground">
                         ({totalConfrontos} {totalConfrontos === 1 ? "confronto" : "confrontos"})
                       </span>

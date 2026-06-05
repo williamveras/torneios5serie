@@ -1,41 +1,56 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { QualifiersResult, QualifierRow } from "@/lib/qualifiers";
+import type { ViewMode } from "@/components/public/ViewModeToggle";
 
 interface Props {
   qualifiers: QualifiersResult;
   variant?: "admin" | "public";
+  viewMode?: ViewMode;
 }
 
-function Section({ title, rows, showGroup }: { title: string; rows: QualifierRow[]; showGroup: boolean }) {
-  if (rows.length === 0) return null;
+const noWrapText = "public-nowrap";
+const scrollLine = "public-scroll-line";
+const compactCardPadding = "p-3 min-[360px]:p-4";
+const keepTogether = (text: string | number) =>
+  String(text).replace(/ /g, "\u00A0").replace(/-/g, "\u2011");
+
+const naturalGroupSort = (a: string, b: string) => {
+  const na = Number(a), nb = Number(b);
+  if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
+  return a.localeCompare(b);
+};
+
+function TableSection({ title, rows, usePos }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall" }) {
   return (
     <section>
       <h3 className="font-semibold text-lg mb-2">{title}</h3>
-      <div className="rounded-lg border bg-background overflow-x-auto">
+      <div className="rounded-md border overflow-x-auto">
         <Table className="min-w-max">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-14">#</TableHead>
+              <TableHead className="w-12">#</TableHead>
               <TableHead>Jogador</TableHead>
-              {showGroup && <TableHead className="whitespace-nowrap">Grupo</TableHead>}
-              {showGroup && <TableHead className="whitespace-nowrap">Pos. no grupo</TableHead>}
               <TableHead className="text-right whitespace-nowrap">Pts. vitória</TableHead>
               <TableHead className="text-right whitespace-nowrap">Pts. mesa</TableHead>
               <TableHead className="whitespace-nowrap">Penalidades</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.map(s => (
-              <TableRow key={`${s.grupo}-${s.playerId}`} className={s.hasPenalty ? "bg-destructive/5" : ""}>
-                <TableCell className="font-bold tabular-nums">{s.position}º</TableCell>
-                <TableCell className="font-medium whitespace-nowrap">{s.nick || s.playerName}</TableCell>
-                {showGroup && <TableCell className="whitespace-nowrap">{s.grupo}</TableCell>}
-                {showGroup && <TableCell className="whitespace-nowrap tabular-nums">{s.groupPosition}º</TableCell>}
-                <TableCell className="text-right tabular-nums">{s.pontosJogo}</TableCell>
-                <TableCell className="text-right tabular-nums">{s.pontosMesa}</TableCell>
-                <TableCell className={s.hasPenalty ? "text-destructive" : "text-muted-foreground"}>{s.penalidades}</TableCell>
-              </TableRow>
-            ))}
+            {rows.map(s => {
+              const pos = usePos === "group" ? s.groupPosition : s.position;
+              const displayName = s.nick || s.playerName;
+              return (
+                <TableRow key={`${s.grupo}-${s.playerId}`} className={s.hasPenalty ? "bg-destructive/5" : ""}>
+                  <TableCell className="font-bold tabular-nums">{pos}º</TableCell>
+                  <TableCell className={`font-medium ${noWrapText}`}>{displayName}</TableCell>
+                  <TableCell className={`text-right tabular-nums ${noWrapText}`}>{s.pontosJogo}</TableCell>
+                  <TableCell className={`text-right tabular-nums ${noWrapText}`}>{s.pontosMesa}</TableCell>
+                  <TableCell className={`${noWrapText} ${s.hasPenalty ? "text-destructive" : "text-muted-foreground"}`}>
+                    {s.penalidades}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
@@ -43,19 +58,65 @@ function Section({ title, rows, showGroup }: { title: string; rows: QualifierRow
   );
 }
 
-export default function QualifiersView({ qualifiers }: Props) {
+function ListSection({ title, rows, usePos }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall" }) {
+  return (
+    <section>
+      <h3 className="font-semibold text-lg mb-2">{title}</h3>
+      <ol className="space-y-2" aria-label={title}>
+        {rows.map(s => {
+          const pos = usePos === "group" ? s.groupPosition : s.position;
+          const displayName = s.nick || s.playerName;
+          return (
+            <li
+              key={`${s.grupo}-${s.playerId}`}
+              className={`rounded-md border bg-background flex items-start gap-3 min-w-0 overflow-hidden ${compactCardPadding} ${s.hasPenalty ? "bg-destructive/5" : ""}`}
+            >
+              <div className="font-bold tabular-nums text-lg min-w-[2.5rem]" aria-label={`Posição ${pos}`}>
+                {pos}º
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className={`font-medium ${scrollLine}`}><span className="public-line-content">{keepTogether(displayName)}</span></p>
+                <p className={`text-sm mt-0.5 ${scrollLine}`}>
+                  <span className="public-line-content">{keepTogether(`${s.pontosJogo} pontos de vitória, ${s.pontosMesa} pontos de mesa.`)}</span>
+                </p>
+                <p className={`text-sm ${scrollLine} ${s.hasPenalty ? "text-destructive" : "text-muted-foreground"}`}>
+                  <span className="public-line-content">{keepTogether(`Penalidades: ${s.penalidades}.`)}</span>
+                </p>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
+}
+
+export default function QualifiersView({ qualifiers, viewMode = "list" }: Props) {
+  const Section = viewMode === "table" ? TableSection : ListSection;
+
+  if (!qualifiers.hasGroups) {
+    return (
+      <div className="space-y-6">
+        <Section title="Classificados" rows={qualifiers.direct} usePos="overall" />
+      </div>
+    );
+  }
+
+  const groups = [...new Set(qualifiers.direct.map(r => r.grupo))].sort(naturalGroupSort);
+
   return (
     <div className="space-y-6">
-      <Section
-        title="Classificados diretamente (5 primeiros de cada grupo)"
-        rows={qualifiers.direct}
-        showGroup={qualifiers.hasGroups}
-      />
-      {qualifiers.hasGroups && (
+      {groups.map(g => {
+        const rows = qualifiers.direct
+          .filter(r => r.grupo === g)
+          .sort((a, b) => a.groupPosition - b.groupPosition);
+        return <Section key={g} title={`Grupo ${g}`} rows={rows} usePos="group" />;
+      })}
+      {qualifiers.repescagem.length > 0 && (
         <Section
-          title="Classificados via repescagem (18 melhores 6º colocados)"
+          title="Repescagem — melhores 6º colocados"
           rows={qualifiers.repescagem}
-          showGroup
+          usePos="overall"
         />
       )}
     </div>

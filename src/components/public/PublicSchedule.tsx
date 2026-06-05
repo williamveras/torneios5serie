@@ -168,7 +168,7 @@ export default function PublicSchedule({ schedules, players, matchups, results =
 
   const description = isGroup
     ? "Atenção aos confrontos e horários dos jogos ainda a decorrer:"
-    : `Confrontos da ${activeFase} — organizados por Mesa, na ordem em que foram cadastrados.`;
+    : `Confrontos da ${activeFase}.`;
 
   // ===== Elimination (non-group) rendering =====
   if (!isGroup) {

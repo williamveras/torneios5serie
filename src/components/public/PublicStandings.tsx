@@ -141,6 +141,95 @@ export default function PublicStandings({ results, players, phaseStatuses, viewM
     XLSX.writeFile(wb, `classificacao_${selectedFase.replace(/ /g, "_")}.xlsx`);
   };
 
+  const renderStandingsSections = () => (
+    viewMode === "table" ? (
+      <div className="space-y-6">
+        {sections.map(sec => (
+          <section key={sec.grupo || "__no_group__"}>
+            {hasAnyGroup && (
+              <h3 className="font-semibold text-lg mb-2">Grupo {sec.grupo}</h3>
+            )}
+            <div className="rounded-md border overflow-x-auto">
+              <Table className="min-w-max">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12">#</TableHead>
+                    <TableHead>Jogador</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">Pts. vitória</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">Pts. mesa</TableHead>
+                    <TableHead className="whitespace-nowrap">Penalidades</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sec.rows.map(s => {
+                    const displayName = s.nick || s.playerName;
+                    return (
+                      <TableRow key={s.playerId} className={s.hasPenalty ? "bg-destructive/5" : ""}>
+                        <TableCell className="font-bold tabular-nums">{s.position}º</TableCell>
+                        <TableCell className={`font-medium ${noWrapText}`}>{displayName}</TableCell>
+                        <TableCell className={`text-right tabular-nums ${noWrapText}`}>{s.pontosJogo}</TableCell>
+                        <TableCell className={`text-right tabular-nums ${noWrapText}`}>{s.pontosMesa}</TableCell>
+                        <TableCell className={`${noWrapText} ${s.hasPenalty ? "text-destructive" : "text-muted-foreground"}`}>
+                          {s.penalidades}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </section>
+        ))}
+      </div>
+    ) : (
+      <div className="space-y-6">
+        {sections.map(sec => (
+          <section key={sec.grupo || "__no_group__"}>
+            {hasAnyGroup && (
+              <h3 className="font-semibold text-lg mb-2">
+                Grupo {sec.grupo}
+              </h3>
+            )}
+            <ol
+              className="space-y-2"
+              aria-label={
+                hasAnyGroup
+                  ? `Classificação do grupo ${sec.grupo}`
+                  : `Classificação — ${selectedFase}`
+              }
+            >
+              {sec.rows.map(s => {
+                const displayName = s.nick || s.playerName;
+                return (
+                  <li
+                    key={s.playerId}
+                    className={`rounded-md border bg-background flex items-start gap-3 min-w-0 overflow-hidden ${compactCardPadding} ${s.hasPenalty ? "bg-destructive/5" : ""}`}
+                  >
+                    <div
+                      className="font-bold tabular-nums text-lg min-w-[2.5rem]"
+                      aria-label={`Posição ${s.position}`}
+                    >
+                      {s.position}º
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`font-medium ${scrollLine}`}><span className="public-line-content">{keepTogether(displayName)}</span></p>
+                      <p className={`text-sm mt-0.5 ${scrollLine}`}>
+                        <span className="public-line-content">{keepTogether(`${s.pontosJogo} pontos de vitória, ${s.pontosMesa} pontos de mesa.`)}</span>
+                      </p>
+                      <p className={`text-sm ${scrollLine} ${s.hasPenalty ? "text-destructive" : "text-muted-foreground"}`}>
+                        <span className="public-line-content">{keepTogether(`Penalidades: ${s.penalidades}.`)}</span>
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
+        ))}
+      </div>
+    )
+  );
+
   return (
     <div className="space-y-4">
       {totalRows > 0 && (
@@ -162,7 +251,17 @@ export default function PublicStandings({ results, players, phaseStatuses, viewM
           <Alert className="border-green-500/50 bg-green-500/10" role="status">
             <CheckCircle2 className="h-4 w-4 text-green-600" />
             <AlertDescription>
-              <strong>Fase encerrada</strong> — classificação oficial.
+              {showQualifiers ? (
+                <div className="space-y-2">
+                  <p><strong>Fase encerrada</strong> — classificação oficial.</p>
+                  <p>Abaixo, segue a lista de classificados para a {nextFase}.</p>
+                  <p>
+                    Se você deseja visualizar a lista completa dos jogadores e suas respectivas posições, até mesmo os que não passaram, pode procurar aqui mesmo, no fim dessa página, a guia "lista completa de jogadores e suas respectivas posições no torneio."
+                  </p>
+                </div>
+              ) : (
+                <><strong>Fase encerrada</strong> — classificação oficial.</>
+              )}
             </AlertDescription>
           </Alert>
         )
@@ -176,96 +275,26 @@ export default function PublicStandings({ results, players, phaseStatuses, viewM
           </CardContent>
         </Card>
       ) : showQualifiers ? (
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold">Classificados para a {nextFase}</h2>
-          <QualifiersView qualifiers={qualifiers} viewMode={viewMode} />
-        </div>
-      ) : viewMode === "table" ? (
         <div className="space-y-6">
-          {sections.map(sec => (
-            <section key={sec.grupo || "__no_group__"}>
-              {hasAnyGroup && (
-                <h3 className="font-semibold text-lg mb-2">Grupo {sec.grupo}</h3>
-              )}
-              <div className="rounded-md border overflow-x-auto">
-                <Table className="min-w-max">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12">#</TableHead>
-                      <TableHead>Jogador</TableHead>
-                      <TableHead className="text-right whitespace-nowrap">Pts. vitória</TableHead>
-                      <TableHead className="text-right whitespace-nowrap">Pts. mesa</TableHead>
-                      <TableHead className="whitespace-nowrap">Penalidades</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sec.rows.map(s => {
-                      const displayName = s.nick || s.playerName;
-                      return (
-                        <TableRow key={s.playerId} className={s.hasPenalty ? "bg-destructive/5" : ""}>
-                          <TableCell className="font-bold tabular-nums">{s.position}º</TableCell>
-                          <TableCell className={`font-medium ${noWrapText}`}>{displayName}</TableCell>
-                          <TableCell className={`text-right tabular-nums ${noWrapText}`}>{s.pontosJogo}</TableCell>
-                          <TableCell className={`text-right tabular-nums ${noWrapText}`}>{s.pontosMesa}</TableCell>
-                          <TableCell className={`${noWrapText} ${s.hasPenalty ? "text-destructive" : "text-muted-foreground"}`}>
-                            {s.penalidades}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            </section>
-          ))}
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold">Classificados para a {nextFase}</h2>
+            <QualifiersView qualifiers={qualifiers} viewMode={viewMode} />
+          </div>
+          <Accordion type="single" collapsible className="rounded-md border bg-background px-4">
+            <AccordionItem value="full-list" className="border-b-0">
+              <AccordionTrigger className="text-left">
+                Lista completa de jogadores e suas respectivas posições no torneio
+              </AccordionTrigger>
+              <AccordionContent className="pt-2">
+                {renderStandingsSections()}
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
       ) : (
-        <div className="space-y-6">
-          {sections.map(sec => (
-            <section key={sec.grupo || "__no_group__"}>
-              {hasAnyGroup && (
-                <h3 className="font-semibold text-lg mb-2">
-                  Grupo {sec.grupo}
-                </h3>
-              )}
-              <ol
-                className="space-y-2"
-                aria-label={
-                  hasAnyGroup
-                    ? `Classificação do grupo ${sec.grupo}`
-                    : `Classificação — ${selectedFase}`
-                }
-              >
-                {sec.rows.map(s => {
-                  const displayName = s.nick || s.playerName;
-                  return (
-                    <li
-                      key={s.playerId}
-                      className={`rounded-md border bg-background flex items-start gap-3 min-w-0 overflow-hidden ${compactCardPadding} ${s.hasPenalty ? "bg-destructive/5" : ""}`}
-                    >
-                      <div
-                        className="font-bold tabular-nums text-lg min-w-[2.5rem]"
-                        aria-label={`Posição ${s.position}`}
-                      >
-                        {s.position}º
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`font-medium ${scrollLine}`}><span className="public-line-content">{keepTogether(displayName)}</span></p>
-                        <p className={`text-sm mt-0.5 ${scrollLine}`}>
-                          <span className="public-line-content">{keepTogether(`${s.pontosJogo} pontos de vitória, ${s.pontosMesa} pontos de mesa.`)}</span>
-                        </p>
-                        <p className={`text-sm ${scrollLine} ${s.hasPenalty ? "text-destructive" : "text-muted-foreground"}`}>
-                          <span className="public-line-content">{keepTogether(`Penalidades: ${s.penalidades}.`)}</span>
-                        </p>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
-            </section>
-          ))}
-        </div>
+        renderStandingsSections()
       )}
     </div>
   );
 }
+

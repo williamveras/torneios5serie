@@ -545,31 +545,40 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
                         <CardTitle className="text-lg">{formatDateTitle(dk)}</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
-                        {grupos.map((g) => (
-                          <div key={g}>
-                            <h3 className="font-semibold text-sm mb-2">
-                              {/^\d+$/.test(g) ? `Grupo ${g}` : g}
-                            </h3>
-                            <div className="space-y-1 pl-2">
-                              {byDate[dk][g].map((s) => (
-                                <div key={s.id} className="flex items-center justify-between py-1.5 px-3 rounded-md bg-muted/50">
-                                  <span className="text-sm">
-                                    {getPlayerName(s.player1_id)} e {getPlayerName(s.player2_id)}:{" "}
-                                    <strong>{s.horario ? s.horario.slice(0, 5) : (s.observacao || "—")}</strong>
-                                  </span>
-                                  <div className="flex gap-1">
-                                    <Button variant="outline" size="sm" className="h-7" onClick={() => openEdit(s)}>
-                                      <CalendarClock className="h-3.5 w-3.5 mr-1" /> Realocar
-                                    </Button>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(s.id)}>
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              ))}
+                        {grupos.map((g) => {
+                          const isGroupG = /^\d+$/.test(g);
+                          return (
+                            <div key={g}>
+                              {isGroupG && (
+                                <h3 className="font-semibold text-sm mb-2">Grupo {g}</h3>
+                              )}
+                              <div className={`space-y-1 ${isGroupG ? "pl-2" : ""}`}>
+                                {byDate[dk][g].map((s) => {
+                                  const mesa = !isGroupG ? getMesa(g, s.player1_id, s.player2_id) : null;
+                                  return (
+                                    <div key={s.id} className="flex items-center justify-between py-1.5 px-3 rounded-md bg-muted/50">
+                                      <span className="text-sm">
+                                        {mesa != null && (
+                                          <span className="text-muted-foreground mr-2">Mesa {mesa}:</span>
+                                        )}
+                                        {getPlayerName(s.player1_id)} e {getPlayerName(s.player2_id)}:{" "}
+                                        <strong>{s.horario ? s.horario.slice(0, 5) : (s.observacao || "—")}</strong>
+                                      </span>
+                                      <div className="flex gap-1">
+                                        <Button variant="outline" size="sm" className="h-7" onClick={() => openEdit(s)}>
+                                          <CalendarClock className="h-3.5 w-3.5 mr-1" /> Realocar
+                                        </Button>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(s.id)}>
+                                          <Trash2 className="h-3.5 w-3.5" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </CardContent>
                     </Card>
                   );

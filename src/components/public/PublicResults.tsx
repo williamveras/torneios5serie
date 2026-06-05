@@ -274,7 +274,23 @@ export default function PublicResults({ results, players, matchups = [], phaseSt
         </Alert>
       )}
 
-      {availableRodadas.length > 0 && (
+      {availableFases.length > 1 && (
+        <div className="flex items-center gap-2">
+          <Label htmlFor="fase-filter" className="text-sm whitespace-nowrap">Fase:</Label>
+          <Select value={selectedFase} onValueChange={setSelectedFase}>
+            <SelectTrigger id="fase-filter" className="w-[220px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {availableFases.map(f => (
+                <SelectItem key={f} value={f}>{f}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {isFaseDeGrupos && availableRodadas.length > 0 && (
         <div className="flex items-center gap-2">
           <Label htmlFor="rodada-filter" className="text-sm whitespace-nowrap">Rodada:</Label>
           <Select value={selectedRodada} onValueChange={setSelectedRodada}>

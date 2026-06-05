@@ -116,8 +116,9 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
   async function fetchMatchups() {
     const { data } = await supabase
       .from("matchups")
-      .select("player1_id, player2_id, rodada, fase")
-      .eq("tournament_id", tournamentId);
+      .select("player1_id, player2_id, rodada, fase, created_at")
+      .eq("tournament_id", tournamentId)
+      .order("created_at", { ascending: true });
     if (data) setMatchups(data as any);
   }
 

@@ -186,8 +186,8 @@ export default function ResultsTab({ tournamentId }: Props) {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="rodada-input">Rodada</Label>
-            <Input id="rodada-input" type="number" min={1} value={rodada} onChange={e => setRodada(e.target.value)} placeholder="Ex: 1" />
+            <Label htmlFor="rodada-input">{isFaseDeGrupos ? "Rodada" : "Mesa"}</Label>
+            <Input id="rodada-input" type="number" min={1} value={rodada} onChange={e => setRodada(e.target.value)} placeholder={isFaseDeGrupos ? "Ex: 1" : "Ex: 1, 2, 3..."} />
           </div>
         </div>
 

@@ -5,10 +5,12 @@ import { CalendarDays, Clock } from "lucide-react";
 import type { ViewMode } from "./ViewModeToggle";
 import type { Tables } from "@/integrations/supabase/types";
 import { computeCurrentRound } from "@/lib/rounds";
+import { getActivePublicPhase, isGroupPhase, buildMesaMap, pairKey } from "@/lib/phase";
 
 type Schedule = Tables<"match_schedule">;
 type Matchup = Tables<"matchups">;
 type MatchResult = Tables<"match_results">;
+type PhaseStatus = Tables<"phase_status">;
 
 interface PlayerLite {
   id: string;
@@ -21,6 +23,7 @@ interface Props {
   players: PlayerLite[];
   matchups: Matchup[];
   results?: MatchResult[];
+  phaseStatuses?: PhaseStatus[];
   numeroRodadas?: number | null;
   viewMode?: ViewMode;
 }
@@ -31,13 +34,11 @@ const displayName = (p?: PlayerLite) => {
   return nick || p.nome_completo;
 };
 
-
 const WEEKDAYS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
 const formatDate = (iso: string) => {
   try {
     const [y, m, d] = iso.split("-");
-    // Use noon to avoid timezone edge cases shifting the weekday
     const dt = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10), 12, 0, 0);
     const weekday = WEEKDAYS[dt.getDay()];
     return `${weekday}, ${d}/${m}/${y}`;
@@ -55,35 +56,59 @@ const compactCardPadding = "p-3 min-[360px]:p-4";
 const keepTogether = (text: string | number) =>
   String(text).replace(/ /g, "\u00A0").replace(/-/g, "\u2011");
 
-// Today in São Paulo timezone (YYYY-MM-DD)
 const todaySaoPauloISO = () => {
   const fmt = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Sao_Paulo",
     year: "numeric", month: "2-digit", day: "2-digit",
   });
-  return fmt.format(new Date()); // YYYY-MM-DD
+  return fmt.format(new Date());
 };
 
-export default function PublicSchedule({ schedules, players, matchups, results = [], numeroRodadas = null, viewMode = "list" }: Props) {
+export default function PublicSchedule({ schedules, players, matchups, results = [], phaseStatuses = [], numeroRodadas = null, viewMode = "list" }: Props) {
   const playerMap = useMemo(() => {
     const m = new Map<string, PlayerLite>();
     players.forEach(p => m.set(p.id, p));
     return m;
   }, [players]);
 
-  // Compute current round using numero_rodadas + results (with legacy fallback)
-  const { currentRound, totalRounds, phaseComplete } = useMemo(
+  const activeFase = useMemo(() => getActivePublicPhase(phaseStatuses), [phaseStatuses]);
+  const isGroup = isGroupPhase(activeFase);
+
+  // === Non-group phase: render by Mesa ===
+  const mesaMap = useMemo(() => buildMesaMap(matchups as any, activeFase), [matchups, activeFase]);
+
+  const eliminationItems = useMemo(() => {
+    if (isGroup) return [] as Array<{ mesa: number; player1_id: string; player2_id: string; schedule: Schedule | null }>;
+    const today = todaySaoPauloISO();
+    const phaseMatchups = matchups.filter(m => (m.fase || "Fase de Grupos") === activeFase);
+    const items = phaseMatchups.map(mu => {
+      const mesa = mesaMap.get(pairKey(mu.player1_id, mu.player2_id)) ?? 9999;
+      const sched = schedules.find(s =>
+        pairKey(s.player1_id, s.player2_id) === pairKey(mu.player1_id, mu.player2_id)
+      ) || null;
+      return { mesa, player1_id: mu.player1_id, player2_id: mu.player2_id, schedule: sched };
+    });
+    // Hide past matches (date already gone)
+    const filtered = items.filter(it => {
+      const d = it.schedule?.data_partida;
+      if (!d) return true;
+      return d >= today;
+    });
+    return filtered.sort((a, b) => a.mesa - b.mesa);
+  }, [isGroup, matchups, schedules, mesaMap, activeFase]);
+
+  // === Group phase (existing rounds-based logic) ===
+  const { currentRound, totalRounds } = useMemo(
     () => computeCurrentRound(matchups as any, results as any, numeroRodadas),
     [matchups, results, numeroRodadas],
   );
 
-
-  // Map roundNumber -> Set of sorted-pair keys (from matchups)
   const pairsByRound = useMemo(() => {
     const m = new Map<number, Set<string>>();
     for (const mu of matchups) {
       if (mu.rodada == null) continue;
-      const key = [mu.player1_id, mu.player2_id].sort().join("|");
+      if ((mu.fase || "Fase de Grupos") !== "Fase de Grupos") continue;
+      const key = pairKey(mu.player1_id, mu.player2_id);
       const set = m.get(mu.rodada) || new Set<string>();
       set.add(key);
       m.set(mu.rodada, set);
@@ -94,19 +119,18 @@ export default function PublicSchedule({ schedules, players, matchups, results =
   const today = todaySaoPauloISO();
   const NO_DATE_KEY = "__sem_data__";
 
-  // Resolve each schedule to a round number (prefer s.rodada, fallback to matchup pair lookup)
   const resolveRound = (s: Schedule): number | null => {
     if (s.rodada != null) return s.rodada;
-    const key = [s.player1_id, s.player2_id].sort().join("|");
+    const key = pairKey(s.player1_id, s.player2_id);
     for (const [r, set] of pairsByRound.entries()) {
       if (set.has(key)) return r;
     }
     return null;
   };
 
-  // Determine which rounds to show: current round + any future rounds that already have schedules
   const visibleSchedulesByRound = useMemo(() => {
-    if (currentRound == null) return [] as Array<{ round: number; items: Schedule[] }>;
+    if (!isGroup) return [] as Array<{ round: number; items: Schedule[] }>;
+    if (currentRound == null) return [];
     const byRound = new Map<number, Schedule[]>();
     for (const s of schedules) {
       if (s.data_partida && s.data_partida < today) continue;
@@ -117,12 +141,11 @@ export default function PublicSchedule({ schedules, players, matchups, results =
       arr.push(s);
       byRound.set(r, arr);
     }
-    // Always include currentRound entry (even if empty) so the message renders
     if (!byRound.has(currentRound)) byRound.set(currentRound, []);
     const rounds = Array.from(byRound.keys()).sort((a, b) => a - b);
     return rounds.map(round => ({ round, items: byRound.get(round) || [] }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [schedules, currentRound, pairsByRound, today]);
+  }, [isGroup, schedules, currentRound, pairsByRound, today]);
 
   const groupByDate = (items: Schedule[]) => {
     const map = new Map<string, Schedule[]>();
@@ -143,8 +166,99 @@ export default function PublicSchedule({ schedules, players, matchups, results =
     return Array.from(map.entries());
   };
 
-  const description = "Atenção aos confrontos e horários dos jogos ainda a decorrer:";
+  const description = isGroup
+    ? "Atenção aos confrontos e horários dos jogos ainda a decorrer:"
+    : `Confrontos da ${activeFase} — organizados por Mesa, na ordem em que foram cadastrados.`;
 
+  // ===== Elimination (non-group) rendering =====
+  if (!isGroup) {
+    if (eliminationItems.length === 0) {
+      return (
+        <div className="space-y-6">
+          <p className="text-sm text-muted-foreground">{description}</p>
+          <Card>
+            <CardContent className="py-12 text-center text-muted-foreground">
+              <CalendarDays className="h-10 w-10 mx-auto mb-3 opacity-40" />
+              <p>Ainda não há confrontos cadastrados para a {activeFase}.</p>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    const formatScheduleInfo = (s: Schedule | null) => {
+      if (!s) return "Data e horário a definir";
+      const date = s.data_partida ? formatDate(s.data_partida) : "Sem data definida";
+      const time = s.horario ? s.horario.slice(0, 5) : (s.observacao || "A definir");
+      return `${date} — ${time}`;
+    };
+
+    return (
+      <div className="space-y-6">
+        <p className="text-sm text-muted-foreground">{description}</p>
+
+        {viewMode === "table" ? (
+          <Card>
+            <CardContent className="pt-4">
+              <div className="rounded-md border overflow-x-auto">
+                <Table className="min-w-max">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="whitespace-nowrap">Mesa</TableHead>
+                      <TableHead className="whitespace-nowrap">Confronto</TableHead>
+                      <TableHead className="whitespace-nowrap">Data</TableHead>
+                      <TableHead className="whitespace-nowrap">Horário</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {eliminationItems.map(it => (
+                      <TableRow key={`${it.mesa}-${it.player1_id}`}>
+                        <TableCell className="whitespace-nowrap tabular-nums">Mesa {it.mesa}</TableCell>
+                        <TableCell className={`font-medium ${noWrapText}`}>
+                          {displayName(playerMap.get(it.player1_id))} x {displayName(playerMap.get(it.player2_id))}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {it.schedule?.data_partida ? formatDate(it.schedule.data_partida) : "A definir"}
+                        </TableCell>
+                        <TableCell className="tabular-nums whitespace-nowrap">
+                          {it.schedule?.horario ? it.schedule.horario.slice(0, 5) : (it.schedule?.observacao || "A definir")}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {eliminationItems.map(it => (
+              <Card key={`${it.mesa}-${it.player1_id}`}>
+                <CardContent className={compactCardPadding}>
+                  <p className="text-sm text-muted-foreground">{keepTogether(`Mesa ${it.mesa}`)}</p>
+                  <h3 className={`text-base sm:text-lg font-semibold ${scrollLine}`}>
+                    <span className="public-line-content">
+                      <span>{keepTogether(displayName(playerMap.get(it.player1_id)))}</span>{" "}
+                      <span className="text-muted-foreground font-normal">x</span>{" "}
+                      <span>{keepTogether(displayName(playerMap.get(it.player2_id)))}</span>
+                    </span>
+                  </h3>
+                  <div className={`text-sm font-medium tabular-nums mt-1 ${scrollLine}`}>
+                    <span className="public-line-content">
+                      <Clock className="inline h-3.5 w-3.5 align-[-2px]" />{" "}
+                      {keepTogether(formatScheduleInfo(it.schedule))}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ===== Group phase rendering (existing) =====
   const totalItems = visibleSchedulesByRound.reduce((acc, r) => acc + r.items.length, 0);
 
   const renderRoundTable = (items: Schedule[]) => (

@@ -7,11 +7,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { AlertTriangle, CheckCircle2, BarChart3 } from "lucide-react";
 import { FASES } from "@/lib/constants";
+import { getActivePublicPhase, isGroupPhase, buildMesaMap, pairKey } from "@/lib/phase";
 import type { ViewMode } from "./ViewModeToggle";
 import type { Tables } from "@/integrations/supabase/types";
 
 type MatchResult = Tables<"match_results">;
 type PhaseStatus = Tables<"phase_status">;
+type Matchup = Tables<"matchups">;
 
 interface PlayerLite {
   id: string;
@@ -27,6 +29,7 @@ interface ModeratorLite {
 interface Props {
   results: MatchResult[];
   players: PlayerLite[];
+  matchups?: Matchup[];
   phaseStatuses: PhaseStatus[];
   moderators: ModeratorLite[];
   viewMode?: ViewMode;
@@ -111,9 +114,15 @@ const formatDayLabel = (d: Date) => {
   return `Jogos de ${weekday} (${p.day}/${p.month})`;
 };
 
-export default function PublicResults({ results, players, phaseStatuses, moderators, viewMode = "list" }: Props) {
-  const [selectedFase, setSelectedFase] = useState<string>("Fase de Grupos");
+export default function PublicResults({ results, players, matchups = [], phaseStatuses, moderators, viewMode = "list" }: Props) {
+  const activeFase = useMemo(() => getActivePublicPhase(phaseStatuses), [phaseStatuses]);
+  const [selectedFase, setSelectedFase] = useState<string>(activeFase);
   const [selectedRodada, setSelectedRodada] = useState<string>("__all__");
+
+  // When phaseStatuses changes (e.g., a phase is concluded), realign default
+  useEffect(() => {
+    setSelectedFase(activeFase);
+  }, [activeFase]);
 
   const playerMap = useMemo(() => {
     const m = new Map<string, PlayerLite>();
@@ -149,17 +158,23 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
     [results, selectedFase],
   );
 
-  const isFaseDeGrupos = selectedFase === "Fase de Grupos";
+  const isFaseDeGrupos = isGroupPhase(selectedFase);
+
+  // Mesa map for non-group phases (matchup order = mesa number)
+  const mesaMap = useMemo(
+    () => buildMesaMap(matchups as any, selectedFase),
+    [matchups, selectedFase],
+  );
 
   const availableRodadas = useMemo(() => {
+    if (!isFaseDeGrupos) return [] as number[];
     const set = new Set<number>();
     filtered.forEach(r => set.add(r.rodada));
     return Array.from(set).sort((a, b) => a - b);
-  }, [filtered]);
+  }, [filtered, isFaseDeGrupos]);
 
   const lastRodada = availableRodadas.length > 0 ? availableRodadas[availableRodadas.length - 1] : null;
 
-  // Reset rodada selection to "last" when fase changes
   useEffect(() => {
     setSelectedRodada("__all__");
   }, [selectedFase]);
@@ -202,16 +217,27 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
     );
   }, [rodadaFiltered]);
 
-  // Group confrontos by rodada (desc), then by day (most recent first) inside each rodada
+  // Compute grouping key for each confronto: rodada (group phase) or mesa (non-group)
+  const confrontoGroupKey = (c: Confronto): number => {
+    if (isFaseDeGrupos) return c.rodada;
+    if (c.players.length < 2) return 0;
+    const mesa = mesaMap.get(pairKey(c.players[0].player_id, c.players[1].player_id));
+    return mesa ?? 0;
+  };
+
+  const groupLabel = (n: number) => isFaseDeGrupos ? `Rodada ${n}` : (n > 0 ? `Mesa ${n}` : "Sem mesa");
+
+  // Group confrontos by rodada/mesa (desc), then by day (most recent first)
   const rodadasGroups = useMemo(() => {
     const rodMap = new Map<number, Map<string, { key: string; date: Date; confrontos: Confronto[] }>>();
     for (const c of confrontos) {
       const d = new Date(c.created_at);
       const dayKey = formatDayKey(d);
-      let dayMap = rodMap.get(c.rodada);
+      const gk = confrontoGroupKey(c);
+      let dayMap = rodMap.get(gk);
       if (!dayMap) {
         dayMap = new Map();
-        rodMap.set(c.rodada, dayMap);
+        rodMap.set(gk, dayMap);
       }
       const existing = dayMap.get(dayKey);
       if (existing) {
@@ -221,12 +247,13 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
       }
     }
     return Array.from(rodMap.entries())
-      .sort((a, b) => b[0] - a[0])
+      .sort((a, b) => isFaseDeGrupos ? b[0] - a[0] : a[0] - b[0])
       .map(([rodada, dayMap]) => ({
         rodada,
         dias: Array.from(dayMap.values()).sort((a, b) => b.key.localeCompare(a.key)),
       }));
-  }, [confrontos]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [confrontos, isFaseDeGrupos, mesaMap]);
 
   const defaultOpenRodadas = useMemo<string[]>(
     () => [],
@@ -247,7 +274,23 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
         </Alert>
       )}
 
-      {availableRodadas.length > 0 && (
+      {availableFases.length > 1 && (
+        <div className="flex items-center gap-2">
+          <Label htmlFor="fase-filter" className="text-sm whitespace-nowrap">Fase:</Label>
+          <Select value={selectedFase} onValueChange={setSelectedFase}>
+            <SelectTrigger id="fase-filter" className="w-[220px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {availableFases.map(f => (
+                <SelectItem key={f} value={f}>{f}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {isFaseDeGrupos && availableRodadas.length > 0 && (
         <div className="flex items-center gap-2">
           <Label htmlFor="rodada-filter" className="text-sm whitespace-nowrap">Rodada:</Label>
           <Select value={selectedRodada} onValueChange={setSelectedRodada}>
@@ -277,11 +320,14 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
       ) : (
         <>
           <p className="text-sm text-muted-foreground">
-            Acompanhe aqui os resultados individuais dos confrontos já ocorridos. Toque em uma rodada para expandir.
+            {isFaseDeGrupos
+              ? "Acompanhe aqui os resultados individuais dos confrontos já ocorridos. Toque em uma rodada para expandir."
+              : `Resultados da ${selectedFase}, organizados por Mesa. Toque em uma mesa para expandir.`}
           </p>
           <Accordion type="multiple" defaultValue={defaultOpenRodadas} className="space-y-2">
             {rodadasGroups.map(group => {
               const totalConfrontos = group.dias.reduce((acc, d) => acc + d.confrontos.length, 0);
+              const headerLabel = groupLabel(group.rodada);
               return (
                 <AccordionItem
                   key={`rodada-${group.rodada}`}
@@ -290,7 +336,7 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
                 >
                   <AccordionTrigger className="px-4 py-3 hover:no-underline">
                     <div className="flex items-center gap-3 text-left">
-                      <span className="text-base font-semibold">Rodada {group.rodada}</span>
+                      <span className="text-base font-semibold">{headerLabel}</span>
                       <span className="text-xs text-muted-foreground">
                         ({totalConfrontos} {totalConfrontos === 1 ? "confronto" : "confrontos"})
                       </span>
@@ -372,9 +418,12 @@ export default function PublicResults({ results, players, phaseStatuses, moderat
                                 const p2 = c.players[1];
                                 const nome1 = displayName(p1.player_id);
                                 const nome2 = p2 ? displayName(p2.player_id) : null;
+                                const mesa = !isFaseDeGrupos && p2
+                                  ? mesaMap.get(pairKey(p1.player_id, p2.player_id))
+                                  : undefined;
                                 const localizacao = isFaseDeGrupos
                                   ? `rodada ${c.rodada}, grupo ${c.grupo}`
-                                  : `rodada ${c.rodada}`;
+                                  : (mesa ? `mesa ${mesa}` : `confronto avulso`);
                                 const tituloConfronto = incompleto
                                   ? `${nome1} (registro avulso) — ${localizacao}`
                                   : `${nome1} x ${nome2}, ${localizacao}`;

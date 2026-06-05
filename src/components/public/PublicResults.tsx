@@ -7,11 +7,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { AlertTriangle, CheckCircle2, BarChart3 } from "lucide-react";
 import { FASES } from "@/lib/constants";
+import { getActivePublicPhase, isGroupPhase, buildMesaMap, pairKey } from "@/lib/phase";
 import type { ViewMode } from "./ViewModeToggle";
 import type { Tables } from "@/integrations/supabase/types";
 
 type MatchResult = Tables<"match_results">;
 type PhaseStatus = Tables<"phase_status">;
+type Matchup = Tables<"matchups">;
 
 interface PlayerLite {
   id: string;
@@ -27,6 +29,7 @@ interface ModeratorLite {
 interface Props {
   results: MatchResult[];
   players: PlayerLite[];
+  matchups?: Matchup[];
   phaseStatuses: PhaseStatus[];
   moderators: ModeratorLite[];
   viewMode?: ViewMode;

@@ -116,13 +116,27 @@ const formatDayLabel = (d: Date) => {
 
 export default function PublicResults({ results, players, matchups = [], phaseStatuses, moderators, viewMode = "list" }: Props) {
   const activeFase = useMemo(() => getActivePublicPhase(phaseStatuses), [phaseStatuses]);
-  const [selectedFase, setSelectedFase] = useState<string>(activeFase);
+
+  const availableFases = useMemo(() => {
+    const set = new Set<string>(results.map(r => r.fase || "Fase de Grupos"));
+    set.add(activeFase);
+    return FASES.filter(f => set.has(f));
+  }, [results, activeFase]);
+
+  // Default selection: active phase if it has results, otherwise the latest phase with results.
+  const defaultFase = useMemo(() => {
+    const fasesWithResults = new Set(results.map(r => r.fase || "Fase de Grupos"));
+    if (fasesWithResults.has(activeFase)) return activeFase;
+    const ordered = FASES.filter(f => fasesWithResults.has(f));
+    return ordered.length > 0 ? ordered[ordered.length - 1] : activeFase;
+  }, [results, activeFase]);
+
+  const [selectedFase, setSelectedFase] = useState<string>(defaultFase);
   const [selectedRodada, setSelectedRodada] = useState<string>("__all__");
 
-  // When phaseStatuses changes (e.g., a phase is concluded), realign default
   useEffect(() => {
-    setSelectedFase(activeFase);
-  }, [activeFase]);
+    setSelectedFase(defaultFase);
+  }, [defaultFase]);
 
   const playerMap = useMemo(() => {
     const m = new Map<string, PlayerLite>();
@@ -147,11 +161,6 @@ export default function PublicResults({ results, players, matchups = [], phaseSt
     if (!uid) return "Não informado";
     return moderatorMap.get(uid) || "Usuário desconhecido";
   };
-
-  const availableFases = useMemo(() => {
-    const fases = [...new Set(results.map(r => r.fase || "Fase de Grupos"))];
-    return FASES.filter(f => fases.includes(f));
-  }, [results]);
 
   const filtered = useMemo(
     () => results.filter(r => (r.fase || "Fase de Grupos") === selectedFase),

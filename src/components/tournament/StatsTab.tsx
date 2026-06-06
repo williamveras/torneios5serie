@@ -9,10 +9,14 @@ import { toast } from "sonner";
 import { FASES } from "@/lib/constants";
 import type { Tables } from "@/integrations/supabase/types";
 import RegistrosViewer from "./RegistrosViewer";
+import PublicResults from "@/components/public/PublicResults";
+import ViewModeToggle, { type ViewMode } from "@/components/public/ViewModeToggle";
 
 type MatchResult = Tables<"match_results">;
 type Player = Tables<"players">;
 type Profile = Tables<"profiles">;
+type Matchup = Tables<"matchups">;
+type PhaseStatus = Tables<"phase_status">;
 
 interface Props { tournamentId: string; }
 
@@ -28,10 +32,14 @@ interface Confronto {
 
 export default function StatsTab({ tournamentId }: Props) {
   const [results, setResults] = useState<MatchResult[]>([]);
-  const [players, setPlayers] = useState<Record<string, Player>>({});
-  const [profiles, setProfiles] = useState<Record<string, Profile>>({});
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [playersMap, setPlayersMap] = useState<Record<string, Player>>({});
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [matchups, setMatchups] = useState<Matchup[]>([]);
+  const [phaseStatuses, setPhaseStatuses] = useState<PhaseStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   useEffect(() => {
     setLoading(true);
@@ -39,15 +47,41 @@ export default function StatsTab({ tournamentId }: Props) {
       fetchAllMatchResults(tournamentId).then(data => ({ data })),
       supabase.from("players").select("*").eq("tournament_id", tournamentId),
       supabase.from("profiles").select("*"),
-    ]).then(([{ data: rs }, { data: ps }, { data: prs }]) => {
+      supabase.from("matchups").select("*").eq("tournament_id", tournamentId),
+      supabase.from("phase_status").select("*").eq("tournament_id", tournamentId),
+    ]).then(([{ data: rs }, { data: ps }, { data: prs }, { data: mu }, { data: phs }]) => {
       setResults(rs || []);
-      setPlayers(Object.fromEntries((ps || []).map(p => [p.id, p])));
-      setProfiles(Object.fromEntries((prs || []).map(p => [p.user_id, p])));
+      setPlayers(ps || []);
+      setPlayersMap(Object.fromEntries((ps || []).map(p => [p.id, p])));
+      setProfiles(prs || []);
+      setMatchups(mu || []);
+      setPhaseStatuses(phs || []);
       setLoading(false);
     });
   }, [tournamentId]);
 
   const totalGames = Math.floor(results.length / 2);
+
+  const playerName = (id: string) => {
+    const p = playersMap[id];
+    if (!p) return "Jogador desconhecido";
+    return p.nick_playroom || p.nome_completo;
+  };
+
+  const registeredByName = (uid: string | null) => {
+    if (!uid) return "Não informado";
+    return profiles.find(p => p.user_id === uid)?.nome || "Usuário desconhecido";
+  };
+
+  const playersLite = useMemo(
+    () => players.map(p => ({ id: p.id, nome_completo: p.nome_completo, nick_playroom: p.nick_playroom })),
+    [players],
+  );
+
+  const moderatorsLite = useMemo(
+    () => profiles.map(p => ({ user_id: p.user_id, nome: p.nome })),
+    [profiles],
+  );
 
   const byFase = useMemo(() => {
     const map = new Map<string, MatchResult[]>();
@@ -59,15 +93,6 @@ export default function StatsTab({ tournamentId }: Props) {
     }
     return FASES.filter(f => map.has(f)).map(f => ({ fase: f, items: map.get(f)! }));
   }, [results]);
-
-  const playerName = (id: string) => {
-    const p = players[id];
-    if (!p) return "Jogador desconhecido";
-    return p.nick_playroom || p.nome_completo;
-  };
-
-  const registeredByName = (uid: string | null) =>
-    !uid ? "Não informado" : profiles[uid]?.nome || "Usuário desconhecido";
 
   const buildConfrontos = (rs: MatchResult[]): Confronto[] => {
     const buckets = new Map<string, MatchResult[]>();
@@ -115,7 +140,6 @@ export default function StatsTab({ tournamentId }: Props) {
     const confrontos = buildConfrontos(results);
     const wb = XLSX.utils.book_new();
 
-    // Resumo
     const resumoRows: Record<string, unknown>[] = [];
     for (const { fase, items } of byFase) {
       const rounds = [...new Set(items.map(r => r.rodada))].sort((a, b) => a - b);
@@ -133,7 +157,6 @@ export default function StatsTab({ tournamentId }: Props) {
     }
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resumoRows), "Resumo");
 
-    // Uma aba por rodada, ordenada por grupo
     const rounds = [...new Set(confrontos.map(c => c.rodada))].sort((a, b) => a - b);
     for (const round of rounds) {
       const roundConfrontos = confrontos
@@ -176,7 +199,6 @@ export default function StatsTab({ tournamentId }: Props) {
 
   return (
     <div className="space-y-4">
-
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -191,54 +213,18 @@ export default function StatsTab({ tournamentId }: Props) {
         </CardContent>
       </Card>
 
-      {byFase.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
-            <p>Nenhum jogo registrado ainda.</p>
-          </CardContent>
-        </Card>
-      ) : (
-        byFase.map(({ fase, items }) => {
-          const rounds = [...new Set(items.map(r => r.rodada))].sort((a, b) => a - b);
-          const faseTotal = Math.floor(items.length / 2);
-          return (
-            <Card key={fase}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center justify-between">
-                  <span>{fase}</span>
-                  <span className="text-sm font-normal text-muted-foreground">
-                    {faseTotal} {faseTotal === 1 ? "jogo" : "jogos"}
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  {rounds.map(round => {
-                    const roundLines = items.filter(r => r.rodada === round);
-                    const roundGames = Math.floor(roundLines.length / 2);
-                    const groups = [...new Set(roundLines.map(r => r.grupo))].sort();
-                    return (
-                      <li key={round} className="flex items-center justify-between p-2 rounded-md border bg-muted/30">
-                        <div>
-                          <div className="font-medium text-sm">Rodada {round}</div>
-                          {fase === "Fase de Grupos" && (
-                            <div className="text-xs text-muted-foreground">
-                              {groups.length} {groups.length === 1 ? "grupo" : "grupos"} com registros
-                            </div>
-                          )}
-                        </div>
-                        <div className="text-lg font-semibold tabular-nums">
-                          {roundGames} <span className="text-xs font-normal text-muted-foreground">{roundGames === 1 ? "jogo" : "jogos"}</span>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </CardContent>
-            </Card>
-          );
-        })
-      )}
+      <div className="flex justify-end">
+        <ViewModeToggle value={viewMode} onChange={setViewMode} />
+      </div>
+
+      <PublicResults
+        results={results}
+        players={playersLite}
+        matchups={matchups}
+        phaseStatuses={phaseStatuses}
+        moderators={moderatorsLite}
+        viewMode={viewMode}
+      />
 
       <div className="flex justify-center gap-2 pt-2 flex-wrap">
         <Button variant="outline" onClick={() => setViewerOpen(true)}>

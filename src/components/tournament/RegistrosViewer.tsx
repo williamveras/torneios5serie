@@ -3,20 +3,48 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchAllMatchResults } from "@/lib/fetchAll";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Pencil, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Trash2, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import { FASES } from "@/lib/constants";
+import { getActivePublicPhase, isGroupPhase, buildMesaMap, pairKey } from "@/lib/phase";
 import type { Tables } from "@/integrations/supabase/types";
 
 type MatchResult = Tables<"match_results">;
 type Player = Tables<"players">;
 type Profile = Tables<"profiles">;
+type Matchup = Tables<"matchups">;
+type PhaseStatus = Tables<"phase_status">;
 
 const PENALIDADE_OPCOES = ["Sem penalidades", "W.O", "Eliminado por W.O", "Digitação na mesa", "Outra"] as const;
+const TZ = "America/Sao_Paulo";
+const WEEKDAYS = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+
+const brasiliaParts = (d: Date) => {
+  const fmt = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hour12: false,
+  });
+  const parts = fmt.formatToParts(d);
+  const get = (t: string) => parts.find(p => p.type === t)?.value ?? "";
+  return { year: get("year"), month: get("month"), day: get("day"), hour: get("hour"), minute: get("minute") };
+};
+const brasiliaWeekday = (d: Date) => {
+  const fmt = new Intl.DateTimeFormat("en-US", { timeZone: TZ, weekday: "short" });
+  const map: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  return map[fmt.format(d)] ?? 0;
+};
+const formatTime = (d: Date) => { const p = brasiliaParts(d); return `${p.hour}:${p.minute}`; };
+const formatDayKey = (d: Date) => { const p = brasiliaParts(d); return `${p.year}-${p.month}-${p.day}`; };
+const formatDayLabel = (d: Date) => {
+  const p = brasiliaParts(d);
+  return `Jogos de ${WEEKDAYS[brasiliaWeekday(d)]} (${p.day}/${p.month})`;
+};
 
 interface Props {
   tournamentId: string;
@@ -40,15 +68,15 @@ interface Confronto {
   rodada: number;
   registered_by: string | null;
   created_at: string;
-  results: MatchResult[]; // 1 ou 2
+  results: MatchResult[];
 }
-
-const CONFRONTO_WINDOW_MS = 5 * 60 * 1000; // 5 minutos: registros do mesmo confronto criados juntos
 
 export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Props) {
   const [results, setResults] = useState<MatchResult[]>([]);
   const [players, setPlayers] = useState<Record<string, Player>>({});
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
+  const [matchups, setMatchups] = useState<Matchup[]>([]);
+  const [phaseStatuses, setPhaseStatuses] = useState<PhaseStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Confronto | null>(null);
   const [deleting, setDeleting] = useState<Confronto | null>(null);
@@ -57,19 +85,23 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
   const [editRodada, setEditRodada] = useState("");
   const [editPlayers, setEditPlayers] = useState<PlayerEditForm[]>([]);
   const [saving, setSaving] = useState(false);
-  const [filterRound, setFilterRound] = useState<string>("all");
+  const [selectedFase, setSelectedFase] = useState<string>("Fase de Grupos");
   const [filterPenalidade, setFilterPenalidade] = useState<string>("all");
 
   const load = async () => {
     setLoading(true);
-    const [{ data: rs }, { data: ps }, { data: prs }] = await Promise.all([
-      fetchAllMatchResults(tournamentId).then(data => ({ data: [...data].sort((a, b) => b.created_at.localeCompare(a.created_at)) })),
+    const [rs, { data: ps }, { data: prs }, { data: mus }, { data: phs }] = await Promise.all([
+      fetchAllMatchResults(tournamentId),
       supabase.from("players").select("*").eq("tournament_id", tournamentId),
       supabase.from("profiles").select("*"),
+      supabase.from("matchups").select("*").eq("tournament_id", tournamentId),
+      supabase.from("phase_status").select("*").eq("tournament_id", tournamentId),
     ]);
     setResults(rs || []);
     setPlayers(Object.fromEntries((ps || []).map(p => [p.id, p])));
     setProfiles(Object.fromEntries((prs || []).map(p => [p.user_id, p])));
+    setMatchups(mus || []);
+    setPhaseStatuses(phs || []);
     setLoading(false);
   };
 
@@ -77,70 +109,43 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
     if (open) load();
   }, [open, tournamentId]);
 
+  const activeFase = useMemo(() => getActivePublicPhase(phaseStatuses), [phaseStatuses]);
+  useEffect(() => { setSelectedFase(activeFase); }, [activeFase]);
+
   const playerName = (id: string) => {
     const p = players[id];
     if (!p) return "Jogador desconhecido";
     return p.nick_playroom || p.nome_completo;
   };
-
   const registeredByName = (uid: string | null) => {
     if (!uid) return "Não informado";
     return profiles[uid]?.nome || "Usuário desconhecido";
   };
 
-  // Agrupa registros em confrontos por fase/grupo/rodada/registered_by + janela de tempo
-  const confrontos = useMemo<Confronto[]>(() => {
-    // ordenar por created_at desc já vem do load
-    const sorted = [...results];
-    const groups: Confronto[] = [];
-    // bucket por fase|grupo|rodada|registered_by
-    const buckets = new Map<string, MatchResult[]>();
-    for (const r of sorted) {
-      const k = `${r.fase}||${r.grupo}||${r.rodada}||${r.registered_by ?? "null"}`;
-      const arr = buckets.get(k) || [];
-      arr.push(r);
-      buckets.set(k, arr);
-    }
-    for (const arr of buckets.values()) {
-      // dentro do bucket, agrupar pares por proximidade de created_at
-      const used = new Set<string>();
-      // ordena cronologicamente para parear
-      const chrono = [...arr].sort((a, b) => +new Date(a.created_at) - +new Date(b.created_at));
-      for (let i = 0; i < chrono.length; i++) {
-        const a = chrono[i];
-        if (used.has(a.id)) continue;
-        // procura próximo não usado, jogador diferente, dentro da janela
-        let pair: MatchResult | null = null;
-        for (let j = i + 1; j < chrono.length; j++) {
-          const b = chrono[j];
-          if (used.has(b.id)) continue;
-          if (b.player_id === a.player_id) continue;
-          const dt = Math.abs(+new Date(b.created_at) - +new Date(a.created_at));
-          if (dt <= CONFRONTO_WINDOW_MS) { pair = b; break; }
-          break; // ordenado: se o próximo já passou da janela, não há par
-        }
-        const items = pair ? [a, pair] : [a];
-        items.forEach(it => used.add(it.id));
-        groups.push({
-          key: items.map(i => i.id).join("|"),
-          fase: a.fase,
-          grupo: a.grupo,
-          rodada: a.rodada,
-          registered_by: a.registered_by,
-          created_at: items.map(i => i.created_at).sort().slice(-1)[0],
-          results: items,
-        });
-      }
-    }
-    // ordenar resultado final por created_at desc
-    groups.sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
-    return groups;
+  const availableFases = useMemo(() => {
+    const fases = [...new Set(results.map(r => r.fase || "Fase de Grupos"))];
+    return FASES.filter(f => fases.includes(f));
   }, [results]);
 
-  const availableRounds = useMemo(
-    () => [...new Set(confrontos.map(c => c.rodada))].sort((a, b) => a - b),
-    [confrontos],
-  );
+  const isFaseDeGrupos = isGroupPhase(selectedFase);
+  const mesaMap = useMemo(() => buildMesaMap(matchups as any, selectedFase), [matchups, selectedFase]);
+
+  // Group results into confrontos (by created_at + fase + grupo + rodada)
+  const confrontos = useMemo<Confronto[]>(() => {
+    const filtered = results.filter(r => (r.fase || "Fase de Grupos") === selectedFase);
+    const map = new Map<string, Confronto>();
+    for (const r of filtered) {
+      const fase = r.fase || "Fase de Grupos";
+      const key = `${r.created_at}|${fase}|${r.grupo}|${r.rodada}`;
+      const existing = map.get(key);
+      if (existing) existing.results.push(r);
+      else map.set(key, {
+        key, created_at: r.created_at, fase, grupo: r.grupo, rodada: r.rodada,
+        registered_by: r.registered_by, results: [r],
+      });
+    }
+    return Array.from(map.values()).sort((a, b) => b.created_at.localeCompare(a.created_at));
+  }, [results, selectedFase]);
 
   const availablePenalidades = useMemo(() => {
     const set = new Set<string>();
@@ -149,18 +154,41 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
   }, [confrontos]);
 
   const filteredConfrontos = useMemo(() => {
-    let list = confrontos;
-    if (filterRound !== "all") list = list.filter(c => String(c.rodada) === filterRound);
-    if (filterPenalidade !== "all") {
-      list = list.filter(c => c.results.some(r => r.penalidades === filterPenalidade));
+    if (filterPenalidade === "all") return confrontos;
+    return confrontos.filter(c => c.results.some(r => r.penalidades === filterPenalidade));
+  }, [confrontos, filterPenalidade]);
+
+  const confrontoGroupKey = (c: Confronto): number => {
+    if (isFaseDeGrupos) return c.rodada;
+    if (c.results.length < 2) return 0;
+    const mesa = mesaMap.get(pairKey(c.results[0].player_id, c.results[1].player_id));
+    return mesa ?? 0;
+  };
+  const groupLabel = (n: number) => isFaseDeGrupos ? `Rodada ${n}` : (n > 0 ? `Mesa ${n}` : "Sem mesa");
+
+  const rodadasGroups = useMemo(() => {
+    const rodMap = new Map<number, Map<string, { key: string; date: Date; confrontos: Confronto[] }>>();
+    for (const c of filteredConfrontos) {
+      const d = new Date(c.created_at);
+      const dayKey = formatDayKey(d);
+      const gk = confrontoGroupKey(c);
+      let dayMap = rodMap.get(gk);
+      if (!dayMap) { dayMap = new Map(); rodMap.set(gk, dayMap); }
+      const existing = dayMap.get(dayKey);
+      if (existing) existing.confrontos.push(c);
+      else dayMap.set(dayKey, { key: dayKey, date: d, confrontos: [c] });
     }
-    return list;
-  }, [confrontos, filterRound, filterPenalidade]);
+    return Array.from(rodMap.entries())
+      .sort((a, b) => isFaseDeGrupos ? b[0] - a[0] : a[0] - b[0])
+      .map(([rodada, dayMap]) => ({
+        rodada,
+        dias: Array.from(dayMap.values()).sort((a, b) => b.key.localeCompare(a.key)),
+      }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredConfrontos, isFaseDeGrupos, mesaMap]);
 
   const confrontoTitle = (c: Confronto) => {
-    if (c.results.length === 2) {
-      return `${playerName(c.results[0].player_id)} × ${playerName(c.results[1].player_id)}`;
-    }
+    if (c.results.length === 2) return `${playerName(c.results[0].player_id)} × ${playerName(c.results[1].player_id)}`;
     return `${playerName(c.results[0].player_id)} (registro avulso)`;
   };
 
@@ -188,11 +216,13 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
     setEditPlayers(prev => prev.map((p, i) => (i === idx ? { ...p, [field]: value } : p)));
   };
 
+  const isFaseDeGruposEdit = editFase === "Fase de Grupos";
+  const rodadaLabel = isFaseDeGruposEdit ? "Rodada" : "Mesa";
+
   const handleSaveEdit = async () => {
     if (!editing) return;
-    if (!editRodada) { toast.error("Informe a rodada"); return; }
-    const isFaseDeGrupos = editFase === "Fase de Grupos";
-    if (isFaseDeGrupos && !editGrupo.trim()) { toast.error("Informe o grupo"); return; }
+    if (!editRodada) { toast.error(`Informe a ${rodadaLabel.toLowerCase()}`); return; }
+    if (isFaseDeGruposEdit && !editGrupo.trim()) { toast.error("Informe o grupo"); return; }
     if (editPlayers.some(p => !p.pontos_jogo || !p.pontos_mesa)) {
       toast.error("Preencha pontos de todos os jogadores"); return;
     }
@@ -202,15 +232,14 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
 
     setSaving(true);
     const updates = editPlayers.map(p => {
-      const penalidades =
-        p.penalidade_tipo === "Outra"
-          ? p.penalidade_outra.trim() || "Outra"
-          : p.penalidade_tipo;
+      const penalidades = p.penalidade_tipo === "Outra"
+        ? p.penalidade_outra.trim() || "Outra"
+        : p.penalidade_tipo;
       return supabase
         .from("match_results")
         .update({
           fase: editFase,
-          grupo: isFaseDeGrupos ? editGrupo.trim() : editFase,
+          grupo: isFaseDeGruposEdit ? editGrupo.trim() : editFase,
           rodada: parseInt(editRodada),
           pontos_jogo: parseInt(p.pontos_jogo),
           pontos_mesa: parseInt(p.pontos_mesa),
@@ -233,16 +262,11 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
     if (!deleting) return;
     const ids = deleting.results.map(r => r.id);
     const { error } = await supabase.from("match_results").delete().in("id", ids);
-    if (error) {
-      toast.error("Erro ao apagar confronto");
-      return;
-    }
+    if (error) { toast.error("Erro ao apagar confronto"); return; }
     toast.success(ids.length > 1 ? "Confronto apagado" : "Registro apagado");
     setDeleting(null);
     load();
   };
-
-  const isFaseDeGruposEdit = editFase === "Fase de Grupos";
 
   return (
     <>
@@ -252,20 +276,19 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
             <DialogTitle>Registros de confrontos</DialogTitle>
           </DialogHeader>
 
-          {!loading && confrontos.length > 0 && (
+          {!loading && results.length > 0 && (
             <div className="flex items-end gap-3 flex-wrap">
-              <div className="space-y-2">
-                <Label htmlFor="viewer-round">Filtrar por rodada</Label>
-                <Select value={filterRound} onValueChange={setFilterRound}>
-                  <SelectTrigger id="viewer-round" className="w-[180px]"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas as rodadas</SelectItem>
-                    {availableRounds.map(r => (
-                      <SelectItem key={r} value={String(r)}>Rodada {r}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {availableFases.length > 1 && (
+                <div className="space-y-2">
+                  <Label htmlFor="viewer-fase">Fase</Label>
+                  <Select value={selectedFase} onValueChange={setSelectedFase}>
+                    <SelectTrigger id="viewer-fase" className="w-[220px]"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {availableFases.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="viewer-pen">Filtrar por penalidade</Label>
                 <Select value={filterPenalidade} onValueChange={setFilterPenalidade}>
@@ -288,42 +311,95 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
             <div className="py-12 text-center text-muted-foreground">
               <Loader2 className="h-8 w-8 mx-auto animate-spin opacity-50" />
             </div>
-          ) : confrontos.length === 0 ? (
-            <p className="py-8 text-center text-muted-foreground">Nenhum registro ainda.</p>
-          ) : filteredConfrontos.length === 0 ? (
-            <p className="py-8 text-center text-muted-foreground">Nenhum confronto nesta rodada.</p>
+          ) : rodadasGroups.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center text-muted-foreground">
+                <BarChart3 className="h-10 w-10 mx-auto mb-3 opacity-40" aria-hidden="true" />
+                <p>{results.length === 0 ? "Nenhum registro ainda." : "Nenhum registro nesta fase."}</p>
+              </CardContent>
+            </Card>
           ) : (
-            <ul className="space-y-2">
-              {filteredConfrontos.map(c => (
-                <li key={c.key} className="p-3 border rounded-md bg-muted/30 flex flex-col sm:flex-row sm:items-center gap-3">
-                  <div className="flex-1 min-w-0 text-sm">
-                    <div className="font-medium">{confrontoTitle(c)}</div>
-                    <div className="text-muted-foreground text-xs">
-                      {c.fase} · {c.fase === "Fase de Grupos" ? `Grupo ${c.grupo} · ` : ""}Rodada {c.rodada}
-                    </div>
-                    <ul className="text-xs mt-1 space-y-0.5">
-                      {c.results.map(r => (
-                        <li key={r.id}>
-                          <span className="font-medium">{playerName(r.player_id)}:</span>{" "}
-                          Vitória {r.pontos_jogo} · Mesa {r.pontos_mesa} · Penalidade: {r.penalidades}
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Registrado por: {registeredByName(c.registered_by)}
-                    </div>
-                  </div>
-                  <div className="flex gap-2 shrink-0">
-                    <Button size="sm" variant="outline" onClick={() => openEdit(c)} aria-label={`Editar confronto ${confrontoTitle(c)}`}>
-                      <Pencil className="h-4 w-4 mr-1" /> Editar
-                    </Button>
-                    <Button size="sm" variant="destructive" onClick={() => setDeleting(c)} aria-label={`Apagar confronto ${confrontoTitle(c)}`}>
-                      <Trash2 className="h-4 w-4 mr-1" /> Apagar
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <Accordion type="multiple" className="space-y-2">
+              {rodadasGroups.map(group => {
+                const total = group.dias.reduce((acc, d) => acc + d.confrontos.length, 0);
+                return (
+                  <AccordionItem key={`g-${group.rodada}`} value={`g-${group.rodada}`} className="border rounded-md bg-card">
+                    <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                      <div className="flex items-center gap-3 text-left">
+                        <span className="text-base font-semibold">{groupLabel(group.rodada)}</span>
+                        <span className="text-xs text-muted-foreground">
+                          ({total} {total === 1 ? "confronto" : "confrontos"})
+                        </span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-3 pb-4 min-[360px]:px-4">
+                      <div className="space-y-6">
+                        {group.dias.map(dia => (
+                          <section key={dia.key}>
+                            <h3 className="text-sm font-semibold mb-2 pb-1 border-b">
+                              {formatDayLabel(dia.date)}
+                            </h3>
+                            <ol className="space-y-3 list-none p-0">
+                              {dia.confrontos.map(c => {
+                                const hora = formatTime(new Date(c.created_at));
+                                return (
+                                  <li key={c.key}>
+                                    <Card>
+                                      <CardContent className="p-3 min-[360px]:p-4 space-y-3">
+                                        <div className="flex items-start justify-between gap-2 flex-wrap">
+                                          <div className="min-w-0">
+                                            <h4 className="text-base font-semibold">{confrontoTitle(c)}</h4>
+                                            <p className="text-xs text-muted-foreground mt-0.5">
+                                              {isFaseDeGrupos ? `Grupo ${c.grupo} · Rodada ${c.rodada}` : groupLabel(confrontoGroupKey(c))} · {hora}
+                                            </p>
+                                          </div>
+                                          <div className="flex gap-2 shrink-0">
+                                            <Button size="sm" variant="outline" onClick={() => openEdit(c)}>
+                                              <Pencil className="h-4 w-4 mr-1" /> Editar
+                                            </Button>
+                                            <Button size="sm" variant="destructive" onClick={() => setDeleting(c)}>
+                                              <Trash2 className="h-4 w-4 mr-1" /> Apagar
+                                            </Button>
+                                          </div>
+                                        </div>
+                                        <ul className="space-y-2 min-w-0">
+                                          {c.results.map(r => {
+                                            const maxJogo = Math.max(...c.results.map(p => p.pontos_jogo));
+                                            const isWinner = c.results.length > 1 && r.pontos_jogo === maxJogo
+                                              && c.results.filter(p => p.pontos_jogo === maxJogo).length === 1;
+                                            const penalidade = r.penalidades !== "Sem penalidades";
+                                            return (
+                                              <li key={r.id} className="rounded-md border bg-muted/30 p-3">
+                                                <p className="font-medium">
+                                                  {isWinner ? "vitória de " : ""}{playerName(r.player_id)}
+                                                </p>
+                                                <p className="text-sm mt-1">
+                                                  {r.pontos_jogo} ponto{r.pontos_jogo === 1 ? "" : "s"} de vitória, {r.pontos_mesa} ponto{r.pontos_mesa === 1 ? "" : "s"} de mesa.
+                                                </p>
+                                                {penalidade && (
+                                                  <p className="text-sm text-destructive">Penalidades: {r.penalidades}.</p>
+                                                )}
+                                              </li>
+                                            );
+                                          })}
+                                        </ul>
+                                        <p className="text-xs text-muted-foreground">
+                                          Registrado por: <span className="font-medium text-foreground">{registeredByName(c.registered_by)}</span>
+                                        </p>
+                                      </CardContent>
+                                    </Card>
+                                  </li>
+                                );
+                              })}
+                            </ol>
+                          </section>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
           )}
         </DialogContent>
       </Dialog>
@@ -347,7 +423,7 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="edit-rodada">Rodada</Label>
+                  <Label htmlFor="edit-rodada">{rodadaLabel}</Label>
                   <Input id="edit-rodada" type="number" min={1} value={editRodada} onChange={e => setEditRodada(e.target.value)} />
                 </div>
               </div>
@@ -406,8 +482,8 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
             <AlertDialogDescription>
               {deleting && (
                 deleting.results.length > 1
-                  ? `Esta ação removerá os registros de ${confrontoTitle(deleting)} (Rodada ${deleting.rodada}). Não pode ser desfeita.`
-                  : `Esta ação removerá o registro de ${playerName(deleting.results[0].player_id)} (Rodada ${deleting.rodada}). Não pode ser desfeita.`
+                  ? `Esta ação removerá os registros de ${confrontoTitle(deleting)}. Não pode ser desfeita.`
+                  : `Esta ação removerá o registro de ${playerName(deleting.results[0].player_id)}. Não pode ser desfeita.`
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>

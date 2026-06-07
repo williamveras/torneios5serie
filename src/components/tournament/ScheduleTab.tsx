@@ -783,9 +783,11 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
         onOpenChange={setImportOpen}
         tournamentId={tournamentId}
         players={players}
+        activePhase={activePhase}
         onImported={() => {
           fetchSchedules();
           fetchMatchups();
+          fetchPhaseStatuses();
         }}
       />
     </div>

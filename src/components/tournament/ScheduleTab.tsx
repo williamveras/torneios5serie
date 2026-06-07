@@ -524,17 +524,19 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
                 </div>
               );
             })()}
-            <div>
-              <Label htmlFor="schedule-rodada">Rodada (opcional)</Label>
-              <Input
-                id="schedule-rodada"
-                type="number"
-                min={1}
-                placeholder="Ex: 1, 2, 3..."
-                value={rodada}
-                onChange={(e) => setRodada(e.target.value)}
-              />
-            </div>
+            {inGroupPhase && (
+              <div>
+                <Label htmlFor="schedule-rodada">Rodada (opcional)</Label>
+                <Input
+                  id="schedule-rodada"
+                  type="number"
+                  min={1}
+                  placeholder="Ex: 1, 2, 3..."
+                  value={rodada}
+                  onChange={(e) => setRodada(e.target.value)}
+                />
+              </div>
+            )}
           </div>
 
           <Button onClick={handleSave} disabled={loading} className="w-full">

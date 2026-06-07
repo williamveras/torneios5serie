@@ -186,12 +186,27 @@ export default function PublicSchedule({ schedules, players, matchups, results =
       );
     }
 
-    const formatScheduleInfo = (s: Schedule | null) => {
-      if (!s) return "Data e horário a definir";
-      const date = s.data_partida ? formatDate(s.data_partida) : "Sem data definida";
-      const time = s.horario ? s.horario.slice(0, 5) : (s.observacao || "A definir");
-      return `${date} — ${time}`;
-    };
+    const dateBuckets = new Map<string, typeof eliminationItems>();
+    for (const it of eliminationItems) {
+      const key = it.schedule?.data_partida || NO_DATE_KEY;
+      const arr = dateBuckets.get(key) || [];
+      arr.push(it);
+      dateBuckets.set(key, arr);
+    }
+    const dateEntries = Array.from(dateBuckets.entries())
+      .sort(([a], [b]) => {
+        if (a === NO_DATE_KEY) return 1;
+        if (b === NO_DATE_KEY) return -1;
+        return a.localeCompare(b);
+      })
+      .map(([date, items]) => [
+        date,
+        [...items].sort((a, b) => {
+          const ha = a.schedule?.horario || "99:99";
+          const hb = b.schedule?.horario || "99:99";
+          return ha.localeCompare(hb);
+        }),
+      ] as const);
 
     return (
       <div className="space-y-6">
@@ -204,50 +219,61 @@ export default function PublicSchedule({ schedules, players, matchups, results =
                 <Table className="min-w-max">
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="whitespace-nowrap">Data</TableHead>
                       <TableHead className="whitespace-nowrap">Mesa</TableHead>
                       <TableHead className="whitespace-nowrap">Confronto</TableHead>
-                      <TableHead className="whitespace-nowrap">Data</TableHead>
                       <TableHead className="whitespace-nowrap">Horário</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {eliminationItems.map(it => (
-                      <TableRow key={`${it.mesa}-${it.player1_id}`}>
-                        <TableCell className="whitespace-nowrap tabular-nums">Mesa {it.mesa}</TableCell>
-                        <TableCell className={`font-medium ${noWrapText}`}>
-                          {displayName(playerMap.get(it.player1_id))} x {displayName(playerMap.get(it.player2_id))}
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          {it.schedule?.data_partida ? formatDate(it.schedule.data_partida) : "A definir"}
-                        </TableCell>
-                        <TableCell className="tabular-nums whitespace-nowrap">
-                          {it.schedule?.horario ? it.schedule.horario.slice(0, 5) : (it.schedule?.observacao || "A definir")}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {dateEntries.flatMap(([date, items]) =>
+                      items.map(it => (
+                        <TableRow key={`${date}-${it.mesa}-${it.player1_id}`}>
+                          <TableCell className="whitespace-nowrap">
+                            {date === NO_DATE_KEY ? "Sem data definida" : formatDate(date)}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap tabular-nums">Mesa {it.mesa}</TableCell>
+                          <TableCell className={`font-medium ${noWrapText}`}>
+                            {displayName(playerMap.get(it.player1_id))} x {displayName(playerMap.get(it.player2_id))}
+                          </TableCell>
+                          <TableCell className="tabular-nums whitespace-nowrap">
+                            {it.schedule?.horario ? it.schedule.horario.slice(0, 5) : (it.schedule?.observacao || "A definir")}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </div>
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
-            {eliminationItems.map(it => (
-              <Card key={`${it.mesa}-${it.player1_id}`}>
-                <CardContent className={compactCardPadding}>
-                  <p className="text-sm text-muted-foreground">{keepTogether(`Mesa ${it.mesa}`)}</p>
-                  <h3 className={`text-base sm:text-lg font-semibold ${scrollLine}`}>
-                    <span className="public-line-content">
-                      <span>{keepTogether(displayName(playerMap.get(it.player1_id)))}</span>{" "}
-                      <span className="text-muted-foreground font-normal">x</span>{" "}
-                      <span>{keepTogether(displayName(playerMap.get(it.player2_id)))}</span>
-                    </span>
+          <div className="space-y-4">
+            {dateEntries.map(([date, items]) => (
+              <Card key={date}>
+                <CardContent className="pt-4">
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <CalendarDays className="h-4 w-4" /> {date === NO_DATE_KEY ? "Sem data definida" : formatDate(date)}
                   </h3>
-                  <div className={`text-sm font-medium tabular-nums mt-1 ${scrollLine}`}>
-                    <span className="public-line-content">
-                      <Clock className="inline h-3.5 w-3.5 align-[-2px]" />{" "}
-                      {keepTogether(formatScheduleInfo(it.schedule))}
-                    </span>
+                  <div className="space-y-2">
+                    {items.map(it => (
+                      <div key={`${it.mesa}-${it.player1_id}`} className={`rounded-md border bg-muted/30 min-w-0 overflow-hidden ${compactCardPadding}`}>
+                        <h3 className={`text-base sm:text-lg font-semibold ${scrollLine}`}>
+                          <span className="public-line-content">
+                            <span>{keepTogether(displayName(playerMap.get(it.player1_id)))}</span>{" "}
+                            <span className="text-muted-foreground font-normal">x</span>{" "}
+                            <span>{keepTogether(displayName(playerMap.get(it.player2_id)))}</span>{" "}
+                            <span className="text-muted-foreground font-normal text-sm">{keepTogether(`(mesa ${it.mesa})`)}</span>
+                          </span>
+                        </h3>
+                        <div className={`text-sm font-medium tabular-nums mt-1 ${scrollLine}`}>
+                          <span className="public-line-content">
+                            <Clock className="inline h-3.5 w-3.5 align-[-2px]" />{" "}
+                            {keepTogether(it.schedule?.horario ? it.schedule.horario.slice(0, 5) : (it.schedule?.observacao || "A definir"))}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>

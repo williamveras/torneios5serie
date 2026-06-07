@@ -79,6 +79,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
   const [matchups, setMatchups] = useState<{ player1_id: string; player2_id: string; rodada: number | null; fase: string | null; created_at: string }[]>([]);
   const [results, setResults] = useState<{ player_id: string; rodada: number; fase: string | null }[]>([]);
   const [numeroRodadas, setNumeroRodadas] = useState<number | null>(null);
+  const [phaseStatuses, setPhaseStatuses] = useState<{ fase: string; status: string }[]>([]);
 
   const [grupo, setGrupo] = useState("");
 

@@ -113,7 +113,17 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
     fetchMatchups();
     fetchResults();
     fetchTournament();
+    fetchPhaseStatuses();
   }, [tournamentId]);
+
+  async function fetchPhaseStatuses() {
+    const { data } = await supabase
+      .from("phase_status")
+      .select("fase, status")
+      .eq("tournament_id", tournamentId);
+    if (data) setPhaseStatuses(data as any);
+  }
+
 
   async function fetchMatchups() {
     const { data } = await supabase

@@ -742,17 +742,19 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
                   className="bg-muted"
                 />
               </div>
-              <div>
-                <Label htmlFor="edit-schedule-rodada">Rodada (opcional)</Label>
-                <Input
-                  id="edit-schedule-rodada"
-                  type="number"
-                  min={1}
-                  placeholder="Ex: 1, 2, 3..."
-                  value={editRodada}
-                  onChange={(e) => setEditRodada(e.target.value)}
-                />
-              </div>
+              {inGroupPhase && (
+                <div>
+                  <Label htmlFor="edit-schedule-rodada">Rodada (opcional)</Label>
+                  <Input
+                    id="edit-schedule-rodada"
+                    type="number"
+                    min={1}
+                    placeholder="Ex: 1, 2, 3..."
+                    value={editRodada}
+                    onChange={(e) => setEditRodada(e.target.value)}
+                  />
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>

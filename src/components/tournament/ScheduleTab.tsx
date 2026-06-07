@@ -192,16 +192,23 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
     return p?.nick_playroom || p?.nome_completo || "—";
   }
 
-  // Auto-fill grupo based on selected player
+  // Active phase (used to scope form defaults, import dialog, and listing)
+  const activePhase = getActivePublicPhase(phaseStatuses);
+  const inGroupPhase = isGroupPhase(activePhase);
+
+  // Auto-fill grupo based on selected player (group phase) or fase (mata-mata)
   function autoFillGrupo(playerId: string) {
+    if (!inGroupPhase) { setGrupo(activePhase); return; }
     const player = players.find(p => p.id === playerId);
     if (player?.grupo) setGrupo(player.grupo);
   }
 
   function autoFillEditGrupo(playerId: string) {
+    if (!inGroupPhase) { setEditGrupo(activePhase); return; }
     const player = players.find(p => p.id === playerId);
     if (player?.grupo) setEditGrupo(player.grupo);
   }
+
 
   async function handleSave() {
     if (!player1 || !player2) {

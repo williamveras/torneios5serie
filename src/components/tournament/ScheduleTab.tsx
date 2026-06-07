@@ -16,6 +16,7 @@ import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Tables } from "@/integrations/supabase/types";
 import { computeCurrentRound } from "@/lib/rounds";
+import { getActivePublicPhase, isGroupPhase } from "@/lib/phase";
 
 
 // Parse "DD/MM" or "DD/MM/YYYY" to "YYYY-MM-DD". Returns null if invalid.

@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { parseMatchupsText, type ParsedMatchup } from "@/lib/matchupParser";
+import { isGroupPhase } from "@/lib/phase";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Player = Tables<"players">;
@@ -17,10 +18,14 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   tournamentId: string;
   players: Player[];
+  activePhase?: string;
   onImported: () => void;
 }
 
-export default function ImportMatchupsDialog({ open, onOpenChange, tournamentId, players, onImported }: Props) {
+export default function ImportMatchupsDialog({ open, onOpenChange, tournamentId, players, activePhase, onImported }: Props) {
+  const fase = activePhase || "Fase de Grupos";
+  const groupPhase = isGroupPhase(fase);
+
   const [rodada, setRodada] = useState<string>("");
   const [text, setText] = useState("");
   const [preview, setPreview] = useState<ParsedMatchup[] | null>(null);
@@ -33,7 +38,7 @@ export default function ImportMatchupsDialog({ open, onOpenChange, tournamentId,
   }
 
   function handlePreview() {
-    if (!rodada || isNaN(parseInt(rodada, 10))) {
+    if (groupPhase && (!rodada || isNaN(parseInt(rodada, 10)))) {
       toast.error("Informe a rodada (número).");
       return;
     }
@@ -41,10 +46,14 @@ export default function ImportMatchupsDialog({ open, onOpenChange, tournamentId,
       toast.error("Cole o texto dos confrontos.");
       return;
     }
-    const parsed = parseMatchupsText(text, players);
+    const parsed = parseMatchupsText(text, players, { ignoreGroups: !groupPhase });
     if (parsed.length === 0) {
       toast.error("Nenhum confronto detectado no texto.");
       return;
+    }
+    if (!groupPhase) {
+      // Mata-mata: força grupo = fase (sem cabeçalho de grupo no texto)
+      parsed.forEach((r) => { r.grupo = fase; });
     }
     setPreview(parsed);
   }
@@ -60,7 +69,7 @@ export default function ImportMatchupsDialog({ open, onOpenChange, tournamentId,
 
   async function handleConfirm() {
     if (!preview) return;
-    const rd = parseInt(rodada, 10);
+    const rd = groupPhase ? parseInt(rodada, 10) : null;
     const valid = preview.filter((r) => r.errors.length === 0 && r.player1Id && r.player2Id && r.grupo);
     if (valid.length === 0) {
       toast.error("Nenhuma linha válida para gravar.");
@@ -68,11 +77,13 @@ export default function ImportMatchupsDialog({ open, onOpenChange, tournamentId,
     }
     setSaving(true);
 
-    const { data: existing } = await supabase
+    let existingQuery = supabase
       .from("matchups")
-      .select("player1_id, player2_id, rodada")
+      .select("player1_id, player2_id, rodada, fase")
       .eq("tournament_id", tournamentId)
-      .eq("rodada", rd);
+      .eq("fase", fase);
+    if (groupPhase && rd != null) existingQuery = existingQuery.eq("rodada", rd);
+    const { data: existing } = await existingQuery;
     const existingPairs = new Set(
       (existing || []).map((m: any) => [m.player1_id, m.player2_id].sort().join("|"))
     );
@@ -91,7 +102,7 @@ export default function ImportMatchupsDialog({ open, onOpenChange, tournamentId,
           tournament_id: tournamentId,
           rodada: rd,
           grupo: row.grupo,
-          fase: "Fase de Grupos",
+          fase,
           player1_id: row.player1Id!,
           player2_id: row.player2Id!,
         });
@@ -139,6 +150,10 @@ export default function ImportMatchupsDialog({ open, onOpenChange, tournamentId,
     onOpenChange(false);
   }
 
+  const placeholderText = groupPhase
+    ? `Exemplo:\n\nGrupo 1:\nNando_sousa x Zico10\nTerça 12/05 20:45\n\nGrupo 2:\nfelino x Cowboy\na definir`
+    : `Exemplo:\n\nNando_sousa x Zico10\nTerça 12/05 20:45\n\nfelino x Cowboy\na definir`;
+
   return (
     <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) reset(); }}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -147,25 +162,32 @@ export default function ImportMatchupsDialog({ open, onOpenChange, tournamentId,
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-[120px_1fr] gap-4 items-start">
-            <div>
-              <Label htmlFor="import-rodada">Rodada</Label>
-              <Input
-                id="import-rodada"
-                type="number"
-                min={1}
-                value={rodada}
-                onChange={(e) => setRodada(e.target.value)}
-                placeholder="Ex: 4"
-              />
-            </div>
+          <p className="text-sm text-muted-foreground">
+            Importando para a <strong>{fase}</strong>.
+            {!groupPhase && " Não é necessário informar grupo nem rodada — as mesas serão numeradas pela ordem de cadastro."}
+          </p>
+
+          <div className={`grid grid-cols-1 gap-4 items-start ${groupPhase ? "sm:grid-cols-[120px_1fr]" : ""}`}>
+            {groupPhase && (
+              <div>
+                <Label htmlFor="import-rodada">Rodada</Label>
+                <Input
+                  id="import-rodada"
+                  type="number"
+                  min={1}
+                  value={rodada}
+                  onChange={(e) => setRodada(e.target.value)}
+                  placeholder="Ex: 4"
+                />
+              </div>
+            )}
             <div>
               <Label htmlFor="import-text">Texto colado</Label>
               <Textarea
                 id="import-text"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder={`Exemplo:\n\nGrupo 1:\nNando_sousa x Zico10\nTerça 12/05 20:45\n\nGrupo 2:\nfelino x Cowboy\na definir`}
+                placeholder={placeholderText}
                 rows={10}
                 className="font-mono text-xs"
               />
@@ -182,7 +204,7 @@ export default function ImportMatchupsDialog({ open, onOpenChange, tournamentId,
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Grupo</TableHead>
+                      {groupPhase && <TableHead>Grupo</TableHead>}
                       <TableHead>Jogador 1</TableHead>
                       <TableHead>Jogador 2</TableHead>
                       <TableHead>Data</TableHead>
@@ -195,13 +217,15 @@ export default function ImportMatchupsDialog({ open, onOpenChange, tournamentId,
                       const hasError = row.errors.length > 0;
                       return (
                         <TableRow key={i} className={hasError ? "bg-destructive/10" : ""}>
-                          <TableCell>
-                            <Input
-                              value={row.grupo}
-                              onChange={(e) => updateRow(i, { grupo: e.target.value })}
-                              className="h-8 w-16"
-                            />
-                          </TableCell>
+                          {groupPhase && (
+                            <TableCell>
+                              <Input
+                                value={row.grupo}
+                                onChange={(e) => updateRow(i, { grupo: e.target.value })}
+                                className="h-8 w-16"
+                              />
+                            </TableCell>
+                          )}
                           <TableCell>
                             <div className="text-sm">{row.player1Name}</div>
                             {!row.player1Id && <div className="text-xs text-destructive">não encontrado</div>}

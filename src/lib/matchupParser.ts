@@ -128,7 +128,11 @@ function parseDateTimeLine(line: string): { data?: string; horario?: string } {
   return result;
 }
 
-export function parseMatchupsText(text: string, players: PlayerLite[]): ParsedMatchup[] {
+export function parseMatchupsText(
+  text: string,
+  players: PlayerLite[],
+  options: { ignoreGroups?: boolean } = {},
+): ParsedMatchup[] {
   const lines = text.split(/\r?\n/).map((l) => l.trim());
   const results: ParsedMatchup[] = [];
   let currentGrupo = "";
@@ -137,19 +141,22 @@ export function parseMatchupsText(text: string, players: PlayerLite[]): ParsedMa
     const line = lines[i];
     if (!line) continue;
 
-    const g = parseGroupHeader(line);
-    if (g) {
-      currentGrupo = g;
-      continue;
+    if (!options.ignoreGroups) {
+      const g = parseGroupHeader(line);
+      if (g) {
+        currentGrupo = g;
+        continue;
+      }
     }
 
     const match = parseMatchLine(line);
     if (!match) continue;
 
     const errors: string[] = [];
-    const r1 = findPlayer(match.p1, players, currentGrupo);
-    const r2 = findPlayer(match.p2, players, currentGrupo);
-    if (!currentGrupo) errors.push("Grupo não definido (adicione cabeçalho 'Grupo N')");
+    const effectiveGrupo = options.ignoreGroups ? "" : currentGrupo;
+    const r1 = findPlayer(match.p1, players, effectiveGrupo);
+    const r2 = findPlayer(match.p2, players, effectiveGrupo);
+    if (!options.ignoreGroups && !currentGrupo) errors.push("Grupo não definido (adicione cabeçalho 'Grupo N')");
     if (!r1.player) errors.push(r1.error || `Jogador "${match.p1}" não encontrado`);
     if (!r2.player) errors.push(r2.error || `Jogador "${match.p2}" não encontrado`);
 

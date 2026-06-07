@@ -16,6 +16,7 @@ import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Tables } from "@/integrations/supabase/types";
 import { computeCurrentRound } from "@/lib/rounds";
+import { getActivePublicPhase, isGroupPhase } from "@/lib/phase";
 
 
 // Parse "DD/MM" or "DD/MM/YYYY" to "YYYY-MM-DD". Returns null if invalid.
@@ -78,6 +79,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
   const [matchups, setMatchups] = useState<{ player1_id: string; player2_id: string; rodada: number | null; fase: string | null; created_at: string }[]>([]);
   const [results, setResults] = useState<{ player_id: string; rodada: number; fase: string | null }[]>([]);
   const [numeroRodadas, setNumeroRodadas] = useState<number | null>(null);
+  const [phaseStatuses, setPhaseStatuses] = useState<{ fase: string; status: string }[]>([]);
 
   const [grupo, setGrupo] = useState("");
 
@@ -111,7 +113,17 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
     fetchMatchups();
     fetchResults();
     fetchTournament();
+    fetchPhaseStatuses();
   }, [tournamentId]);
+
+  async function fetchPhaseStatuses() {
+    const { data } = await supabase
+      .from("phase_status")
+      .select("fase, status")
+      .eq("tournament_id", tournamentId);
+    if (data) setPhaseStatuses(data as any);
+  }
+
 
   async function fetchMatchups() {
     const { data } = await supabase
@@ -180,16 +192,23 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
     return p?.nick_playroom || p?.nome_completo || "—";
   }
 
-  // Auto-fill grupo based on selected player
+  // Active phase (used to scope form defaults, import dialog, and listing)
+  const activePhase = getActivePublicPhase(phaseStatuses);
+  const inGroupPhase = isGroupPhase(activePhase);
+
+  // Auto-fill grupo based on selected player (group phase) or fase (mata-mata)
   function autoFillGrupo(playerId: string) {
+    if (!inGroupPhase) { setGrupo(activePhase); return; }
     const player = players.find(p => p.id === playerId);
     if (player?.grupo) setGrupo(player.grupo);
   }
 
   function autoFillEditGrupo(playerId: string) {
+    if (!inGroupPhase) { setEditGrupo(activePhase); return; }
     const player = players.find(p => p.id === playerId);
     if (player?.grupo) setEditGrupo(player.grupo);
   }
+
 
   async function handleSave() {
     if (!player1 || !player2) {
@@ -219,7 +238,9 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
         return;
       }
     }
-    const finalGrupo = grupo || players.find(p => p.id === player1)?.grupo || "";
+    const finalGrupo = inGroupPhase
+      ? (grupo || players.find(p => p.id === player1)?.grupo || "")
+      : activePhase;
     if (!finalGrupo) {
       toast.error("Selecione o grupo ou defina os grupos dos jogadores.");
       return;
@@ -361,10 +382,23 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
   };
 
 
-  // Group schedules by round → date → grupo. Admin shows ALL rounds.
+  // Filter schedules to the active phase / round only.
+  // - In group phase: keep numeric-grupo schedules of currentRound (if known).
+  // - In mata-mata: keep schedules whose grupo equals the active fase.
+  const filteredSchedules = schedules.filter((s) => {
+    const isNumGroup = /^\d+$/.test(s.grupo);
+    if (inGroupPhase) {
+      if (!isNumGroup) return false;
+      if (currentRound != null && s.rodada !== currentRound) return false;
+      return true;
+    }
+    return s.grupo === activePhase;
+  });
+
+  // Group schedules by round → date → grupo.
   function groupedSchedulesByRound() {
     const grouped: Record<string, Record<string, Record<string, Schedule[]>>> = {};
-    for (const s of schedules) {
+    for (const s of filteredSchedules) {
       const roundKey = s.rodada != null ? String(s.rodada) : NO_ROUND_KEY;
       const dateKey = s.data_partida || NO_DATE_KEY;
       if (!grouped[roundKey]) grouped[roundKey] = {};
@@ -374,6 +408,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
     }
     return grouped;
   }
+
 
   function formatDateTitle(dateStr: string) {
     if (dateStr === NO_DATE_KEY) return "Sem data definida";
@@ -489,17 +524,19 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
                 </div>
               );
             })()}
-            <div>
-              <Label htmlFor="schedule-rodada">Rodada (opcional)</Label>
-              <Input
-                id="schedule-rodada"
-                type="number"
-                min={1}
-                placeholder="Ex: 1, 2, 3..."
-                value={rodada}
-                onChange={(e) => setRodada(e.target.value)}
-              />
-            </div>
+            {inGroupPhase && (
+              <div>
+                <Label htmlFor="schedule-rodada">Rodada (opcional)</Label>
+                <Input
+                  id="schedule-rodada"
+                  type="number"
+                  min={1}
+                  placeholder="Ex: 1, 2, 3..."
+                  value={rodada}
+                  onChange={(e) => setRodada(e.target.value)}
+                />
+              </div>
+            )}
           </div>
 
           <Button onClick={handleSave} disabled={loading} className="w-full">
@@ -511,12 +548,15 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
       {/* Título separador */}
       <h2 className="text-xl font-semibold pt-2">
         Partidas agendadas
-        {currentRound != null && (
-          <span className="text-sm font-normal text-muted-foreground ml-2">
-            (rodada atual: {currentRound}{totalRounds ? ` de ${totalRounds}` : ""}{phaseComplete ? " — fase concluída" : ""})
-          </span>
-        )}
+        <span className="text-sm font-normal text-muted-foreground ml-2">
+          {inGroupPhase
+            ? (currentRound != null
+                ? `(rodada atual: ${currentRound}${totalRounds ? ` de ${totalRounds}` : ""}${phaseComplete ? " — fase concluída" : ""})`
+                : "")
+            : `(${activePhase})`}
+        </span>
       </h2>
+
 
       {/* Visualização — rodada atual em destaque, demais rodadas recolhidas */}
       {sortedRoundKeys.length === 0 ? (
@@ -702,17 +742,19 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
                   className="bg-muted"
                 />
               </div>
-              <div>
-                <Label htmlFor="edit-schedule-rodada">Rodada (opcional)</Label>
-                <Input
-                  id="edit-schedule-rodada"
-                  type="number"
-                  min={1}
-                  placeholder="Ex: 1, 2, 3..."
-                  value={editRodada}
-                  onChange={(e) => setEditRodada(e.target.value)}
-                />
-              </div>
+              {inGroupPhase && (
+                <div>
+                  <Label htmlFor="edit-schedule-rodada">Rodada (opcional)</Label>
+                  <Input
+                    id="edit-schedule-rodada"
+                    type="number"
+                    min={1}
+                    placeholder="Ex: 1, 2, 3..."
+                    value={editRodada}
+                    onChange={(e) => setEditRodada(e.target.value)}
+                  />
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>
@@ -741,9 +783,11 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
         onOpenChange={setImportOpen}
         tournamentId={tournamentId}
         players={players}
+        activePhase={activePhase}
         onImported={() => {
           fetchSchedules();
           fetchMatchups();
+          fetchPhaseStatuses();
         }}
       />
     </div>

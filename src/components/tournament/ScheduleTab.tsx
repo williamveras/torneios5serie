@@ -382,10 +382,23 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
   };
 
 
-  // Group schedules by round → date → grupo. Admin shows ALL rounds.
+  // Filter schedules to the active phase / round only.
+  // - In group phase: keep numeric-grupo schedules of currentRound (if known).
+  // - In mata-mata: keep schedules whose grupo equals the active fase.
+  const filteredSchedules = schedules.filter((s) => {
+    const isNumGroup = /^\d+$/.test(s.grupo);
+    if (inGroupPhase) {
+      if (!isNumGroup) return false;
+      if (currentRound != null && s.rodada !== currentRound) return false;
+      return true;
+    }
+    return s.grupo === activePhase;
+  });
+
+  // Group schedules by round → date → grupo.
   function groupedSchedulesByRound() {
     const grouped: Record<string, Record<string, Record<string, Schedule[]>>> = {};
-    for (const s of schedules) {
+    for (const s of filteredSchedules) {
       const roundKey = s.rodada != null ? String(s.rodada) : NO_ROUND_KEY;
       const dateKey = s.data_partida || NO_DATE_KEY;
       if (!grouped[roundKey]) grouped[roundKey] = {};
@@ -395,6 +408,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
     }
     return grouped;
   }
+
 
   function formatDateTitle(dateStr: string) {
     if (dateStr === NO_DATE_KEY) return "Sem data definida";

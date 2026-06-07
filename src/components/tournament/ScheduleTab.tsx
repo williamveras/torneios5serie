@@ -548,12 +548,15 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
       {/* Título separador */}
       <h2 className="text-xl font-semibold pt-2">
         Partidas agendadas
-        {currentRound != null && (
-          <span className="text-sm font-normal text-muted-foreground ml-2">
-            (rodada atual: {currentRound}{totalRounds ? ` de ${totalRounds}` : ""}{phaseComplete ? " — fase concluída" : ""})
-          </span>
-        )}
+        <span className="text-sm font-normal text-muted-foreground ml-2">
+          {inGroupPhase
+            ? (currentRound != null
+                ? `(rodada atual: ${currentRound}${totalRounds ? ` de ${totalRounds}` : ""}${phaseComplete ? " — fase concluída" : ""})`
+                : "")
+            : `(${activePhase})`}
+        </span>
       </h2>
+
 
       {/* Visualização — rodada atual em destaque, demais rodadas recolhidas */}
       {sortedRoundKeys.length === 0 ? (

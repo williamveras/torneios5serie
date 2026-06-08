@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Save, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { FASES } from "@/lib/constants";
+import { getActivePublicPhase, isGroupPhase } from "@/lib/phase";
 import ImportResultsDialog from "./ImportResultsDialog";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -44,12 +45,19 @@ export default function ResultsTab({ tournamentId }: Props) {
   const [results, setResults] = useState<PlayerResult[]>([emptyResult()]);
   const [loading, setLoading] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [activeFase, setActiveFase] = useState<string>("Fase de Grupos");
 
-  const isFaseDeGrupos = fase === "Fase de Grupos";
+  const isFaseDeGrupos = isGroupPhase(fase);
 
   useEffect(() => {
     supabase.from("players").select("*").eq("tournament_id", tournamentId).order("nome_completo")
       .then(({ data }) => { if (data) setPlayers(data); });
+    supabase.from("phase_status").select("fase, status").eq("tournament_id", tournamentId)
+      .then(({ data }) => {
+        const af = getActivePublicPhase((data || []) as any);
+        setActiveFase(af);
+        setFase(af);
+      });
   }, [tournamentId]);
 
   const getPlayerGrupo = (playerId: string): string => {
@@ -173,6 +181,7 @@ export default function ResultsTab({ tournamentId }: Props) {
           onOpenChange={setImportOpen}
           tournamentId={tournamentId}
           players={players}
+          activeFase={activeFase}
           onImported={() => { /* nothing to refresh in this tab */ }}
         />
         <div className="grid gap-4 grid-cols-2">

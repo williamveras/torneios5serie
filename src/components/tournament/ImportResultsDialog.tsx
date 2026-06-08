@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { FASES } from "@/lib/constants";
+import { isGroupPhase, buildMesaMap, pairKey, type MatchupLite } from "@/lib/phase";
 import { parseResultsText, type ParsedResult } from "@/lib/resultsParser";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -30,18 +31,36 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   tournamentId: string;
   players: Player[];
+  activeFase?: string;
   onImported: () => void;
 }
 
-export default function ImportResultsDialog({ open, onOpenChange, tournamentId, players, onImported }: Props) {
+export default function ImportResultsDialog({ open, onOpenChange, tournamentId, players, activeFase, onImported }: Props) {
   const { user } = useAuth();
-  const [fase, setFase] = useState<string>("Fase de Grupos");
+  const [fase, setFase] = useState<string>(activeFase || "Fase de Grupos");
   const [rodada, setRodada] = useState<string>("");
   const [text, setText] = useState("");
   const [blocks, setBlocks] = useState<BlockState[] | null>(null);
   const [saving, setSaving] = useState(false);
+  const [matchups, setMatchups] = useState<MatchupLite[]>([]);
 
-  const isFaseDeGrupos = fase === "Fase de Grupos";
+  const isFaseDeGrupos = isGroupPhase(fase);
+
+  useEffect(() => {
+    if (activeFase) setFase(activeFase);
+  }, [activeFase]);
+
+  useEffect(() => {
+    if (!open) return;
+    supabase
+      .from("matchups")
+      .select("id, fase, player1_id, player2_id, created_at")
+      .eq("tournament_id", tournamentId)
+      .order("created_at", { ascending: true })
+      .then(({ data }) => { if (data) setMatchups(data as any); });
+  }, [open, tournamentId]);
+
+  const mesaMap = !isFaseDeGrupos ? buildMesaMap(matchups, fase) : new Map<string, number>();
 
   function reset() {
     setRodada("");
@@ -50,7 +69,7 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
   }
 
   function handlePreview() {
-    if (!rodada || isNaN(parseInt(rodada, 10))) {
+    if (isFaseDeGrupos && (!rodada || isNaN(parseInt(rodada, 10)))) {
       toast.error("Informe a rodada (número).");
       return;
     }
@@ -90,7 +109,7 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
 
   async function handleConfirm() {
     if (!blocks) return;
-    const rd = parseInt(rodada, 10);
+    const rdGroup = isFaseDeGrupos ? parseInt(rodada, 10) : NaN;
 
     const { data: sessionData } = await supabase.auth.getSession();
     const currentUserId = sessionData.session?.user?.id ?? user?.id ?? null;
@@ -115,8 +134,17 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
     let inserted = 0;
     let failed = 0;
 
-    for (const b of valid) {
+    for (let i = 0; i < valid.length; i++) {
+      const b = valid[i];
       const grupo = isFaseDeGrupos ? (b.parsed.grupo as string) : fase;
+      let rd: number;
+      if (isFaseDeGrupos) {
+        rd = rdGroup;
+      } else {
+        const [p1, p2] = b.parsed.players;
+        const mesa = mesaMap.get(pairKey(p1.playerId!, p2.playerId!));
+        rd = mesa ?? (i + 1);
+      }
       const toInsert = b.parsed.players.map((pl, idx) => ({
         tournament_id: tournamentId,
         player_id: pl.playerId!,
@@ -162,17 +190,19 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label htmlFor="import-res-rodada">Rodada</Label>
-              <Input
-                id="import-res-rodada"
-                type="number"
-                min={1}
-                value={rodada}
-                onChange={(e) => setRodada(e.target.value)}
-                placeholder="Ex: 4"
-              />
-            </div>
+            {isFaseDeGrupos && (
+              <div>
+                <Label htmlFor="import-res-rodada">Rodada</Label>
+                <Input
+                  id="import-res-rodada"
+                  type="number"
+                  min={1}
+                  value={rodada}
+                  onChange={(e) => setRodada(e.target.value)}
+                  placeholder="Ex: 4"
+                />
+              </div>
+            )}
           </div>
 
           <div>
@@ -200,7 +230,7 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Grupo</TableHead>
+                      <TableHead>{isFaseDeGrupos ? "Grupo" : "Mesa"}</TableHead>
                       <TableHead>Jogador</TableHead>
                       <TableHead>Vitória</TableHead>
                       <TableHead>Mesa</TableHead>
@@ -208,13 +238,19 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {blocks.map((b, i) => (
+                    {blocks.map((b, i) => {
+                      const mesaForBlock = !isFaseDeGrupos
+                        ? (b.parsed.players[0]?.playerId && b.parsed.players[1]?.playerId
+                            ? mesaMap.get(pairKey(b.parsed.players[0].playerId!, b.parsed.players[1].playerId!)) ?? (i + 1)
+                            : i + 1)
+                        : null;
+                      return (
                       <Fragment key={i}>
                         {b.parsed.players.map((pl, idx) => (
                           <TableRow key={`${i}-${idx}`} className={b.parsed.errors.length > 0 ? "bg-destructive/10" : ""}>
                             {idx === 0 && (
                               <TableCell rowSpan={2} className="align-top">
-                                {isFaseDeGrupos ? (b.parsed.grupo || <span className="text-destructive">?</span>) : "—"}
+                                {isFaseDeGrupos ? (b.parsed.grupo || <span className="text-destructive">?</span>) : `Mesa ${mesaForBlock}`}
                               </TableCell>
                             )}
                             <TableCell>
@@ -252,7 +288,8 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
                           </TableRow>
                         )}
                       </Fragment>
-                    ))}
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>

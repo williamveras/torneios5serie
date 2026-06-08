@@ -45,12 +45,19 @@ export default function ResultsTab({ tournamentId }: Props) {
   const [results, setResults] = useState<PlayerResult[]>([emptyResult()]);
   const [loading, setLoading] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [activeFase, setActiveFase] = useState<string>("Fase de Grupos");
 
-  const isFaseDeGrupos = fase === "Fase de Grupos";
+  const isFaseDeGrupos = isGroupPhase(fase);
 
   useEffect(() => {
     supabase.from("players").select("*").eq("tournament_id", tournamentId).order("nome_completo")
       .then(({ data }) => { if (data) setPlayers(data); });
+    supabase.from("phase_status").select("fase, status").eq("tournament_id", tournamentId)
+      .then(({ data }) => {
+        const af = getActivePublicPhase((data || []) as any);
+        setActiveFase(af);
+        setFase(af);
+      });
   }, [tournamentId]);
 
   const getPlayerGrupo = (playerId: string): string => {

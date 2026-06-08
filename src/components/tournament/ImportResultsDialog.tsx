@@ -31,18 +31,36 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   tournamentId: string;
   players: Player[];
+  activeFase?: string;
   onImported: () => void;
 }
 
-export default function ImportResultsDialog({ open, onOpenChange, tournamentId, players, onImported }: Props) {
+export default function ImportResultsDialog({ open, onOpenChange, tournamentId, players, activeFase, onImported }: Props) {
   const { user } = useAuth();
-  const [fase, setFase] = useState<string>("Fase de Grupos");
+  const [fase, setFase] = useState<string>(activeFase || "Fase de Grupos");
   const [rodada, setRodada] = useState<string>("");
   const [text, setText] = useState("");
   const [blocks, setBlocks] = useState<BlockState[] | null>(null);
   const [saving, setSaving] = useState(false);
+  const [matchups, setMatchups] = useState<MatchupLite[]>([]);
 
-  const isFaseDeGrupos = fase === "Fase de Grupos";
+  const isFaseDeGrupos = isGroupPhase(fase);
+
+  useEffect(() => {
+    if (activeFase) setFase(activeFase);
+  }, [activeFase]);
+
+  useEffect(() => {
+    if (!open) return;
+    supabase
+      .from("matchups")
+      .select("id, fase, player1_id, player2_id, created_at")
+      .eq("tournament_id", tournamentId)
+      .order("created_at", { ascending: true })
+      .then(({ data }) => { if (data) setMatchups(data as any); });
+  }, [open, tournamentId]);
+
+  const mesaMap = !isFaseDeGrupos ? buildMesaMap(matchups, fase) : new Map<string, number>();
 
   function reset() {
     setRodada("");

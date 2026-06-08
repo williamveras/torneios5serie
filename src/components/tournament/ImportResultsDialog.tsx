@@ -230,7 +230,7 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Grupo</TableHead>
+                      <TableHead>{isFaseDeGrupos ? "Grupo" : "Mesa"}</TableHead>
                       <TableHead>Jogador</TableHead>
                       <TableHead>Vitória</TableHead>
                       <TableHead>Mesa</TableHead>
@@ -238,13 +238,19 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {blocks.map((b, i) => (
+                    {blocks.map((b, i) => {
+                      const mesaForBlock = !isFaseDeGrupos
+                        ? (b.parsed.players[0]?.playerId && b.parsed.players[1]?.playerId
+                            ? mesaMap.get(pairKey(b.parsed.players[0].playerId!, b.parsed.players[1].playerId!)) ?? (i + 1)
+                            : i + 1)
+                        : null;
+                      return (
                       <Fragment key={i}>
                         {b.parsed.players.map((pl, idx) => (
                           <TableRow key={`${i}-${idx}`} className={b.parsed.errors.length > 0 ? "bg-destructive/10" : ""}>
                             {idx === 0 && (
                               <TableCell rowSpan={2} className="align-top">
-                                {isFaseDeGrupos ? (b.parsed.grupo || <span className="text-destructive">?</span>) : "—"}
+                                {isFaseDeGrupos ? (b.parsed.grupo || <span className="text-destructive">?</span>) : `Mesa ${mesaForBlock}`}
                               </TableCell>
                             )}
                             <TableCell>

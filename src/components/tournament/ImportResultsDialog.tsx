@@ -288,7 +288,8 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
                           </TableRow>
                         )}
                       </Fragment>
-                    ))}
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>

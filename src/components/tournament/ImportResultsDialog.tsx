@@ -190,17 +190,19 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label htmlFor="import-res-rodada">Rodada</Label>
-              <Input
-                id="import-res-rodada"
-                type="number"
-                min={1}
-                value={rodada}
-                onChange={(e) => setRodada(e.target.value)}
-                placeholder="Ex: 4"
-              />
-            </div>
+            {isFaseDeGrupos && (
+              <div>
+                <Label htmlFor="import-res-rodada">Rodada</Label>
+                <Input
+                  id="import-res-rodada"
+                  type="number"
+                  min={1}
+                  value={rodada}
+                  onChange={(e) => setRodada(e.target.value)}
+                  placeholder="Ex: 4"
+                />
+              </div>
+            )}
           </div>
 
           <div>

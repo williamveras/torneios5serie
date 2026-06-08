@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { FASES } from "@/lib/constants";
+import { isGroupPhase, buildMesaMap, pairKey, type MatchupLite } from "@/lib/phase";
 import { parseResultsText, type ParsedResult } from "@/lib/resultsParser";
 import type { Tables } from "@/integrations/supabase/types";
 

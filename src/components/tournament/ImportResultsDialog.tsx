@@ -109,7 +109,7 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
 
   async function handleConfirm() {
     if (!blocks) return;
-    const rd = parseInt(rodada, 10);
+    const rdGroup = isFaseDeGrupos ? parseInt(rodada, 10) : NaN;
 
     const { data: sessionData } = await supabase.auth.getSession();
     const currentUserId = sessionData.session?.user?.id ?? user?.id ?? null;
@@ -134,8 +134,17 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
     let inserted = 0;
     let failed = 0;
 
-    for (const b of valid) {
+    for (let i = 0; i < valid.length; i++) {
+      const b = valid[i];
       const grupo = isFaseDeGrupos ? (b.parsed.grupo as string) : fase;
+      let rd: number;
+      if (isFaseDeGrupos) {
+        rd = rdGroup;
+      } else {
+        const [p1, p2] = b.parsed.players;
+        const mesa = mesaMap.get(pairKey(p1.playerId!, p2.playerId!));
+        rd = mesa ?? (i + 1);
+      }
       const toInsert = b.parsed.players.map((pl, idx) => ({
         tournament_id: tournamentId,
         player_id: pl.playerId!,

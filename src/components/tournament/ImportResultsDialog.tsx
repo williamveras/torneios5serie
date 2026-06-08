@@ -69,7 +69,7 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
   }
 
   function handlePreview() {
-    if (!rodada || isNaN(parseInt(rodada, 10))) {
+    if (isFaseDeGrupos && (!rodada || isNaN(parseInt(rodada, 10)))) {
       toast.error("Informe a rodada (número).");
       return;
     }

@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Save, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { FASES } from "@/lib/constants";
+import { getActivePublicPhase, isGroupPhase } from "@/lib/phase";
 import ImportResultsDialog from "./ImportResultsDialog";
 import type { Tables } from "@/integrations/supabase/types";
 

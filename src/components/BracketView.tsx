@@ -82,16 +82,25 @@ export default function BracketView({ matchups, results, players, faseOrder, cha
             return a.created_at.localeCompare(b.created_at);
           });
         if (ms.length === 0) return null;
-        const views: MatchupView[] = ms.map(m => ({
+        const playedIds = new Set(
+          results.filter(r => r.fase === fase).map(r => r.player_id),
+        );
+        let views: MatchupView[] = ms.map(m => ({
           matchup: m,
           p1: playerMap.get(m.player1_id),
           p2: playerMap.get(m.player2_id),
           winnerId: computeWinner(m, results),
         }));
-        return { fase, views };
+        if (hideUnplayed) {
+          views = views.filter(
+            v => playedIds.has(v.matchup.player1_id) || playedIds.has(v.matchup.player2_id),
+          );
+          if (views.length === 0) return null;
+        }
+        return { fase, views, playedIds };
       })
-      .filter((c): c is { fase: string; views: MatchupView[] } => c !== null);
-  }, [matchups, results, playerMap, faseOrder]);
+      .filter((c): c is { fase: string; views: MatchupView[]; playedIds: Set<string> } => c !== null);
+  }, [matchups, results, playerMap, faseOrder, hideUnplayed]);
 
   if (columns.length === 0) {
     return (

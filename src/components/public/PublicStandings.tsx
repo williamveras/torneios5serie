@@ -256,6 +256,14 @@ export default function PublicStandings({ results, players, phaseStatuses, viewM
           </Button>
         </div>
       )}
+      {projection.length > 0 && (
+        <PhaseRoadmap
+          projection={projection}
+          classifiedCount={classifiedCount}
+          currentFase={selectedFase}
+          concludedFases={concludedFases}
+        />
+      )}
       {totalRows > 0 && (
         isInProgress ? (
           <Alert className="border-yellow-500/50 bg-yellow-500/10" role="status">

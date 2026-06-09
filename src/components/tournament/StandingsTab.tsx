@@ -192,6 +192,57 @@ export default function StandingsTab({ tournamentId }: Props) {
   const nextFase = nextPhaseName(selectedFase);
   const showQualifiers = isConcluded && hasAnyGroup && !!nextFase;
 
+  // === Projeção automática das fases eliminatórias ===
+  // Conta classificados saídos da Fase de Grupos (top-5 por grupo + 18 melhores 6º)
+  // ou, se não há grupos, simplesmente o total de jogadores cadastrados.
+  const grupoResults = useMemo(
+    () => results.filter(r => (r.fase || "Fase de Grupos") === "Fase de Grupos"),
+    [results],
+  );
+  const grupoQualifiers = useMemo(
+    () => computeQualifiers(grupoResults, getPlayerName, getPlayerNick),
+    [grupoResults, players],
+  );
+  const classifiedCount = grupoQualifiers.hasGroups
+    ? grupoQualifiers.direct.length + grupoQualifiers.repescagem.length
+    : grupoQualifiers.direct.length;
+  const projection = useMemo(() => projectPhases(classifiedCount), [classifiedCount]);
+  const concludedFases = phaseStatuses.filter(p => p.status === "concluida").map(p => p.fase);
+
+  // Banner contextual da fase selecionada
+  const selectedFaseMatchups = useMemo(
+    () => matchups.filter(m => (m.fase || "Fase de Grupos") === selectedFase),
+    [matchups, selectedFase],
+  );
+  const selectedFasePlayersWithResult = useMemo(() => new Set(
+    results
+      .filter(r => (r.fase || "Fase de Grupos") === selectedFase)
+      .map(r => r.player_id),
+  ), [results, selectedFase]);
+  const confrontosPendentes = selectedFaseMatchups.filter(
+    m => !selectedFasePlayersWithResult.has(m.player1_id) || !selectedFasePlayersWithResult.has(m.player2_id),
+  ).length;
+
+  // Sugestão: fase atual concluída + próxima fase ainda sem confrontos
+  const projectedNext = projection.find(p => p.fase === selectedFase);
+  const projectedAfterCurrent = (() => {
+    const i = projection.findIndex(p => p.fase === selectedFase);
+    if (i < 0 || i === projection.length - 1) return null;
+    return projection[i + 1];
+  })();
+  const nextHasMatchups = projectedAfterCurrent
+    ? matchups.some(m => (m.fase || "Fase de Grupos") === projectedAfterCurrent.fase)
+    : false;
+  const showGenerateNextHint = isConcluded && projectedAfterCurrent && !nextHasMatchups;
+  // Sugestão na própria Fase de Grupos: já concluiu mas a 1ª fase eliminatória ainda não tem confrontos
+  const firstElim = projection[0];
+  const firstElimHasMatchups = firstElim
+    ? matchups.some(m => (m.fase || "Fase de Grupos") === firstElim.fase)
+    : false;
+  const showGenerateFirstElim =
+    selectedFase === "Fase de Grupos" && isConcluded && firstElim && !firstElimHasMatchups;
+
+
   const exportToXlsx = () => {
     const wb = XLSX.utils.book_new();
 

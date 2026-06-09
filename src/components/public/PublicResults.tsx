@@ -330,8 +330,8 @@ export default function PublicResults({ results, players, matchups = [], phaseSt
         <>
           <p className="text-sm text-muted-foreground">
             {isFaseDeGrupos
-              ? "Acompanhe aqui os resultados individuais dos confrontos já ocorridos. Toque em uma rodada para expandir."
-              : `Resultados da ${selectedFase}, organizados por Mesa. Toque em uma mesa para expandir.`}
+              ? `Acompanhe aqui os resultados individuais dos confrontos já ocorridos. Toque em uma rodada para expandir. (${confrontos.length} ${confrontos.length === 1 ? "jogo" : "jogos"} registrados)`
+              : `${confrontos.length} ${confrontos.length === 1 ? "jogo" : "jogos"} registrados nesta fase.`}
           </p>
           {isFaseDeGrupos ? (
             <Accordion type="multiple" defaultValue={defaultOpenRodadas} className="space-y-2">

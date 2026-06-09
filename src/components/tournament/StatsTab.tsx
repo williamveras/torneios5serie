@@ -95,6 +95,12 @@ export default function StatsTab({ tournamentId }: Props) {
     return FASES.filter(f => map.has(f)).map(f => ({ fase: f, items: map.get(f)! }));
   }, [results]);
 
+  const activeFase = useMemo(() => getActivePublicPhase(phaseStatuses), [phaseStatuses]);
+  const activeFaseGames = useMemo(() => {
+    const faseData = byFase.find(b => b.fase === activeFase);
+    return faseData ? Math.floor(faseData.items.length / 2) : 0;
+  }, [byFase, activeFase]);
+
   const buildConfrontos = (rs: MatchResult[]): Confronto[] => {
     const buckets = new Map<string, MatchResult[]>();
     for (const r of rs) {

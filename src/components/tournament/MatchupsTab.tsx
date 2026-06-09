@@ -187,20 +187,22 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
   const canPorGrupo = fase === "Fase de Grupos" && hasGroups;
 
   function generate() {
-    if (players.length < 2) {
-      toast.error("É necessário ter pelo menos 2 jogadores cadastrados.");
+    // Apenas jogadores que ainda continuam no torneio (não eliminados)
+    const activePlayers = players.filter((p) => !p.eliminado);
+    if (activePlayers.length < 2) {
+      toast.error("É necessário ter pelo menos 2 jogadores ativos (não eliminados).");
       return;
     }
 
     const newDrafts: DraftMatch[] = [];
 
     if (mode === "por_grupo") {
-      if (!hasGroups) {
+      if (!activePlayers.some((p) => p.grupo)) {
         toast.error("Defina os grupos dos jogadores na aba Participantes antes de gerar.");
         return;
       }
       const byGroup = new Map<string, Player[]>();
-      players.forEach((p) => {
+      activePlayers.forEach((p) => {
         if (!p.grupo) return;
         const list = byGroup.get(p.grupo) || [];
         list.push(p);
@@ -217,8 +219,8 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
         });
       }
     } else {
-      // geral: random pairs across all players
-      const shuffled = shuffle(players.map((p) => p.id));
+      // geral: pares aleatórios entre jogadores ativos
+      const shuffled = shuffle(activePlayers.map((p) => p.id));
       const grupoLabel = fase === "Fase de Grupos" ? "Geral" : fase;
       const rodadaNum = rodadaGeral.trim() ? parseInt(rodadaGeral.trim(), 10) : undefined;
       if (rodadaGeral.trim() && (rodadaNum === undefined || isNaN(rodadaNum) || rodadaNum < 1)) {

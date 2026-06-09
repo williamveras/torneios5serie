@@ -105,6 +105,21 @@ export default function PublicStandings({ results, players, phaseStatuses, viewM
   const nextFase = nextPhaseName(selectedFase);
   const showQualifiers = isConcluded && hasAnyGroup && !!nextFase && totalRows > 0;
 
+  // Projeção de fases eliminatórias (visível na fase de grupos para mostrar o roadmap completo).
+  const grupoResults = useMemo(
+    () => results.filter(r => (r.fase || "Fase de Grupos") === "Fase de Grupos"),
+    [results],
+  );
+  const grupoQualifiers = useMemo(
+    () => computeQualifiers(grupoResults, getPlayerName, getPlayerNick),
+    [grupoResults, players],
+  );
+  const classifiedCount = grupoQualifiers.hasGroups
+    ? grupoQualifiers.direct.length + grupoQualifiers.repescagem.length
+    : grupoQualifiers.direct.length;
+  const projection = useMemo(() => projectPhases(classifiedCount), [classifiedCount]);
+  const concludedFases = phaseStatuses.filter(p => p.status === "concluida").map(p => p.fase);
+
   const exportToXlsx = () => {
     const wb = XLSX.utils.book_new();
     if (!hasAnyGroup) {

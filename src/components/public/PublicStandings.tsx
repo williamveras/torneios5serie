@@ -20,6 +20,8 @@ import type { Tables } from "@/integrations/supabase/types";
 type MatchResult = Tables<"match_results">;
 type PhaseStatus = Tables<"phase_status">;
 
+type Matchup = Tables<"matchups">;
+
 interface PlayerLite {
   id: string;
   nome_completo: string;
@@ -30,6 +32,7 @@ interface Props {
   results: MatchResult[];
   players: PlayerLite[];
   phaseStatuses: PhaseStatus[];
+  matchups?: Matchup[];
   viewMode?: ViewMode;
 }
 

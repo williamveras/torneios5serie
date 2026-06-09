@@ -431,8 +431,18 @@ export default function StandingsTab({ tournamentId }: Props) {
     XLSX.writeFile(wb, `classificacao_${selectedFase.replace(/ /g, "_")}.xlsx`);
   };
 
+  const campeao = campeaoId ? players.find(p => p.id === campeaoId) : null;
+
   return (
     <div className="space-y-4">
+      {campeao && (
+        <Alert role="status" className="border-amber-500/50 bg-amber-500/10">
+          <Info className="h-4 w-4 text-amber-600" />
+          <AlertDescription>
+            🏆 <strong>Campeão do torneio:</strong> {campeao.nick_playroom || campeao.nome_completo}
+          </AlertDescription>
+        </Alert>
+      )}
       <div className="flex items-end gap-4 flex-wrap">
         <div className="space-y-2">
           <Label htmlFor="standings-fase">Fase</Label>

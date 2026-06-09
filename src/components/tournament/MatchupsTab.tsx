@@ -359,6 +359,34 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
             </p>
           )}
 
+          {(() => {
+            const EXPECTED: Record<string, number> = {
+              "16 Avos": 32,
+              "Oitavas de Final": 16,
+              "Quartas de Final": 8,
+              "Semifinal": 4,
+              "Final": 2,
+            };
+            const expected = EXPECTED[fase];
+            if (!expected || fase === "Fase de Grupos") return null;
+            const active = players.filter((p) => !p.eliminado).length;
+            if (active === expected) {
+              return (
+                <p className="text-xs text-green-700 dark:text-green-400">
+                  ✔ {fase} requer {expected} jogadores e você tem {active} ativos.
+                </p>
+              );
+            }
+            return (
+              <p className="text-xs text-amber-700 dark:text-amber-400">
+                ⚠ {fase} requer normalmente {expected} jogadores, mas há {active} ativos no torneio.
+                {active > expected && " Considere usar a fase anterior, ou conferir quem ainda não foi eliminado."}
+                {active < expected && " Faltam jogadores — verifique se sobrou alguém sem confronto ou avance para a próxima fase nomeada."}
+              </p>
+            );
+          })()}
+
+
           {mode === "geral" && (
             <div className="max-w-xs">
               <Label htmlFor="matchup-rodada-geral">Rodada (opcional)</Label>

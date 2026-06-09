@@ -481,99 +481,113 @@ export default function PublicResults({ results, players, matchups = [], phaseSt
               })}
             </Accordion>
           ) : (
-            <div className="space-y-6">
-              {rodadasGroups.flatMap(group => group.dias).map(dia => (
-                viewMode === "table" ? (
-                  <section key={dia.key} aria-labelledby={`dia-flat-${dia.key}`}>
-                    <h3 id={`dia-flat-${dia.key}`} className="text-sm font-semibold mb-2 pb-1 border-b">
-                      {formatDayLabel(dia.date)}
-                    </h3>
-                    <div className="rounded-md border overflow-x-auto">
-                      <Table className="min-w-max">
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="whitespace-nowrap">Mesa</TableHead>
-                            <TableHead className="whitespace-nowrap">Confronto</TableHead>
-                            <TableHead className="whitespace-nowrap">Jogador</TableHead>
-                            <TableHead className="text-right whitespace-nowrap">Vitória</TableHead>
-                            <TableHead className="text-right whitespace-nowrap">Mesa</TableHead>
-                            <TableHead className="whitespace-nowrap">Penalidades</TableHead>
-                            <TableHead className="whitespace-nowrap">Moderador</TableHead>
-                            <TableHead className="whitespace-nowrap">Hora</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {dia.confrontos.flatMap(c => {
-                            const horaPostagem = formatTime(new Date(c.created_at));
-                            const mod = moderatorName(c.registered_by);
-                            const mesaNum = c.players.length >= 2
-                              ? mesaMap.get(pairKey(c.players[0].player_id, c.players[1].player_id))
-                              : undefined;
-                            return c.players.map((r, idx) => (
-                              <TableRow key={r.id} className={idx === 0 ? "border-t-2" : ""}>
-                                {idx === 0 && (
-                                  <TableCell rowSpan={c.players.length} className={`align-top font-medium ${noWrapText}`}>
-                                    {mesaNum ? `Mesa ${mesaNum}` : "—"}
-                                  </TableCell>
-                                )}
-                                {idx === 0 && (
-                                  <TableCell rowSpan={c.players.length} className={`align-top font-medium ${noWrapText}`}>
-                                    {c.players.length < 2
-                                      ? `${displayName(c.players[0].player_id)} (avulso)`
-                                      : `${displayName(c.players[0].player_id)} x ${displayName(c.players[1].player_id)}`}
-                                  </TableCell>
-                                )}
-                                <TableCell className={noWrapText}>{displayName(r.player_id)}</TableCell>
-                                <TableCell className={`text-right tabular-nums ${noWrapText}`}>{r.pontos_jogo}</TableCell>
-                                <TableCell className={`text-right tabular-nums ${noWrapText}`}>{r.pontos_mesa}</TableCell>
-                                <TableCell className={`${noWrapText} ${r.penalidades !== "Sem penalidades" ? "text-destructive" : "text-muted-foreground"}`}>
-                                  {r.penalidades}
-                                </TableCell>
-                                {idx === 0 && (
-                                  <TableCell rowSpan={c.players.length} className={`align-top ${noWrapText}`}>{mod}</TableCell>
-                                )}
-                                {idx === 0 && (
-                                  <TableCell rowSpan={c.players.length} className={`align-top tabular-nums ${noWrapText}`}>{horaPostagem}</TableCell>
-                                )}
-                              </TableRow>
-                            ));
-                          })}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </section>
-                ) : (
-                  <section key={dia.key} aria-labelledby={`dia-flat-${dia.key}`}>
-                    <h3 id={`dia-flat-${dia.key}`} className="text-sm font-semibold mb-2 pb-1 border-b">
-                      {formatDayLabel(dia.date)}
-                    </h3>
-                    <ol className="space-y-3 list-none p-0">
-                      {dia.confrontos.map(c => {
-                        const incompleto = c.players.length < 2;
-                        const p1 = c.players[0];
-                        const p2 = c.players[1];
-                        const nome1 = displayName(p1.player_id);
-                        const nome2 = p2 ? displayName(p2.player_id) : null;
-                        const mesa = p2 ? mesaMap.get(pairKey(p1.player_id, p2.player_id)) : undefined;
-                        const mesaLabel = mesa ? `Mesa ${mesa}` : "Mesa —";
-                        const tituloConfronto = incompleto
-                          ? `${mesaLabel}: ${nome1} (registro avulso)`
-                          : `${mesaLabel}: ${nome1} x ${nome2}`;
-                        const horaPostagem = formatTime(new Date(c.created_at));
+            (() => {
+              // For non-group phases: group confrontos directly by day (one header per day),
+              // and render each confronto as a collapsible accordion item.
+              const dayMap = new Map<string, { key: string; date: Date; confrontos: Confronto[] }>();
+              for (const c of confrontos) {
+                const d = new Date(c.created_at);
+                const dk = formatDayKey(d);
+                const ex = dayMap.get(dk);
+                if (ex) ex.confrontos.push(c);
+                else dayMap.set(dk, { key: dk, date: d, confrontos: [c] });
+              }
+              const dias = Array.from(dayMap.values()).sort((a, b) => b.key.localeCompare(a.key));
 
-                        return (
-                          <li key={c.key}>
-                            <article aria-label={`Confronto ${tituloConfronto}, postado às ${horaPostagem}`}>
-                              <Card>
-                                <CardContent className="p-3 min-[360px]:p-4">
-                                  <header className="mb-3">
-                                    <h4 className={`text-base font-semibold ${scrollLine}`}>
-                                      <span className="public-line-content">{keepTogether(tituloConfronto)}</span>
-                                    </h4>
-                                    <p className={`text-sm text-muted-foreground mt-1 ${scrollLine}`}>
-                                      <span className="public-line-content">{keepTogether("Moderação:")} <span className="font-medium text-foreground">{keepTogether(moderatorName(c.registered_by))}</span>.</span>
-                                    </p>
-                                  </header>
+              return (
+                <div className="space-y-6">
+                  {dias.map(dia => (
+                    viewMode === "table" ? (
+                      <section key={dia.key} aria-labelledby={`dia-flat-${dia.key}`}>
+                        <h3 id={`dia-flat-${dia.key}`} className="text-sm font-semibold mb-2 pb-1 border-b">
+                          {formatDayLabel(dia.date)}
+                        </h3>
+                        <div className="rounded-md border overflow-x-auto">
+                          <Table className="min-w-max">
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="whitespace-nowrap">Mesa</TableHead>
+                                <TableHead className="whitespace-nowrap">Confronto</TableHead>
+                                <TableHead className="whitespace-nowrap">Jogador</TableHead>
+                                <TableHead className="text-right whitespace-nowrap">Vitória</TableHead>
+                                <TableHead className="text-right whitespace-nowrap">Mesa</TableHead>
+                                <TableHead className="whitespace-nowrap">Penalidades</TableHead>
+                                <TableHead className="whitespace-nowrap">Moderador</TableHead>
+                                <TableHead className="whitespace-nowrap">Hora</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {dia.confrontos.flatMap(c => {
+                                const horaPostagem = formatTime(new Date(c.created_at));
+                                const mod = moderatorName(c.registered_by);
+                                const mesaNum = c.players.length >= 2
+                                  ? mesaMap.get(pairKey(c.players[0].player_id, c.players[1].player_id))
+                                  : undefined;
+                                return c.players.map((r, idx) => (
+                                  <TableRow key={r.id} className={idx === 0 ? "border-t-2" : ""}>
+                                    {idx === 0 && (
+                                      <TableCell rowSpan={c.players.length} className={`align-top font-medium ${noWrapText}`}>
+                                        {mesaNum ? `Mesa ${mesaNum}` : "—"}
+                                      </TableCell>
+                                    )}
+                                    {idx === 0 && (
+                                      <TableCell rowSpan={c.players.length} className={`align-top font-medium ${noWrapText}`}>
+                                        {c.players.length < 2
+                                          ? `${displayName(c.players[0].player_id)} (avulso)`
+                                          : `${displayName(c.players[0].player_id)} x ${displayName(c.players[1].player_id)}`}
+                                      </TableCell>
+                                    )}
+                                    <TableCell className={noWrapText}>{displayName(r.player_id)}</TableCell>
+                                    <TableCell className={`text-right tabular-nums ${noWrapText}`}>{r.pontos_jogo}</TableCell>
+                                    <TableCell className={`text-right tabular-nums ${noWrapText}`}>{r.pontos_mesa}</TableCell>
+                                    <TableCell className={`${noWrapText} ${r.penalidades !== "Sem penalidades" ? "text-destructive" : "text-muted-foreground"}`}>
+                                      {r.penalidades}
+                                    </TableCell>
+                                    {idx === 0 && (
+                                      <TableCell rowSpan={c.players.length} className={`align-top ${noWrapText}`}>{mod}</TableCell>
+                                    )}
+                                    {idx === 0 && (
+                                      <TableCell rowSpan={c.players.length} className={`align-top tabular-nums ${noWrapText}`}>{horaPostagem}</TableCell>
+                                    )}
+                                  </TableRow>
+                                ));
+                              })}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </section>
+                    ) : (
+                      <section key={dia.key} aria-labelledby={`dia-flat-${dia.key}`}>
+                        <h3 id={`dia-flat-${dia.key}`} className="text-sm font-semibold mb-2 pb-1 border-b">
+                          {formatDayLabel(dia.date)}
+                        </h3>
+                        <Accordion type="multiple" className="space-y-2">
+                          {dia.confrontos.map(c => {
+                            const incompleto = c.players.length < 2;
+                            const p1 = c.players[0];
+                            const p2 = c.players[1];
+                            const nome1 = displayName(p1.player_id);
+                            const nome2 = p2 ? displayName(p2.player_id) : null;
+                            const mesa = p2 ? mesaMap.get(pairKey(p1.player_id, p2.player_id)) : undefined;
+                            const mesaLabel = mesa ? `Mesa ${mesa}` : "Mesa —";
+                            const tituloConfronto = incompleto
+                              ? `${mesaLabel}: ${nome1} (registro avulso)`
+                              : `${mesaLabel}: ${nome1} x ${nome2}`;
+                            const horaPostagem = formatTime(new Date(c.created_at));
+
+                            return (
+                              <AccordionItem
+                                key={c.key}
+                                value={c.key}
+                                className="border rounded-md bg-card"
+                              >
+                                <AccordionTrigger className="px-4 py-3 hover:no-underline text-left">
+                                  <span className="text-base font-semibold">{keepTogether(tituloConfronto)}</span>
+                                </AccordionTrigger>
+                                <AccordionContent className="px-3 pb-4 min-[360px]:px-4">
+                                  <p className={`text-sm text-muted-foreground mb-3 ${scrollLine}`}>
+                                    <span className="public-line-content">{keepTogether("Moderação:")} <span className="font-medium text-foreground">{keepTogether(moderatorName(c.registered_by))}</span>. {keepTogether(`Postado às ${horaPostagem}.`)}</span>
+                                  </p>
                                   <ul className="space-y-2 min-w-0">
                                     {c.players.map(r => {
                                       const penalidade = r.penalidades !== "Sem penalidades";
@@ -590,7 +604,6 @@ export default function PublicResults({ results, players, matchups = [], phaseSt
                                           <p className={`text-sm mt-1 ${scrollLine}`}>
                                             <span className="public-line-content">{keepTogether(`${r.pontos_jogo} ponto${r.pontos_jogo === 1 ? "" : "s"} de vitória, ${r.pontos_mesa} ponto${r.pontos_mesa === 1 ? "" : "s"} de mesa.`)}</span>
                                           </p>
-
                                           {penalidade && (
                                             <p className={`text-sm text-destructive ${scrollLine}`}>
                                               <span className="public-line-content">{keepTogether(`Penalidades: ${r.penalidades}.`)}</span>
@@ -600,17 +613,17 @@ export default function PublicResults({ results, players, matchups = [], phaseSt
                                       );
                                     })}
                                   </ul>
-                                </CardContent>
-                              </Card>
-                            </article>
-                          </li>
-                        );
-                      })}
-                    </ol>
-                  </section>
-                )
-              ))}
-            </div>
+                                </AccordionContent>
+                              </AccordionItem>
+                            );
+                          })}
+                        </Accordion>
+                      </section>
+                    )
+                  ))}
+                </div>
+              );
+            })()
           )}
         </>
       )}

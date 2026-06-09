@@ -33,6 +33,7 @@ interface Props {
   phaseStatuses: PhaseStatus[];
   moderators: ModeratorLite[];
   viewMode?: ViewMode;
+  defaultExpanded?: boolean;
 }
 
 interface Confronto {

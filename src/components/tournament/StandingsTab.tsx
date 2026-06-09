@@ -314,6 +314,50 @@ export default function StandingsTab({ tournamentId }: Props) {
         )}
       </div>
 
+      {projection.length > 0 && (
+        <PhaseRoadmap
+          projection={projection}
+          classifiedCount={classifiedCount}
+          currentFase={selectedFase}
+          concludedFases={concludedFases}
+        />
+      )}
+
+      {showGenerateFirstElim && firstElim && (
+        <Alert role="status" className="border-primary/40 bg-primary/5">
+          <Info className="h-4 w-4 text-primary" />
+          <AlertDescription>
+            <strong>Fase de Grupos concluída.</strong> Próximo passo: gerar os
+            confrontos da <strong>{firstElim.fase}</strong> ({firstElim.from} jogadores)
+            na aba <em>Confrontos</em>.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {showGenerateNextHint && projectedAfterCurrent && (
+        <Alert role="status" className="border-primary/40 bg-primary/5">
+          <Info className="h-4 w-4 text-primary" />
+          <AlertDescription>
+            <strong>{selectedFase} concluída.</strong> Próximo passo: gerar os
+            confrontos da <strong>{projectedAfterCurrent.fase}</strong> ({projectedAfterCurrent.from} jogadores)
+            na aba <em>Confrontos</em>.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {!isConcluded && selectedFaseMatchups.length > 0 && confrontosPendentes > 0 && (
+        <Alert role="status">
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            Faltam <strong>{confrontosPendentes}</strong> confronto{confrontosPendentes === 1 ? "" : "s"} para encerrar a {selectedFase}.
+            {projectedNext && (
+              <> Esta fase deve reduzir de <strong>{projectedNext.from}</strong> para <strong>{projectedNext.to}</strong> jogadores.</>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+
+
 
 
       {totalRows === 0 ? (

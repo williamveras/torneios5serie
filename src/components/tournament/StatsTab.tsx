@@ -63,6 +63,12 @@ export default function StatsTab({ tournamentId }: Props) {
 
   const totalGames = Math.floor(results.length / 2);
 
+  const activeFase = useMemo(() => getActivePublicPhase(phaseStatuses), [phaseStatuses]);
+  const activeFaseGames = useMemo(() => {
+    const faseData = byFase.find(b => b.fase === activeFase);
+    return faseData ? Math.floor(faseData.items.length / 2) : 0;
+  }, [byFase, activeFase]);
+
   const playerName = (id: string) => {
     const p = playersMap[id];
     if (!p) return "Jogador desconhecido";

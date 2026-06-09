@@ -135,6 +135,10 @@ export default function BracketView({ matchups, results, players, faseOrder, cha
                   const slot = (v.matchup as any).bracket_slot ?? i + 1;
                   const winnerP1 = v.winnerId === v.matchup.player1_id;
                   const winnerP2 = v.winnerId === v.matchup.player2_id;
+                  const p1Played = col.playedIds.has(v.matchup.player1_id);
+                  const p2Played = col.playedIds.has(v.matchup.player2_id);
+                  const showP1Name = !hideUnplayed || p1Played;
+                  const showP2Name = !hideUnplayed || p2Played;
                   return (
                     <li
                       key={v.matchup.id}
@@ -150,7 +154,7 @@ export default function BracketView({ matchups, results, players, faseOrder, cha
                           v.winnerId && !winnerP1 ? "text-muted-foreground line-through decoration-1" : "",
                         ].join(" ")}
                       >
-                        <span className="truncate">{displayName(v.p1)}</span>
+                        <span className="truncate">{showP1Name ? displayName(v.p1) : "—"}</span>
                         {winnerP1 && <span aria-label="Vencedor" title="Vencedor">✓</span>}
                       </div>
                       <div
@@ -160,7 +164,7 @@ export default function BracketView({ matchups, results, players, faseOrder, cha
                           v.winnerId && !winnerP2 ? "text-muted-foreground line-through decoration-1" : "",
                         ].join(" ")}
                       >
-                        <span className="truncate">{displayName(v.p2)}</span>
+                        <span className="truncate">{showP2Name ? displayName(v.p2) : "—"}</span>
                         {winnerP2 && <span aria-label="Vencedor" title="Vencedor">✓</span>}
                       </div>
                     </li>

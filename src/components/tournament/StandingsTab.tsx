@@ -88,6 +88,43 @@ export default function StandingsTab({ tournamentId }: Props) {
     });
   }, [matchups, results, numeroRodadas, phaseStatuses, grupoConcluded, tournamentId]);
 
+  // Auto-close fases ELIMINATÓRIAS (mata-mata) quando todos os confrontos
+  // da fase têm resultado registrado para ambos os jogadores.
+  useEffect(() => {
+    if (matchups.length === 0) return;
+    const elimFases = FASES.filter(f => f !== "Fase de Grupos");
+    for (const fase of elimFases) {
+      const status = phaseStatuses.find(p => p.fase === fase)?.status;
+      if (status === "concluida") continue;
+      const faseMatchups = matchups.filter(m => (m.fase || "Fase de Grupos") === fase);
+      if (faseMatchups.length === 0) continue;
+      // Conjunto de pares jogador/fase com resultado registrado
+      const playersWithResult = new Set(
+        results
+          .filter(r => (r.fase || "Fase de Grupos") === fase)
+          .map(r => r.player_id),
+      );
+      const allDone = faseMatchups.every(
+        m => playersWithResult.has(m.player1_id) && playersWithResult.has(m.player2_id),
+      );
+      if (!allDone) continue;
+      const existing = phaseStatuses.find(p => p.fase === fase);
+      const op = existing
+        ? supabase.from("phase_status").update({ status: "concluida" }).eq("id", existing.id)
+        : supabase.from("phase_status").insert({
+            tournament_id: tournamentId, fase, status: "concluida",
+          });
+      op.then(({ error }) => {
+        if (error) return;
+        toast.success(`${fase} encerrada automaticamente — todos os confrontos concluídos.`);
+        loadPhaseStatuses();
+      });
+      // Trata uma fase por ciclo para evitar updates concorrentes
+      break;
+    }
+  }, [matchups, results, phaseStatuses, tournamentId]);
+
+
   const currentPhaseStatus = phaseStatuses.find(p => p.fase === selectedFase)?.status || "em_andamento";
   const isConcluded = currentPhaseStatus === "concluida";
 

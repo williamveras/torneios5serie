@@ -266,8 +266,13 @@ export default function PublicResults({ results, players, matchups = [], phaseSt
   }, [confrontos, isFaseDeGrupos, mesaMap]);
 
   const defaultOpenRodadas = useMemo<string[]>(
-    () => [],
-    [],
+    () => defaultExpanded ? rodadasGroups.map(g => `rodada-${g.rodada}`) : [],
+    [defaultExpanded, rodadasGroups],
+  );
+
+  const defaultOpenConfrontos = useMemo<string[]>(
+    () => defaultExpanded ? confrontos.map(c => c.key) : [],
+    [defaultExpanded, confrontos],
   );
 
   const phaseStatus = phaseStatuses.find(p => p.fase === selectedFase)?.status || "em_andamento";

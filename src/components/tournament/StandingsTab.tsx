@@ -168,6 +168,33 @@ export default function StandingsTab({ tournamentId }: Props) {
     });
   }, [matchups, results, players, tournamentId]);
 
+  // Detecta automaticamente o campeão quando a Final tem um vencedor.
+  useEffect(() => {
+    if (campeaoId) return;
+    const finalMatchup = matchups.find(m => m.fase === "Final");
+    if (!finalMatchup) return;
+    const r1 = results.find(r => r.player_id === finalMatchup.player1_id && r.fase === "Final");
+    const r2 = results.find(r => r.player_id === finalMatchup.player2_id && r.fase === "Final");
+    if (!r1 || !r2) return;
+    let winner: string | null = null;
+    if (r1.pontos_jogo > r2.pontos_jogo) winner = finalMatchup.player1_id;
+    else if (r2.pontos_jogo > r1.pontos_jogo) winner = finalMatchup.player2_id;
+    else if (r1.pontos_mesa > r2.pontos_mesa) winner = finalMatchup.player1_id;
+    else if (r2.pontos_mesa > r1.pontos_mesa) winner = finalMatchup.player2_id;
+    if (!winner) return;
+    (supabase.from("tournaments") as any)
+      .update({ campeao_id: winner })
+      .eq("id", tournamentId)
+      .then(({ error }: { error: any }) => {
+        if (error) return;
+        setCampeaoId(winner);
+        const p = players.find(pp => pp.id === winner);
+        toast.success(`🏆 Campeão definido: ${p?.nick_playroom || p?.nome_completo || "vencedor"}!`);
+      });
+  }, [matchups, results, campeaoId, tournamentId, players]);
+
+
+
 
   const currentPhaseStatus = phaseStatuses.find(p => p.fase === selectedFase)?.status || "em_andamento";
   const isConcluded = currentPhaseStatus === "concluida";

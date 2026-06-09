@@ -42,6 +42,7 @@ export default function StandingsTab({ tournamentId }: Props) {
   const [selectedFase, setSelectedFase] = useState<string>("Fase de Grupos");
   const [matchups, setMatchups] = useState<Tables<"matchups">[]>([]);
   const [numeroRodadas, setNumeroRodadas] = useState<number | null>(null);
+  const [campeaoId, setCampeaoId] = useState<string | null>(null);
 
   const loadPhaseStatuses = () => {
     supabase.from("phase_status").select("*").eq("tournament_id", tournamentId).then(({ data }) => {
@@ -54,12 +55,15 @@ export default function StandingsTab({ tournamentId }: Props) {
       fetchAllMatchResults(tournamentId).then(data => ({ data })),
       supabase.from("players").select("*").eq("tournament_id", tournamentId),
       supabase.from("matchups").select("*").eq("tournament_id", tournamentId),
-      supabase.from("tournaments").select("numero_rodadas").eq("id", tournamentId).maybeSingle(),
+      supabase.from("tournaments").select("numero_rodadas, campeao_id").eq("id", tournamentId).maybeSingle(),
     ]).then(([r, p, m, t]) => {
       if (r.data) setResults(r.data);
       if (p.data) setPlayers(p.data);
       if (m.data) setMatchups(m.data);
-      if (t.data) setNumeroRodadas((t.data as any).numero_rodadas ?? null);
+      if (t.data) {
+        setNumeroRodadas((t.data as any).numero_rodadas ?? null);
+        setCampeaoId((t.data as any).campeao_id ?? null);
+      }
     });
     loadPhaseStatuses();
   }, [tournamentId]);

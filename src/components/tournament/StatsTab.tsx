@@ -43,6 +43,7 @@ export default function StatsTab({ tournamentId }: Props) {
   const [loading, setLoading] = useState(true);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [moderatorFilter, setModeratorFilter] = useState<string>("__all__");
 
   useEffect(() => {
     setLoading(true);

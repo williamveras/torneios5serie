@@ -567,7 +567,7 @@ export default function PublicResults({ results, players, matchups = [], phaseSt
                         <h3 id={`dia-flat-${dia.key}`} className="text-sm font-semibold mb-2 pb-1 border-b">
                           {formatDayLabel(dia.date)}
                         </h3>
-                        <Accordion type="multiple" className="space-y-2">
+                        <Accordion type="multiple" defaultValue={defaultOpenConfrontos} className="space-y-2">
                           {dia.confrontos.map(c => {
                             const incompleto = c.players.length < 2;
                             const p1 = c.players[0];

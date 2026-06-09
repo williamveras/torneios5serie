@@ -7,6 +7,7 @@ import { BarChart3, Download, ListChecks, Loader2 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { FASES } from "@/lib/constants";
+import { getActivePublicPhase } from "@/lib/phase";
 import type { Tables } from "@/integrations/supabase/types";
 import RegistrosViewer from "./RegistrosViewer";
 import PublicResults from "@/components/public/PublicResults";

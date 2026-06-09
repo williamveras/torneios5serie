@@ -398,27 +398,7 @@ export default function StandingsTab({ tournamentId }: Props) {
     if (data) setMatchups(data);
   };
 
-    setPromoting(true);
-    // Substitui qualquer matchup existente da fase alvo
-    const { error: delErr } = await supabase
-      .from("matchups").delete()
-      .eq("tournament_id", tournamentId).eq("fase", targetFase);
-    if (delErr) {
-      setPromoting(false);
-      toast.error("Erro ao limpar confrontos existentes: " + delErr.message);
-      return;
-    }
-    const { error } = await supabase.from("matchups").insert(rows);
-    setPromoting(false);
-    if (error) { toast.error("Erro ao gerar confrontos: " + error.message); return; }
-    toast.success(
-      `${rows.length} confronto${rows.length === 1 ? "" : "s"} gerado${rows.length === 1 ? "" : "s"} para a ${targetFase}` +
-      (byes > 0 ? ` (${byes} jogador(es) sem par — ajuste manual recomendado).` : "."),
-    );
-    // Recarrega matchups
-    const { data } = await supabase.from("matchups").select("*").eq("tournament_id", tournamentId);
-    if (data) setMatchups(data);
-  };
+
 
 
 

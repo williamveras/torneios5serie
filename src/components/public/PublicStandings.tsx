@@ -49,8 +49,21 @@ const compactCardPadding = "p-3 min-[360px]:p-4";
 const keepTogether = (text: string | number) =>
   String(text).replace(/ /g, "\u00A0").replace(/-/g, "\u2011");
 
-export default function PublicStandings({ results, players, phaseStatuses, viewMode = "list" }: Props) {
-  const [selectedFase, setSelectedFase] = useState<string>("Fase de Grupos");
+export default function PublicStandings({ results, players, phaseStatuses, matchups = [], viewMode = "list" }: Props) {
+  // Default fase: latest concluded phase (so the public view follows the tournament progression).
+  const latestConcludedFase = useMemo(() => {
+    for (let i = FASES.length - 1; i >= 0; i--) {
+      const f = FASES[i];
+      if (phaseStatuses.find(p => p.fase === f)?.status === "concluida") return f;
+    }
+    return "Fase de Grupos";
+  }, [phaseStatuses]);
+  const [selectedFase, setSelectedFase] = useState<string>(latestConcludedFase);
+  const [userPickedFase, setUserPickedFase] = useState(false);
+  // Keep selected fase in sync with progression until the user manually changes it.
+  useEffect(() => {
+    if (!userPickedFase) setSelectedFase(latestConcludedFase);
+  }, [latestConcludedFase, userPickedFase]);
 
   const playerMap = useMemo(() => {
     const m = new Map<string, PlayerLite>();

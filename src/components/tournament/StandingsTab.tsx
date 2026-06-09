@@ -318,18 +318,40 @@ export default function StandingsTab({ tournamentId }: Props) {
   // Promove jogadores para a próxima fase: gera os matchups sorteados,
   // substituindo qualquer matchup já existente daquela fase.
   const promoteToNextPhase = async (targetFase: string, sourceFase: string) => {
-    let ids: string[] = [];
+    // Lista de pares já posicionados [player1, player2] na ordem do bracket
+    // (slot 1, slot 2, ...). Para a 1ª fase eliminatória, embaralhamos os
+    // classificados; para fases seguintes, pareamos vencedores por slot
+    // adjacente (slot 1 vs slot 2 → próximo slot 1, etc.) preservando o
+    // chaveamento (bracket).
+    let pairs: [string, string][] = [];
     if (sourceFase === "Fase de Grupos") {
-      ids = [
+      const ids = [
         ...grupoQualifiers.direct.map(r => r.playerId),
         ...grupoQualifiers.repescagem.map(r => r.playerId),
       ];
+      const shuffled = [...ids];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      for (let i = 0; i + 1 < shuffled.length; i += 2) {
+        pairs.push([shuffled[i], shuffled[i + 1]]);
+      }
     } else {
-      // Vencedores dos matchups da sourceFase
-      const faseMatchups = matchups.filter(m => (m.fase || "Fase de Grupos") === sourceFase);
+      // Vencedores dos matchups da sourceFase, mantendo a ordem do bracket
+      const faseMatchups = matchups
+        .filter(m => (m.fase || "Fase de Grupos") === sourceFase)
+        .slice()
+        .sort((a, b) => {
+          const sa = (a as any).bracket_slot ?? 999999;
+          const sb = (b as any).bracket_slot ?? 999999;
+          if (sa !== sb) return sa - sb;
+          return a.created_at.localeCompare(b.created_at);
+        });
       const faseResults = results.filter(r => (r.fase || "Fase de Grupos") === sourceFase);
       const byPlayer = new Map<string, typeof faseResults[number]>();
       faseResults.forEach(r => byPlayer.set(r.player_id, r));
+      const winners: string[] = [];
       for (const m of faseMatchups) {
         const r1 = byPlayer.get(m.player1_id);
         const r2 = byPlayer.get(m.player2_id);
@@ -339,30 +361,24 @@ export default function StandingsTab({ tournamentId }: Props) {
         else if (r2.pontos_jogo > r1.pontos_jogo) winner = m.player2_id;
         else if (r1.pontos_mesa > r2.pontos_mesa) winner = m.player1_id;
         else if (r2.pontos_mesa > r1.pontos_mesa) winner = m.player2_id;
-        if (winner) ids.push(winner);
+        if (winner) winners.push(winner);
+      }
+      for (let i = 0; i + 1 < winners.length; i += 2) {
+        pairs.push([winners[i], winners[i + 1]]);
       }
     }
-    if (ids.length < 2) {
+    if (pairs.length === 0) {
       toast.error("Não há classificados suficientes para gerar os confrontos.");
       return;
     }
-    // Embaralha
-    const shuffled = [...ids];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    const rows: { tournament_id: string; fase: string; grupo: string; player1_id: string; player2_id: string }[] = [];
-    for (let i = 0; i + 1 < shuffled.length; i += 2) {
-      rows.push({
-        tournament_id: tournamentId,
-        fase: targetFase,
-        grupo: targetFase,
-        player1_id: shuffled[i],
-        player2_id: shuffled[i + 1],
-      });
-    }
-    const byes = shuffled.length - rows.length * 2;
+    const rows = pairs.map(([a, b], idx) => ({
+      tournament_id: tournamentId,
+      fase: targetFase,
+      grupo: targetFase,
+      player1_id: a,
+      player2_id: b,
+      bracket_slot: idx + 1,
+    }));
     setPromoting(true);
     // Substitui qualquer matchup existente da fase alvo
     const { error: delErr } = await supabase
@@ -373,17 +389,16 @@ export default function StandingsTab({ tournamentId }: Props) {
       toast.error("Erro ao limpar confrontos existentes: " + delErr.message);
       return;
     }
-    const { error } = await supabase.from("matchups").insert(rows);
+    const { error } = await (supabase.from("matchups") as any).insert(rows);
     setPromoting(false);
     if (error) { toast.error("Erro ao gerar confrontos: " + error.message); return; }
-    toast.success(
-      `${rows.length} confronto${rows.length === 1 ? "" : "s"} gerado${rows.length === 1 ? "" : "s"} para a ${targetFase}` +
-      (byes > 0 ? ` (${byes} jogador(es) sem par — ajuste manual recomendado).` : "."),
-    );
+    toast.success(`${rows.length} confronto${rows.length === 1 ? "" : "s"} gerado${rows.length === 1 ? "" : "s"} para a ${targetFase}.`);
     // Recarrega matchups
     const { data } = await supabase.from("matchups").select("*").eq("tournament_id", tournamentId);
     if (data) setMatchups(data);
   };
+
+
 
 
 

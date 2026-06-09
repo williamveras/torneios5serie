@@ -6,7 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
-import { Download, BarChart3, Lock, Unlock } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Download, BarChart3, Lock, Unlock, Info } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { FASES } from "@/lib/constants";
@@ -15,6 +16,9 @@ import { computeQualifiers, nextPhaseName } from "@/lib/qualifiers";
 import QualifiersView from "@/components/QualifiersView";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { computeCurrentRound } from "@/lib/rounds";
+import { projectPhases, findPhaseInProjection } from "@/lib/phaseProjection";
+import PhaseRoadmap from "@/components/PhaseRoadmap";
+import { pairKey } from "@/lib/phase";
 import type { Tables } from "@/integrations/supabase/types";
 
 

@@ -441,9 +441,19 @@ export default function StandingsTab({ tournamentId }: Props) {
         <Alert role="status" className="border-primary/40 bg-primary/5">
           <Info className="h-4 w-4 text-primary" />
           <AlertDescription>
-            <strong>Fase de Grupos concluída.</strong> Próximo passo: gerar os
-            confrontos da <strong>{firstElim.fase}</strong> ({firstElim.from} jogadores)
-            na aba <em>Confrontos</em>.
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <span>
+                <strong>Fase de Grupos concluída.</strong> Próximo passo: gerar os
+                confrontos da <strong>{firstElim.fase}</strong> ({firstElim.from} jogadores).
+              </span>
+              <Button
+                size="sm"
+                onClick={() => promoteToNextPhase(firstElim.fase, "Fase de Grupos")}
+                disabled={promoting}
+              >
+                {promoting ? "Gerando..." : `Promover classificados → ${firstElim.fase}`}
+              </Button>
+            </div>
           </AlertDescription>
         </Alert>
       )}
@@ -452,12 +462,23 @@ export default function StandingsTab({ tournamentId }: Props) {
         <Alert role="status" className="border-primary/40 bg-primary/5">
           <Info className="h-4 w-4 text-primary" />
           <AlertDescription>
-            <strong>{selectedFase} concluída.</strong> Próximo passo: gerar os
-            confrontos da <strong>{projectedAfterCurrent.fase}</strong> ({projectedAfterCurrent.from} jogadores)
-            na aba <em>Confrontos</em>.
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <span>
+                <strong>{selectedFase} concluída.</strong> Próximo passo: gerar os
+                confrontos da <strong>{projectedAfterCurrent.fase}</strong> ({projectedAfterCurrent.from} jogadores).
+              </span>
+              <Button
+                size="sm"
+                onClick={() => promoteToNextPhase(projectedAfterCurrent.fase, selectedFase)}
+                disabled={promoting}
+              >
+                {promoting ? "Gerando..." : `Promover vencedores → ${projectedAfterCurrent.fase}`}
+              </Button>
+            </div>
           </AlertDescription>
         </Alert>
       )}
+
 
       {!isConcluded && selectedFaseMatchups.length > 0 && confrontosPendentes > 0 && (
         <Alert role="status">

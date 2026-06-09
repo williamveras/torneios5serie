@@ -33,6 +33,7 @@ interface Props {
   phaseStatuses: PhaseStatus[];
   moderators: ModeratorLite[];
   viewMode?: ViewMode;
+  defaultExpanded?: boolean;
 }
 
 interface Confronto {
@@ -114,7 +115,7 @@ const formatDayLabel = (d: Date) => {
   return `Jogos de ${weekday} (${p.day}/${p.month})`;
 };
 
-export default function PublicResults({ results, players, matchups = [], phaseStatuses, moderators, viewMode = "list" }: Props) {
+export default function PublicResults({ results, players, matchups = [], phaseStatuses, moderators, viewMode = "list", defaultExpanded = false }: Props) {
   const activeFase = useMemo(() => getActivePublicPhase(phaseStatuses), [phaseStatuses]);
 
   const availableFases = useMemo(() => {
@@ -265,8 +266,13 @@ export default function PublicResults({ results, players, matchups = [], phaseSt
   }, [confrontos, isFaseDeGrupos, mesaMap]);
 
   const defaultOpenRodadas = useMemo<string[]>(
-    () => [],
-    [],
+    () => defaultExpanded ? rodadasGroups.map(g => `rodada-${g.rodada}`) : [],
+    [defaultExpanded, rodadasGroups],
+  );
+
+  const defaultOpenConfrontos = useMemo<string[]>(
+    () => defaultExpanded ? confrontos.map(c => c.key) : [],
+    [defaultExpanded, confrontos],
   );
 
   const phaseStatus = phaseStatuses.find(p => p.fase === selectedFase)?.status || "em_andamento";
@@ -334,7 +340,7 @@ export default function PublicResults({ results, players, matchups = [], phaseSt
               : `${confrontos.length} ${confrontos.length === 1 ? "jogo" : "jogos"} registrados nesta fase.`}
           </p>
           {isFaseDeGrupos ? (
-            <Accordion type="multiple" defaultValue={defaultOpenRodadas} className="space-y-2">
+            <Accordion type="multiple" key={defaultExpanded ? `exp-${defaultOpenRodadas.join(",")}` : "rod"} defaultValue={defaultOpenRodadas} className="space-y-2">
               {rodadasGroups.map(group => {
                 const totalConfrontos = group.dias.reduce((acc, d) => acc + d.confrontos.length, 0);
                 const headerLabel = groupLabel(group.rodada);
@@ -561,7 +567,7 @@ export default function PublicResults({ results, players, matchups = [], phaseSt
                         <h3 id={`dia-flat-${dia.key}`} className="text-sm font-semibold mb-2 pb-1 border-b">
                           {formatDayLabel(dia.date)}
                         </h3>
-                        <Accordion type="multiple" className="space-y-2">
+                        <Accordion type="multiple" key={defaultExpanded ? `exp-${defaultOpenConfrontos.join(",")}` : `flat-${dia.key}`} defaultValue={defaultOpenConfrontos} className="space-y-2">
                           {dia.confrontos.map(c => {
                             const incompleto = c.players.length < 2;
                             const p1 = c.players[0];

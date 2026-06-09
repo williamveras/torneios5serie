@@ -188,8 +188,16 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
   }, [filteredConfrontos, isFaseDeGrupos, mesaMap]);
 
   const confrontoTitle = (c: Confronto) => {
-    if (c.results.length === 2) return `${playerName(c.results[0].player_id)} × ${playerName(c.results[1].player_id)}`;
-    return `${playerName(c.results[0].player_id)} (registro avulso)`;
+    if (isFaseDeGrupos) {
+      if (c.results.length === 2) return `${playerName(c.results[0].player_id)} × ${playerName(c.results[1].player_id)}`;
+      return `${playerName(c.results[0].player_id)} (registro avulso)`;
+    }
+    const mesa = c.results.length >= 2
+      ? mesaMap.get(pairKey(c.results[0].player_id, c.results[1].player_id))
+      : undefined;
+    const mesaLabel = mesa ? `Mesa ${mesa}` : "Mesa —";
+    if (c.results.length === 2) return `${mesaLabel}: ${playerName(c.results[0].player_id)} × ${playerName(c.results[1].player_id)}`;
+    return `${mesaLabel}: ${playerName(c.results[0].player_id)} (registro avulso)`;
   };
 
   const openEdit = (c: Confronto) => {
@@ -319,90 +327,124 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
               </CardContent>
             </Card>
           ) : (
-            <Accordion type="multiple" className="space-y-2">
-              {rodadasGroups.map(group => {
-                const total = group.dias.reduce((acc, d) => acc + d.confrontos.length, 0);
+            (() => {
+              const renderConfronto = (c: Confronto) => {
+                const hora = formatTime(new Date(c.created_at));
                 return (
-                  <AccordionItem key={`g-${group.rodada}`} value={`g-${group.rodada}`} className="border rounded-md bg-card">
-                    <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                      <div className="flex items-center gap-3 text-left">
-                        <span className="text-base font-semibold">{groupLabel(group.rodada)}</span>
-                        <span className="text-xs text-muted-foreground">
-                          ({total} {total === 1 ? "confronto" : "confrontos"})
-                        </span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-3 pb-4 min-[360px]:px-4">
-                      <div className="space-y-6">
-                        {group.dias.map(dia => (
-                          <section key={dia.key}>
-                            <h3 className="text-sm font-semibold mb-2 pb-1 border-b">
-                              {formatDayLabel(dia.date)}
-                            </h3>
-                            <ol className="space-y-3 list-none p-0">
-                              {dia.confrontos.map(c => {
-                                const hora = formatTime(new Date(c.created_at));
-                                return (
-                                  <li key={c.key}>
-                                    <Card>
-                                      <CardContent className="p-3 min-[360px]:p-4 space-y-3">
-                                        <div className="flex items-start justify-between gap-2 flex-wrap">
-                                          <div className="min-w-0">
-                                            <h4 className="text-base font-semibold">{confrontoTitle(c)}</h4>
-                                            <p className="text-xs text-muted-foreground mt-0.5">
-                                              {isFaseDeGrupos ? `Grupo ${c.grupo} · Rodada ${c.rodada}` : groupLabel(confrontoGroupKey(c))} · {hora}
-                                            </p>
-                                          </div>
-                                          <div className="flex gap-2 shrink-0">
-                                            <Button size="sm" variant="outline" onClick={() => openEdit(c)}>
-                                              <Pencil className="h-4 w-4 mr-1" /> Editar
-                                            </Button>
-                                            <Button size="sm" variant="destructive" onClick={() => setDeleting(c)}>
-                                              <Trash2 className="h-4 w-4 mr-1" /> Apagar
-                                            </Button>
-                                          </div>
-                                        </div>
-                                        <ul className="space-y-2 min-w-0">
-                                          {c.results.map(r => {
-                                            const maxJogo = Math.max(...c.results.map(p => p.pontos_jogo));
-                                            const isWinner = c.results.length > 1 && r.pontos_jogo === maxJogo
-                                              && c.results.filter(p => p.pontos_jogo === maxJogo).length === 1;
-                                            const penalidade = r.penalidades !== "Sem penalidades";
-                                            return (
-                                              <li key={r.id} className="rounded-md border bg-muted/30 p-3">
-                                                <p className="font-medium">
-                                                  {isWinner ? "vitória de " : ""}{playerName(r.player_id)}
-                                                </p>
-                                                <p className="text-sm mt-1">
-                                                  {r.pontos_jogo} ponto{r.pontos_jogo === 1 ? "" : "s"} de vitória, {r.pontos_mesa} ponto{r.pontos_mesa === 1 ? "" : "s"} de mesa.
-                                                </p>
-                                                {penalidade && (
-                                                  <p className="text-sm text-destructive">Penalidades: {r.penalidades}.</p>
-                                                )}
-                                              </li>
-                                            );
-                                          })}
-                                        </ul>
-                                        <p className="text-xs text-muted-foreground">
-                                          Registrado por: <span className="font-medium text-foreground">{registeredByName(c.registered_by)}</span>
-                                        </p>
-                                      </CardContent>
-                                    </Card>
-                                  </li>
-                                );
-                              })}
-                            </ol>
-                          </section>
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
+                  <li key={c.key}>
+                    <Card>
+                      <CardContent className="p-3 min-[360px]:p-4 space-y-3">
+                        <div className="flex items-start justify-between gap-2 flex-wrap">
+                          <div className="min-w-0">
+                            <h4 className="text-base font-semibold">{confrontoTitle(c)}</h4>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {isFaseDeGrupos ? `Grupo ${c.grupo} · Rodada ${c.rodada} · ${hora}` : hora}
+                            </p>
+                          </div>
+                          <div className="flex gap-2 shrink-0">
+                            <Button size="sm" variant="outline" onClick={() => openEdit(c)}>
+                              <Pencil className="h-4 w-4 mr-1" /> Editar
+                            </Button>
+                            <Button size="sm" variant="destructive" onClick={() => setDeleting(c)}>
+                              <Trash2 className="h-4 w-4 mr-1" /> Apagar
+                            </Button>
+                          </div>
+                        </div>
+                        <ul className="space-y-2 min-w-0">
+                          {c.results.map(r => {
+                            const maxJogo = Math.max(...c.results.map(p => p.pontos_jogo));
+                            const isWinner = c.results.length > 1 && r.pontos_jogo === maxJogo
+                              && c.results.filter(p => p.pontos_jogo === maxJogo).length === 1;
+                            const penalidade = r.penalidades !== "Sem penalidades";
+                            return (
+                              <li key={r.id} className="rounded-md border bg-muted/30 p-3">
+                                <p className="font-medium">
+                                  {isWinner ? "vitória de " : ""}{playerName(r.player_id)}
+                                </p>
+                                <p className="text-sm mt-1">
+                                  {r.pontos_jogo} ponto{r.pontos_jogo === 1 ? "" : "s"} de vitória, {r.pontos_mesa} ponto{r.pontos_mesa === 1 ? "" : "s"} de mesa.
+                                </p>
+                                {penalidade && (
+                                  <p className="text-sm text-destructive">Penalidades: {r.penalidades}.</p>
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                        <p className="text-xs text-muted-foreground">
+                          Registrado por: <span className="font-medium text-foreground">{registeredByName(c.registered_by)}</span>
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </li>
                 );
-              })}
-            </Accordion>
+              };
+
+              if (!isFaseDeGrupos) {
+                // Non-group phases: flat list grouped only by day, no outer Mesa accordion.
+                const dayMap = new Map<string, { key: string; date: Date; confrontos: Confronto[] }>();
+                for (const c of filteredConfrontos) {
+                  const d = new Date(c.created_at);
+                  const dk = formatDayKey(d);
+                  const ex = dayMap.get(dk);
+                  if (ex) ex.confrontos.push(c);
+                  else dayMap.set(dk, { key: dk, date: d, confrontos: [c] });
+                }
+                const dias = Array.from(dayMap.values()).sort((a, b) => b.key.localeCompare(a.key));
+                return (
+                  <div className="space-y-6">
+                    {dias.map(dia => (
+                      <section key={dia.key}>
+                        <h3 className="text-sm font-semibold mb-2 pb-1 border-b">
+                          {formatDayLabel(dia.date)}
+                        </h3>
+                        <ol className="space-y-3 list-none p-0">
+                          {dia.confrontos.map(renderConfronto)}
+                        </ol>
+                      </section>
+                    ))}
+                  </div>
+                );
+              }
+
+              return (
+                <Accordion type="multiple" className="space-y-2">
+                  {rodadasGroups.map(group => {
+                    const total = group.dias.reduce((acc, d) => acc + d.confrontos.length, 0);
+                    return (
+                      <AccordionItem key={`g-${group.rodada}`} value={`g-${group.rodada}`} className="border rounded-md bg-card">
+                        <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                          <div className="flex items-center gap-3 text-left">
+                            <span className="text-base font-semibold">{groupLabel(group.rodada)}</span>
+                            <span className="text-xs text-muted-foreground">
+                              ({total} {total === 1 ? "confronto" : "confrontos"})
+                            </span>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-3 pb-4 min-[360px]:px-4">
+                          <div className="space-y-6">
+                            {group.dias.map(dia => (
+                              <section key={dia.key}>
+                                <h3 className="text-sm font-semibold mb-2 pb-1 border-b">
+                                  {formatDayLabel(dia.date)}
+                                </h3>
+                                <ol className="space-y-3 list-none p-0">
+                                  {dia.confrontos.map(renderConfronto)}
+                                </ol>
+                              </section>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    );
+                  })}
+                </Accordion>
+              );
+            })()
           )}
         </DialogContent>
       </Dialog>
+
 
       <Dialog open={!!editing} onOpenChange={o => !o && setEditing(null)}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">

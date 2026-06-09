@@ -125,6 +125,9 @@ export default function PublicTournament() {
   const showDrawTab = false; // drawFase != null;
   const drawTabLabel = drawFase ? `Sorteio dos confrontos - ${drawFase}` : "";
 
+  const campeaoId = (tournament as any).campeao_id as string | null | undefined;
+  const campeao = campeaoId ? players.find(p => p.id === campeaoId) : null;
+
   return (
     <div className="public-page min-h-screen bg-muted/30">
       <header className="border-b bg-background">
@@ -135,6 +138,11 @@ export default function PublicTournament() {
             <p className="text-xs text-muted-foreground">Acompanhamento público</p>
           </div>
         </div>
+        {campeao && (
+          <div className="bg-amber-500/10 border-t border-amber-500/30 py-2 px-4 text-center text-sm font-medium text-amber-900 dark:text-amber-200">
+            🏆 Campeão: {campeao.nick_playroom || campeao.nome_completo}
+          </div>
+        )}
       </header>
 
       <main className="max-w-5xl mx-auto px-3 py-6 sm:px-4">

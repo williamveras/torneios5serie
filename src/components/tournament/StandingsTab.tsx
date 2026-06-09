@@ -42,6 +42,7 @@ export default function StandingsTab({ tournamentId }: Props) {
   const [selectedFase, setSelectedFase] = useState<string>("Fase de Grupos");
   const [matchups, setMatchups] = useState<Tables<"matchups">[]>([]);
   const [numeroRodadas, setNumeroRodadas] = useState<number | null>(null);
+  const [campeaoId, setCampeaoId] = useState<string | null>(null);
 
   const loadPhaseStatuses = () => {
     supabase.from("phase_status").select("*").eq("tournament_id", tournamentId).then(({ data }) => {
@@ -54,12 +55,15 @@ export default function StandingsTab({ tournamentId }: Props) {
       fetchAllMatchResults(tournamentId).then(data => ({ data })),
       supabase.from("players").select("*").eq("tournament_id", tournamentId),
       supabase.from("matchups").select("*").eq("tournament_id", tournamentId),
-      supabase.from("tournaments").select("numero_rodadas").eq("id", tournamentId).maybeSingle(),
+      supabase.from("tournaments").select("numero_rodadas, campeao_id").eq("id", tournamentId).maybeSingle(),
     ]).then(([r, p, m, t]) => {
       if (r.data) setResults(r.data);
       if (p.data) setPlayers(p.data);
       if (m.data) setMatchups(m.data);
-      if (t.data) setNumeroRodadas((t.data as any).numero_rodadas ?? null);
+      if (t.data) {
+        setNumeroRodadas((t.data as any).numero_rodadas ?? null);
+        setCampeaoId((t.data as any).campeao_id ?? null);
+      }
     });
     loadPhaseStatuses();
   }, [tournamentId]);
@@ -163,6 +167,33 @@ export default function StandingsTab({ tournamentId }: Props) {
       });
     });
   }, [matchups, results, players, tournamentId]);
+
+  // Detecta automaticamente o campeão quando a Final tem um vencedor.
+  useEffect(() => {
+    if (campeaoId) return;
+    const finalMatchup = matchups.find(m => m.fase === "Final");
+    if (!finalMatchup) return;
+    const r1 = results.find(r => r.player_id === finalMatchup.player1_id && r.fase === "Final");
+    const r2 = results.find(r => r.player_id === finalMatchup.player2_id && r.fase === "Final");
+    if (!r1 || !r2) return;
+    let winner: string | null = null;
+    if (r1.pontos_jogo > r2.pontos_jogo) winner = finalMatchup.player1_id;
+    else if (r2.pontos_jogo > r1.pontos_jogo) winner = finalMatchup.player2_id;
+    else if (r1.pontos_mesa > r2.pontos_mesa) winner = finalMatchup.player1_id;
+    else if (r2.pontos_mesa > r1.pontos_mesa) winner = finalMatchup.player2_id;
+    if (!winner) return;
+    (supabase.from("tournaments") as any)
+      .update({ campeao_id: winner })
+      .eq("id", tournamentId)
+      .then(({ error }: { error: any }) => {
+        if (error) return;
+        setCampeaoId(winner);
+        const p = players.find(pp => pp.id === winner);
+        toast.success(`🏆 Campeão definido: ${p?.nick_playroom || p?.nome_completo || "vencedor"}!`);
+      });
+  }, [matchups, results, campeaoId, tournamentId, players]);
+
+
 
 
   const currentPhaseStatus = phaseStatuses.find(p => p.fase === selectedFase)?.status || "em_andamento";
@@ -400,8 +431,18 @@ export default function StandingsTab({ tournamentId }: Props) {
     XLSX.writeFile(wb, `classificacao_${selectedFase.replace(/ /g, "_")}.xlsx`);
   };
 
+  const campeao = campeaoId ? players.find(p => p.id === campeaoId) : null;
+
   return (
     <div className="space-y-4">
+      {campeao && (
+        <Alert role="status" className="border-amber-500/50 bg-amber-500/10">
+          <Info className="h-4 w-4 text-amber-600" />
+          <AlertDescription>
+            🏆 <strong>Campeão do torneio:</strong> {campeao.nick_playroom || campeao.nome_completo}
+          </AlertDescription>
+        </Alert>
+      )}
       <div className="flex items-end gap-4 flex-wrap">
         <div className="space-y-2">
           <Label htmlFor="standings-fase">Fase</Label>

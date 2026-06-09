@@ -148,7 +148,7 @@ export default function PublicTournament() {
 
       <main className="max-w-5xl mx-auto px-3 py-6 sm:px-4">
         {(() => {
-          const elimFases = FASES.filter(f => f !== "Fase de Grupos");
+          const elimFases: string[] = FASES.filter(f => f !== "Fase de Grupos");
           const hasBracket = matchups.some(m => elimFases.includes(m.fase));
           const tabCount = 4 + (showDrawTab ? 1 : 0) + (hasBracket ? 1 : 0);
           const gridCls = tabCount >= 6

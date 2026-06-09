@@ -18,6 +18,7 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/
 import { computeCurrentRound } from "@/lib/rounds";
 import { projectPhases, findPhaseInProjection } from "@/lib/phaseProjection";
 import PhaseRoadmap from "@/components/PhaseRoadmap";
+import BracketView from "@/components/BracketView";
 import { pairKey } from "@/lib/phase";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -622,6 +623,35 @@ export default function StandingsTab({ tournamentId }: Props) {
           return fullList;
         })()
       )}
+
+      {(() => {
+        const elimFases = FASES.filter(f => f !== "Fase de Grupos");
+        // Fase eliminatória mais avançada que já tem confrontos cadastrados.
+        let activeElim: string | null = null;
+        for (let i = elimFases.length - 1; i >= 0; i--) {
+          const f = elimFases[i];
+          if (matchups.some(m => (m.fase || "Fase de Grupos") === f)) { activeElim = f; break; }
+        }
+        if (!activeElim) return null;
+        const playerLites = players.map(p => ({
+          id: p.id, nome_completo: p.nome_completo, nick_playroom: p.nick_playroom,
+        }));
+        const champion = campeao
+          ? { id: campeao.id, nome_completo: campeao.nome_completo, nick_playroom: campeao.nick_playroom }
+          : null;
+        return (
+          <div className="pt-4">
+            <BracketView
+              matchups={matchups as any}
+              results={results}
+              players={playerLites}
+              champion={champion}
+              hideUnplayed
+              title={`Classificação parcial — ${activeElim}`}
+            />
+          </div>
+        );
+      })()}
     </div>
   );
 }

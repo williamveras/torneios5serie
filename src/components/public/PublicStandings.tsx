@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -20,6 +20,8 @@ import type { Tables } from "@/integrations/supabase/types";
 type MatchResult = Tables<"match_results">;
 type PhaseStatus = Tables<"phase_status">;
 
+type Matchup = Tables<"matchups">;
+
 interface PlayerLite {
   id: string;
   nome_completo: string;
@@ -30,6 +32,7 @@ interface Props {
   results: MatchResult[];
   players: PlayerLite[];
   phaseStatuses: PhaseStatus[];
+  matchups?: Matchup[];
   viewMode?: ViewMode;
 }
 
@@ -46,8 +49,21 @@ const compactCardPadding = "p-3 min-[360px]:p-4";
 const keepTogether = (text: string | number) =>
   String(text).replace(/ /g, "\u00A0").replace(/-/g, "\u2011");
 
-export default function PublicStandings({ results, players, phaseStatuses, viewMode = "list" }: Props) {
-  const [selectedFase, setSelectedFase] = useState<string>("Fase de Grupos");
+export default function PublicStandings({ results, players, phaseStatuses, matchups = [], viewMode = "list" }: Props) {
+  // Default fase: latest concluded phase (so the public view follows the tournament progression).
+  const latestConcludedFase = useMemo(() => {
+    for (let i = FASES.length - 1; i >= 0; i--) {
+      const f = FASES[i];
+      if (phaseStatuses.find(p => p.fase === f)?.status === "concluida") return f;
+    }
+    return "Fase de Grupos";
+  }, [phaseStatuses]);
+  const [selectedFase, setSelectedFase] = useState<string>(latestConcludedFase);
+  const [userPickedFase, setUserPickedFase] = useState(false);
+  // Keep selected fase in sync with progression until the user manually changes it.
+  useEffect(() => {
+    if (!userPickedFase) setSelectedFase(latestConcludedFase);
+  }, [latestConcludedFase, userPickedFase]);
 
   const playerMap = useMemo(() => {
     const m = new Map<string, PlayerLite>();
@@ -103,7 +119,41 @@ export default function PublicStandings({ results, players, phaseStatuses, viewM
     [filteredByFase, players],
   );
   const nextFase = nextPhaseName(selectedFase);
-  const showQualifiers = isConcluded && hasAnyGroup && !!nextFase && totalRows > 0;
+
+  // Vencedores da fase eliminatória selecionada (quando concluída) — formam a lista
+  // de classificados para a próxima fase, exibida da mesma forma que os classificados
+  // saídos da Fase de Grupos.
+  const elimWinners = useMemo(() => {
+    if (selectedFase === "Fase de Grupos") return [];
+    const faseMatchups = matchups.filter(m => (m.fase || "Fase de Grupos") === selectedFase);
+    if (faseMatchups.length === 0) return [];
+    const byPlayer = new Map<string, MatchResult>();
+    filteredByFase.forEach(r => byPlayer.set(r.player_id, r));
+    const winners: string[] = [];
+    for (const m of faseMatchups) {
+      const r1 = byPlayer.get(m.player1_id);
+      const r2 = byPlayer.get(m.player2_id);
+      if (!r1 || !r2) continue;
+      let w: string | null = null;
+      if (r1.pontos_jogo > r2.pontos_jogo) w = m.player1_id;
+      else if (r2.pontos_jogo > r1.pontos_jogo) w = m.player2_id;
+      else if (r1.pontos_mesa > r2.pontos_mesa) w = m.player1_id;
+      else if (r2.pontos_mesa > r1.pontos_mesa) w = m.player2_id;
+      if (w) winners.push(w);
+    }
+    return winners;
+  }, [matchups, filteredByFase, selectedFase]);
+
+  const elimWinnersQualifiers = useMemo(() => {
+    if (elimWinners.length === 0) return null;
+    const winnersResults = filteredByFase.filter(r => elimWinners.includes(r.player_id));
+    return computeQualifiers(winnersResults, getPlayerName, getPlayerNick);
+  }, [elimWinners, filteredByFase, players]);
+
+  const showQualifiers = isConcluded && !!nextFase && totalRows > 0 && (
+    hasAnyGroup || (elimWinnersQualifiers !== null && elimWinnersQualifiers.direct.length > 0)
+  );
+  const qualifiersToShow = hasAnyGroup ? qualifiers : (elimWinnersQualifiers ?? qualifiers);
 
   // Projeção de fases eliminatórias (visível na fase de grupos para mostrar o roadmap completo).
   const grupoResults = useMemo(
@@ -303,7 +353,7 @@ export default function PublicStandings({ results, players, phaseStatuses, viewM
         <div className="space-y-6">
           <div className="space-y-4">
             <h2 className="text-xl font-bold">Classificados para a {nextFase}</h2>
-            <QualifiersView qualifiers={qualifiers} viewMode={viewMode} />
+            <QualifiersView qualifiers={qualifiersToShow} viewMode={viewMode} />
           </div>
           <Accordion type="single" collapsible className="rounded-md border bg-background px-4">
             <AccordionItem value="full-list" className="border-b-0">

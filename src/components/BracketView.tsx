@@ -19,6 +19,10 @@ interface Props {
   /** Ordem das fases a exibir (esquerda → direita). Default: todas as fases eliminatórias presentes. */
   faseOrder?: string[];
   champion?: PlayerLite | null;
+  /** Quando true, oculta jogadores ainda sem resultado registrado na fase. */
+  hideUnplayed?: boolean;
+  /** Título opcional acima do chaveamento. */
+  title?: string;
 }
 
 const ELIM_FASES_DEFAULT = [
@@ -57,7 +61,7 @@ function computeWinner(
   return null;
 }
 
-export default function BracketView({ matchups, results, players, faseOrder, champion }: Props) {
+export default function BracketView({ matchups, results, players, faseOrder, champion, hideUnplayed, title }: Props) {
   const playerMap = useMemo(() => {
     const m = new Map<string, PlayerLite>();
     players.forEach(p => m.set(p.id, p));
@@ -78,16 +82,25 @@ export default function BracketView({ matchups, results, players, faseOrder, cha
             return a.created_at.localeCompare(b.created_at);
           });
         if (ms.length === 0) return null;
-        const views: MatchupView[] = ms.map(m => ({
+        const playedIds = new Set(
+          results.filter(r => r.fase === fase).map(r => r.player_id),
+        );
+        let views: MatchupView[] = ms.map(m => ({
           matchup: m,
           p1: playerMap.get(m.player1_id),
           p2: playerMap.get(m.player2_id),
           winnerId: computeWinner(m, results),
         }));
-        return { fase, views };
+        if (hideUnplayed) {
+          views = views.filter(
+            v => playedIds.has(v.matchup.player1_id) || playedIds.has(v.matchup.player2_id),
+          );
+          if (views.length === 0) return null;
+        }
+        return { fase, views, playedIds };
       })
-      .filter((c): c is { fase: string; views: MatchupView[] } => c !== null);
-  }, [matchups, results, playerMap, faseOrder]);
+      .filter((c): c is { fase: string; views: MatchupView[]; playedIds: Set<string> } => c !== null);
+  }, [matchups, results, playerMap, faseOrder, hideUnplayed]);
 
   if (columns.length === 0) {
     return (
@@ -102,6 +115,9 @@ export default function BracketView({ matchups, results, players, faseOrder, cha
 
   return (
     <div className="space-y-4">
+      {title && (
+        <h2 className="text-lg font-semibold">{title}</h2>
+      )}
       {champion && (
         <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-center text-sm font-medium">
           🏆 Campeão: {displayName(champion)}
@@ -119,6 +135,10 @@ export default function BracketView({ matchups, results, players, faseOrder, cha
                   const slot = (v.matchup as any).bracket_slot ?? i + 1;
                   const winnerP1 = v.winnerId === v.matchup.player1_id;
                   const winnerP2 = v.winnerId === v.matchup.player2_id;
+                  const p1Played = col.playedIds.has(v.matchup.player1_id);
+                  const p2Played = col.playedIds.has(v.matchup.player2_id);
+                  const showP1Name = !hideUnplayed || p1Played;
+                  const showP2Name = !hideUnplayed || p2Played;
                   return (
                     <li
                       key={v.matchup.id}
@@ -134,7 +154,7 @@ export default function BracketView({ matchups, results, players, faseOrder, cha
                           v.winnerId && !winnerP1 ? "text-muted-foreground line-through decoration-1" : "",
                         ].join(" ")}
                       >
-                        <span className="truncate">{displayName(v.p1)}</span>
+                        <span className="truncate">{showP1Name ? displayName(v.p1) : "—"}</span>
                         {winnerP1 && <span aria-label="Vencedor" title="Vencedor">✓</span>}
                       </div>
                       <div
@@ -144,7 +164,7 @@ export default function BracketView({ matchups, results, players, faseOrder, cha
                           v.winnerId && !winnerP2 ? "text-muted-foreground line-through decoration-1" : "",
                         ].join(" ")}
                       >
-                        <span className="truncate">{displayName(v.p2)}</span>
+                        <span className="truncate">{showP2Name ? displayName(v.p2) : "—"}</span>
                         {winnerP2 && <span aria-label="Vencedor" title="Vencedor">✓</span>}
                       </div>
                     </li>

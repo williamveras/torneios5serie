@@ -119,7 +119,41 @@ export default function PublicStandings({ results, players, phaseStatuses, match
     [filteredByFase, players],
   );
   const nextFase = nextPhaseName(selectedFase);
-  const showQualifiers = isConcluded && hasAnyGroup && !!nextFase && totalRows > 0;
+
+  // Vencedores da fase eliminatória selecionada (quando concluída) — formam a lista
+  // de classificados para a próxima fase, exibida da mesma forma que os classificados
+  // saídos da Fase de Grupos.
+  const elimWinners = useMemo(() => {
+    if (selectedFase === "Fase de Grupos") return [];
+    const faseMatchups = matchups.filter(m => (m.fase || "Fase de Grupos") === selectedFase);
+    if (faseMatchups.length === 0) return [];
+    const byPlayer = new Map<string, MatchResult>();
+    filteredByFase.forEach(r => byPlayer.set(r.player_id, r));
+    const winners: string[] = [];
+    for (const m of faseMatchups) {
+      const r1 = byPlayer.get(m.player1_id);
+      const r2 = byPlayer.get(m.player2_id);
+      if (!r1 || !r2) continue;
+      let w: string | null = null;
+      if (r1.pontos_jogo > r2.pontos_jogo) w = m.player1_id;
+      else if (r2.pontos_jogo > r1.pontos_jogo) w = m.player2_id;
+      else if (r1.pontos_mesa > r2.pontos_mesa) w = m.player1_id;
+      else if (r2.pontos_mesa > r1.pontos_mesa) w = m.player2_id;
+      if (w) winners.push(w);
+    }
+    return winners;
+  }, [matchups, filteredByFase, selectedFase]);
+
+  const elimWinnersQualifiers = useMemo(() => {
+    if (elimWinners.length === 0) return null;
+    const winnersResults = filteredByFase.filter(r => elimWinners.includes(r.player_id));
+    return computeQualifiers(winnersResults, getPlayerName, getPlayerNick);
+  }, [elimWinners, filteredByFase, players]);
+
+  const showQualifiers = isConcluded && !!nextFase && totalRows > 0 && (
+    hasAnyGroup || (elimWinnersQualifiers !== null && elimWinnersQualifiers.direct.length > 0)
+  );
+  const qualifiersToShow = hasAnyGroup ? qualifiers : (elimWinnersQualifiers ?? qualifiers);
 
   // Projeção de fases eliminatórias (visível na fase de grupos para mostrar o roadmap completo).
   const grupoResults = useMemo(

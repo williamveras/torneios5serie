@@ -353,7 +353,7 @@ export default function PublicStandings({ results, players, phaseStatuses, match
         <div className="space-y-6">
           <div className="space-y-4">
             <h2 className="text-xl font-bold">Classificados para a {nextFase}</h2>
-            <QualifiersView qualifiers={qualifiers} viewMode={viewMode} />
+            <QualifiersView qualifiers={qualifiersToShow} viewMode={viewMode} />
           </div>
           <Accordion type="single" collapsible className="rounded-md border bg-background px-4">
             <AccordionItem value="full-list" className="border-b-0">

@@ -176,6 +176,7 @@ export type Database = {
       }
       matchups: {
         Row: {
+          bracket_slot: number | null
           created_at: string
           fase: string
           grupo: string
@@ -186,6 +187,7 @@ export type Database = {
           tournament_id: string
         }
         Insert: {
+          bracket_slot?: number | null
           created_at?: string
           fase?: string
           grupo: string
@@ -196,6 +198,7 @@ export type Database = {
           tournament_id: string
         }
         Update: {
+          bracket_slot?: number | null
           created_at?: string
           fase?: string
           grupo?: string
@@ -376,6 +379,7 @@ export type Database = {
       }
       tournaments: {
         Row: {
+          campeao_id: string | null
           created_at: string
           created_by: string
           data_inicio: string
@@ -386,6 +390,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          campeao_id?: string | null
           created_at?: string
           created_by: string
           data_inicio: string
@@ -396,6 +401,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          campeao_id?: string | null
           created_at?: string
           created_by?: string
           data_inicio?: string
@@ -405,7 +411,22 @@ export type Database = {
           regulamento?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tournaments_campeao_id_fkey"
+            columns: ["campeao_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournaments_campeao_id_fkey"
+            columns: ["campeao_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

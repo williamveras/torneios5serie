@@ -188,8 +188,16 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
   }, [filteredConfrontos, isFaseDeGrupos, mesaMap]);
 
   const confrontoTitle = (c: Confronto) => {
-    if (c.results.length === 2) return `${playerName(c.results[0].player_id)} × ${playerName(c.results[1].player_id)}`;
-    return `${playerName(c.results[0].player_id)} (registro avulso)`;
+    if (isFaseDeGrupos) {
+      if (c.results.length === 2) return `${playerName(c.results[0].player_id)} × ${playerName(c.results[1].player_id)}`;
+      return `${playerName(c.results[0].player_id)} (registro avulso)`;
+    }
+    const mesa = c.results.length >= 2
+      ? mesaMap.get(pairKey(c.results[0].player_id, c.results[1].player_id))
+      : undefined;
+    const mesaLabel = mesa ? `Mesa ${mesa}` : "Mesa —";
+    if (c.results.length === 2) return `${mesaLabel}: ${playerName(c.results[0].player_id)} × ${playerName(c.results[1].player_id)}`;
+    return `${mesaLabel}: ${playerName(c.results[0].player_id)} (registro avulso)`;
   };
 
   const openEdit = (c: Confronto) => {

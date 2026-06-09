@@ -206,19 +206,34 @@ export default function StatsTab({ tournamentId }: Props) {
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <BarChart3 className="h-4 w-4" /> Total de jogos registrados
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-4xl font-bold tabular-nums">{totalGames}</div>
-          <p className="text-xs text-muted-foreground mt-1">
-            Cada jogo corresponde a 2 registros (um por jogador).
-          </p>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <BarChart3 className="h-4 w-4" /> Total de jogos registrados
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-4xl font-bold tabular-nums">{totalGames}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Cada jogo corresponde a 2 registros (um por jogador).
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <BarChart3 className="h-4 w-4" /> Jogos na fase atual
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-4xl font-bold tabular-nums">{activeFaseGames}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {activeFase}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="flex justify-end">
         <ViewModeToggle value={viewMode} onChange={setViewMode} />

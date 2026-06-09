@@ -115,6 +115,9 @@ export default function BracketView({ matchups, results, players, faseOrder, cha
 
   return (
     <div className="space-y-4">
+      {title && (
+        <h2 className="text-lg font-semibold">{title}</h2>
+      )}
       {champion && (
         <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-center text-sm font-medium">
           🏆 Campeão: {displayName(champion)}

@@ -61,7 +61,7 @@ function computeWinner(
   return null;
 }
 
-export default function BracketView({ matchups, results, players, faseOrder, champion }: Props) {
+export default function BracketView({ matchups, results, players, faseOrder, champion, hideUnplayed, title }: Props) {
   const playerMap = useMemo(() => {
     const m = new Map<string, PlayerLite>();
     players.forEach(p => m.set(p.id, p));

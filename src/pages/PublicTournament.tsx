@@ -146,48 +146,67 @@ export default function PublicTournament() {
       </header>
 
       <main className="max-w-5xl mx-auto px-3 py-6 sm:px-4">
-        <Tabs defaultValue="results" activationMode="manual">
-          <TabsList className={`mb-4 grid w-full h-auto gap-1 ${showDrawTab ? "grid-cols-2 sm:grid-cols-5" : "grid-cols-4"}`}>
-            <TabsTrigger value="results" className="text-xs sm:text-sm py-2">Resultados</TabsTrigger>
-            <TabsTrigger value="standings" className="text-xs sm:text-sm py-2">{standingsTabLabel}</TabsTrigger>
-            <TabsTrigger value="schedule" className="text-xs sm:text-sm py-2">Confrontos</TabsTrigger>
-            {showDrawTab && (
-              <TabsTrigger value="draw" className="text-xs sm:text-sm py-2">{drawTabLabel}</TabsTrigger>
-            )}
-            <TabsTrigger value="regulamento" className="text-xs sm:text-sm py-2">Regulamento</TabsTrigger>
-          </TabsList>
+        {(() => {
+          const elimFases = FASES.filter(f => f !== "Fase de Grupos");
+          const hasBracket = matchups.some(m => elimFases.includes(m.fase));
+          const tabCount = 4 + (showDrawTab ? 1 : 0) + (hasBracket ? 1 : 0);
+          const gridCls = tabCount >= 6
+            ? "grid-cols-3 sm:grid-cols-6"
+            : tabCount === 5
+              ? "grid-cols-2 sm:grid-cols-5"
+              : "grid-cols-4";
+          return (
+            <Tabs defaultValue="results" activationMode="manual">
+              <TabsList className={`mb-4 grid w-full h-auto gap-1 ${gridCls}`}>
+                <TabsTrigger value="results" className="text-xs sm:text-sm py-2">Resultados</TabsTrigger>
+                <TabsTrigger value="standings" className="text-xs sm:text-sm py-2">{standingsTabLabel}</TabsTrigger>
+                <TabsTrigger value="schedule" className="text-xs sm:text-sm py-2">Confrontos</TabsTrigger>
+                {hasBracket && (
+                  <TabsTrigger value="bracket" className="text-xs sm:text-sm py-2">Chaveamento</TabsTrigger>
+                )}
+                {showDrawTab && (
+                  <TabsTrigger value="draw" className="text-xs sm:text-sm py-2">{drawTabLabel}</TabsTrigger>
+                )}
+                <TabsTrigger value="regulamento" className="text-xs sm:text-sm py-2">Regulamento</TabsTrigger>
+              </TabsList>
 
-          <TabsContent value="results">
-            <div className="flex justify-end mb-3">
-              <ViewModeToggle value={resultsView} onChange={setResultsView} />
-            </div>
-            <PublicResults results={results} players={players} matchups={matchups} phaseStatuses={phaseStatuses} moderators={moderators} viewMode={resultsView} />
-          </TabsContent>
-          <TabsContent value="standings">
-            <div className="flex justify-end mb-3">
-              <ViewModeToggle value={standingsView} onChange={setStandingsView} />
-            </div>
-            <PublicStandings results={results} players={players} phaseStatuses={phaseStatuses} viewMode={standingsView} />
-          </TabsContent>
-          <TabsContent value="schedule">
-            <div className="flex justify-end mb-3">
-              <ViewModeToggle value={scheduleView} onChange={setScheduleView} />
-            </div>
-            <PublicSchedule schedules={schedules} players={players} matchups={matchups} results={results} phaseStatuses={phaseStatuses} numeroRodadas={(tournament as any).numero_rodadas ?? null} viewMode={scheduleView} />
-
-          </TabsContent>
-          {showDrawTab && drawFase && (
-            <TabsContent value="draw">
-              <div className="flex justify-end mb-3">
-                <ViewModeToggle value={drawView} onChange={setDrawView} />
-              </div>
-              <PublicDraw matchups={matchups} players={players} fase={drawFase} scheduledDraws={scheduledDraws} viewMode={drawView} />
-            </TabsContent>
-          )}
-          <TabsContent value="regulamento">
-            <PublicRegulamento regulamento={tournament.regulamento ?? null} />
-          </TabsContent>
-        </Tabs>
+              <TabsContent value="results">
+                <div className="flex justify-end mb-3">
+                  <ViewModeToggle value={resultsView} onChange={setResultsView} />
+                </div>
+                <PublicResults results={results} players={players} matchups={matchups} phaseStatuses={phaseStatuses} moderators={moderators} viewMode={resultsView} />
+              </TabsContent>
+              <TabsContent value="standings">
+                <div className="flex justify-end mb-3">
+                  <ViewModeToggle value={standingsView} onChange={setStandingsView} />
+                </div>
+                <PublicStandings results={results} players={players} phaseStatuses={phaseStatuses} viewMode={standingsView} />
+              </TabsContent>
+              <TabsContent value="schedule">
+                <div className="flex justify-end mb-3">
+                  <ViewModeToggle value={scheduleView} onChange={setScheduleView} />
+                </div>
+                <PublicSchedule schedules={schedules} players={players} matchups={matchups} results={results} phaseStatuses={phaseStatuses} numeroRodadas={(tournament as any).numero_rodadas ?? null} viewMode={scheduleView} />
+              </TabsContent>
+              {hasBracket && (
+                <TabsContent value="bracket">
+                  <BracketView matchups={matchups as any} results={results} players={players} champion={campeao} />
+                </TabsContent>
+              )}
+              {showDrawTab && drawFase && (
+                <TabsContent value="draw">
+                  <div className="flex justify-end mb-3">
+                    <ViewModeToggle value={drawView} onChange={setDrawView} />
+                  </div>
+                  <PublicDraw matchups={matchups} players={players} fase={drawFase} scheduledDraws={scheduledDraws} viewMode={drawView} />
+                </TabsContent>
+              )}
+              <TabsContent value="regulamento">
+                <PublicRegulamento regulamento={tournament.regulamento ?? null} />
+              </TabsContent>
+            </Tabs>
+          );
+        })()}
       </main>
     </div>
   );

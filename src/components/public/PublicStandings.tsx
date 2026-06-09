@@ -11,6 +11,8 @@ import * as XLSX from "xlsx";
 import { FASES } from "@/lib/constants";
 import { computeStandings } from "@/lib/standings";
 import { computeQualifiers, nextPhaseName } from "@/lib/qualifiers";
+import { projectPhases } from "@/lib/phaseProjection";
+import PhaseRoadmap from "@/components/PhaseRoadmap";
 import QualifiersView from "@/components/QualifiersView";
 import type { ViewMode } from "./ViewModeToggle";
 import type { Tables } from "@/integrations/supabase/types";
@@ -102,6 +104,21 @@ export default function PublicStandings({ results, players, phaseStatuses, viewM
   );
   const nextFase = nextPhaseName(selectedFase);
   const showQualifiers = isConcluded && hasAnyGroup && !!nextFase && totalRows > 0;
+
+  // Projeção de fases eliminatórias (visível na fase de grupos para mostrar o roadmap completo).
+  const grupoResults = useMemo(
+    () => results.filter(r => (r.fase || "Fase de Grupos") === "Fase de Grupos"),
+    [results],
+  );
+  const grupoQualifiers = useMemo(
+    () => computeQualifiers(grupoResults, getPlayerName, getPlayerNick),
+    [grupoResults, players],
+  );
+  const classifiedCount = grupoQualifiers.hasGroups
+    ? grupoQualifiers.direct.length + grupoQualifiers.repescagem.length
+    : grupoQualifiers.direct.length;
+  const projection = useMemo(() => projectPhases(classifiedCount), [classifiedCount]);
+  const concludedFases = phaseStatuses.filter(p => p.status === "concluida").map(p => p.fase);
 
   const exportToXlsx = () => {
     const wb = XLSX.utils.book_new();
@@ -238,6 +255,14 @@ export default function PublicStandings({ results, players, phaseStatuses, viewM
             <Download className="h-4 w-4 mr-1" /> Exportar planilha
           </Button>
         </div>
+      )}
+      {projection.length > 0 && (
+        <PhaseRoadmap
+          projection={projection}
+          classifiedCount={classifiedCount}
+          currentFase={selectedFase}
+          concludedFases={concludedFases}
+        />
       )}
       {totalRows > 0 && (
         isInProgress ? (

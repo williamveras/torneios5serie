@@ -6,7 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
-import { Download, BarChart3, Lock, Unlock } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Download, BarChart3, Lock, Unlock, Info } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { FASES } from "@/lib/constants";
@@ -15,6 +16,9 @@ import { computeQualifiers, nextPhaseName } from "@/lib/qualifiers";
 import QualifiersView from "@/components/QualifiersView";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { computeCurrentRound } from "@/lib/rounds";
+import { projectPhases, findPhaseInProjection } from "@/lib/phaseProjection";
+import PhaseRoadmap from "@/components/PhaseRoadmap";
+import { pairKey } from "@/lib/phase";
 import type { Tables } from "@/integrations/supabase/types";
 
 
@@ -84,6 +88,43 @@ export default function StandingsTab({ tournamentId }: Props) {
     });
   }, [matchups, results, numeroRodadas, phaseStatuses, grupoConcluded, tournamentId]);
 
+  // Auto-close fases ELIMINATÓRIAS (mata-mata) quando todos os confrontos
+  // da fase têm resultado registrado para ambos os jogadores.
+  useEffect(() => {
+    if (matchups.length === 0) return;
+    const elimFases = FASES.filter(f => f !== "Fase de Grupos");
+    for (const fase of elimFases) {
+      const status = phaseStatuses.find(p => p.fase === fase)?.status;
+      if (status === "concluida") continue;
+      const faseMatchups = matchups.filter(m => (m.fase || "Fase de Grupos") === fase);
+      if (faseMatchups.length === 0) continue;
+      // Conjunto de pares jogador/fase com resultado registrado
+      const playersWithResult = new Set(
+        results
+          .filter(r => (r.fase || "Fase de Grupos") === fase)
+          .map(r => r.player_id),
+      );
+      const allDone = faseMatchups.every(
+        m => playersWithResult.has(m.player1_id) && playersWithResult.has(m.player2_id),
+      );
+      if (!allDone) continue;
+      const existing = phaseStatuses.find(p => p.fase === fase);
+      const op = existing
+        ? supabase.from("phase_status").update({ status: "concluida" }).eq("id", existing.id)
+        : supabase.from("phase_status").insert({
+            tournament_id: tournamentId, fase, status: "concluida",
+          });
+      op.then(({ error }) => {
+        if (error) return;
+        toast.success(`${fase} encerrada automaticamente — todos os confrontos concluídos.`);
+        loadPhaseStatuses();
+      });
+      // Trata uma fase por ciclo para evitar updates concorrentes
+      break;
+    }
+  }, [matchups, results, phaseStatuses, tournamentId]);
+
+
   const currentPhaseStatus = phaseStatuses.find(p => p.fase === selectedFase)?.status || "em_andamento";
   const isConcluded = currentPhaseStatus === "concluida";
 
@@ -150,6 +191,57 @@ export default function StandingsTab({ tournamentId }: Props) {
   );
   const nextFase = nextPhaseName(selectedFase);
   const showQualifiers = isConcluded && hasAnyGroup && !!nextFase;
+
+  // === Projeção automática das fases eliminatórias ===
+  // Conta classificados saídos da Fase de Grupos (top-5 por grupo + 18 melhores 6º)
+  // ou, se não há grupos, simplesmente o total de jogadores cadastrados.
+  const grupoResults = useMemo(
+    () => results.filter(r => (r.fase || "Fase de Grupos") === "Fase de Grupos"),
+    [results],
+  );
+  const grupoQualifiers = useMemo(
+    () => computeQualifiers(grupoResults, getPlayerName, getPlayerNick),
+    [grupoResults, players],
+  );
+  const classifiedCount = grupoQualifiers.hasGroups
+    ? grupoQualifiers.direct.length + grupoQualifiers.repescagem.length
+    : grupoQualifiers.direct.length;
+  const projection = useMemo(() => projectPhases(classifiedCount), [classifiedCount]);
+  const concludedFases = phaseStatuses.filter(p => p.status === "concluida").map(p => p.fase);
+
+  // Banner contextual da fase selecionada
+  const selectedFaseMatchups = useMemo(
+    () => matchups.filter(m => (m.fase || "Fase de Grupos") === selectedFase),
+    [matchups, selectedFase],
+  );
+  const selectedFasePlayersWithResult = useMemo(() => new Set(
+    results
+      .filter(r => (r.fase || "Fase de Grupos") === selectedFase)
+      .map(r => r.player_id),
+  ), [results, selectedFase]);
+  const confrontosPendentes = selectedFaseMatchups.filter(
+    m => !selectedFasePlayersWithResult.has(m.player1_id) || !selectedFasePlayersWithResult.has(m.player2_id),
+  ).length;
+
+  // Sugestão: fase atual concluída + próxima fase ainda sem confrontos
+  const projectedNext = projection.find(p => p.fase === selectedFase);
+  const projectedAfterCurrent = (() => {
+    const i = projection.findIndex(p => p.fase === selectedFase);
+    if (i < 0 || i === projection.length - 1) return null;
+    return projection[i + 1];
+  })();
+  const nextHasMatchups = projectedAfterCurrent
+    ? matchups.some(m => (m.fase || "Fase de Grupos") === projectedAfterCurrent.fase)
+    : false;
+  const showGenerateNextHint = isConcluded && projectedAfterCurrent && !nextHasMatchups;
+  // Sugestão na própria Fase de Grupos: já concluiu mas a 1ª fase eliminatória ainda não tem confrontos
+  const firstElim = projection[0];
+  const firstElimHasMatchups = firstElim
+    ? matchups.some(m => (m.fase || "Fase de Grupos") === firstElim.fase)
+    : false;
+  const showGenerateFirstElim =
+    selectedFase === "Fase de Grupos" && isConcluded && firstElim && !firstElimHasMatchups;
+
 
   const exportToXlsx = () => {
     const wb = XLSX.utils.book_new();
@@ -221,6 +313,50 @@ export default function StandingsTab({ tournamentId }: Props) {
           </Button>
         )}
       </div>
+
+      {projection.length > 0 && (
+        <PhaseRoadmap
+          projection={projection}
+          classifiedCount={classifiedCount}
+          currentFase={selectedFase}
+          concludedFases={concludedFases}
+        />
+      )}
+
+      {showGenerateFirstElim && firstElim && (
+        <Alert role="status" className="border-primary/40 bg-primary/5">
+          <Info className="h-4 w-4 text-primary" />
+          <AlertDescription>
+            <strong>Fase de Grupos concluída.</strong> Próximo passo: gerar os
+            confrontos da <strong>{firstElim.fase}</strong> ({firstElim.from} jogadores)
+            na aba <em>Confrontos</em>.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {showGenerateNextHint && projectedAfterCurrent && (
+        <Alert role="status" className="border-primary/40 bg-primary/5">
+          <Info className="h-4 w-4 text-primary" />
+          <AlertDescription>
+            <strong>{selectedFase} concluída.</strong> Próximo passo: gerar os
+            confrontos da <strong>{projectedAfterCurrent.fase}</strong> ({projectedAfterCurrent.from} jogadores)
+            na aba <em>Confrontos</em>.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {!isConcluded && selectedFaseMatchups.length > 0 && confrontosPendentes > 0 && (
+        <Alert role="status">
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            Faltam <strong>{confrontosPendentes}</strong> confronto{confrontosPendentes === 1 ? "" : "s"} para encerrar a {selectedFase}.
+            {projectedNext && (
+              <> Esta fase deve reduzir de <strong>{projectedNext.from}</strong> para <strong>{projectedNext.to}</strong> jogadores.</>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+
 
 
 

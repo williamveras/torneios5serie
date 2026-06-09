@@ -340,7 +340,7 @@ export default function PublicResults({ results, players, matchups = [], phaseSt
               : `${confrontos.length} ${confrontos.length === 1 ? "jogo" : "jogos"} registrados nesta fase.`}
           </p>
           {isFaseDeGrupos ? (
-            <Accordion type="multiple" defaultValue={defaultOpenRodadas} className="space-y-2">
+            <Accordion type="multiple" key={defaultExpanded ? `exp-${defaultOpenRodadas.join(",")}` : "rod"} defaultValue={defaultOpenRodadas} className="space-y-2">
               {rodadasGroups.map(group => {
                 const totalConfrontos = group.dias.reduce((acc, d) => acc + d.confrontos.length, 0);
                 const headerLabel = groupLabel(group.rodada);

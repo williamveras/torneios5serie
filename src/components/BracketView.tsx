@@ -19,6 +19,10 @@ interface Props {
   /** Ordem das fases a exibir (esquerda → direita). Default: todas as fases eliminatórias presentes. */
   faseOrder?: string[];
   champion?: PlayerLite | null;
+  /** Quando true, oculta jogadores ainda sem resultado registrado na fase. */
+  hideUnplayed?: boolean;
+  /** Título opcional acima do chaveamento. */
+  title?: string;
 }
 
 const ELIM_FASES_DEFAULT = [

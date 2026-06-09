@@ -124,6 +124,46 @@ export default function StandingsTab({ tournamentId }: Props) {
     }
   }, [matchups, results, phaseStatuses, tournamentId]);
 
+  // Auto-elimina o perdedor de cada confronto eliminatório completo (mata-mata).
+  // Critério: maior pontos_jogo vence; empate → maior pontos_mesa; empate total → não decide.
+  useEffect(() => {
+    if (matchups.length === 0 || results.length === 0 || players.length === 0) return;
+    const elimFases = FASES.filter(f => f !== "Fase de Grupos");
+    const toEliminate = new Set<string>();
+    for (const fase of elimFases) {
+      const faseMatchups = matchups.filter(m => (m.fase || "Fase de Grupos") === fase);
+      const faseResults = results.filter(r => (r.fase || "Fase de Grupos") === fase);
+      const byPlayer = new Map<string, typeof faseResults[number]>();
+      faseResults.forEach(r => byPlayer.set(r.player_id, r));
+      for (const m of faseMatchups) {
+        const r1 = byPlayer.get(m.player1_id);
+        const r2 = byPlayer.get(m.player2_id);
+        if (!r1 || !r2) continue;
+        let loser: string | null = null;
+        if (r1.pontos_jogo > r2.pontos_jogo) loser = m.player2_id;
+        else if (r2.pontos_jogo > r1.pontos_jogo) loser = m.player1_id;
+        else if (r1.pontos_mesa > r2.pontos_mesa) loser = m.player2_id;
+        else if (r2.pontos_mesa > r1.pontos_mesa) loser = m.player1_id;
+        if (!loser) continue;
+        const p = players.find(pp => pp.id === loser);
+        if (p && !p.eliminado) toEliminate.add(loser);
+      }
+    }
+    if (toEliminate.size === 0) return;
+    const ids = [...toEliminate];
+    supabase.from("players").update({ eliminado: true }).in("id", ids).then(({ error }) => {
+      if (error) return;
+      toast.success(
+        ids.length === 1
+          ? "1 jogador eliminado automaticamente após resultado de mata-mata."
+          : `${ids.length} jogadores eliminados automaticamente após resultados de mata-mata.`,
+      );
+      supabase.from("players").select("*").eq("tournament_id", tournamentId).then(({ data }) => {
+        if (data) setPlayers(data);
+      });
+    });
+  }, [matchups, results, players, tournamentId]);
+
 
   const currentPhaseStatus = phaseStatuses.find(p => p.fase === selectedFase)?.status || "em_andamento";
   const isConcluded = currentPhaseStatus === "concluida";

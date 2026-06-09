@@ -238,17 +238,35 @@ export default function StatsTab({ tournamentId }: Props) {
         </Card>
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex items-end justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <Label htmlFor="mod-filter" className="text-sm whitespace-nowrap">Moderador:</Label>
+          <Select value={moderatorFilter} onValueChange={setModeratorFilter}>
+            <SelectTrigger id="mod-filter" className="w-[240px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todos os moderadores</SelectItem>
+              {moderatorsLite
+                .filter(m => results.some(r => r.registered_by === m.user_id))
+                .sort((a, b) => a.nome.localeCompare(b.nome))
+                .map(m => (
+                  <SelectItem key={m.user_id} value={m.user_id}>{m.nome}</SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        </div>
         <ViewModeToggle value={viewMode} onChange={setViewMode} />
       </div>
 
       <PublicResults
-        results={results}
+        results={moderatorFilter === "__all__" ? results : results.filter(r => r.registered_by === moderatorFilter)}
         players={playersLite}
         matchups={matchups}
         phaseStatuses={phaseStatuses}
         moderators={moderatorsLite}
         viewMode={viewMode}
+        defaultExpanded
       />
 
       <div className="flex justify-center gap-2 pt-2 flex-wrap">

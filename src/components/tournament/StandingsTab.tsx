@@ -18,6 +18,7 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/
 import { computeCurrentRound } from "@/lib/rounds";
 import { projectPhases, findPhaseInProjection } from "@/lib/phaseProjection";
 import PhaseRoadmap from "@/components/PhaseRoadmap";
+import BracketView from "@/components/BracketView";
 import { pairKey } from "@/lib/phase";
 import type { Tables } from "@/integrations/supabase/types";
 

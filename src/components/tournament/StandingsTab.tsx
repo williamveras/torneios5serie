@@ -44,6 +44,7 @@ export default function StandingsTab({ tournamentId }: Props) {
   const [matchups, setMatchups] = useState<Tables<"matchups">[]>([]);
   const [numeroRodadas, setNumeroRodadas] = useState<number | null>(null);
   const [campeaoId, setCampeaoId] = useState<string | null>(null);
+  const [qualifierOpts, setQualifierOpts] = useState<{ directPerGroup?: number; repescagemTotal?: number }>({});
 
   const loadPhaseStatuses = () => {
     supabase.from("phase_status").select("*").eq("tournament_id", tournamentId).then(({ data }) => {
@@ -56,14 +57,20 @@ export default function StandingsTab({ tournamentId }: Props) {
       fetchAllMatchResults(tournamentId).then(data => ({ data })),
       supabase.from("players").select("*").eq("tournament_id", tournamentId),
       supabase.from("matchups").select("*").eq("tournament_id", tournamentId),
-      supabase.from("tournaments").select("numero_rodadas, campeao_id").eq("id", tournamentId).maybeSingle(),
+      supabase.from("tournaments").select("*").eq("id", tournamentId).maybeSingle(),
     ]).then(([r, p, m, t]) => {
       if (r.data) setResults(r.data);
       if (p.data) setPlayers(p.data);
       if (m.data) setMatchups(m.data);
       if (t.data) {
-        setNumeroRodadas((t.data as any).numero_rodadas ?? null);
-        setCampeaoId((t.data as any).campeao_id ?? null);
+        const td = t.data as any;
+        setNumeroRodadas(td.numero_rodadas ?? null);
+        setCampeaoId(td.campeao_id ?? null);
+        const opts: { directPerGroup?: number; repescagemTotal?: number } = {};
+        if (td.direct_per_group != null) opts.directPerGroup = td.direct_per_group;
+        if (td.repescagem_enabled === false) opts.repescagemTotal = 0;
+        else if (td.repescagem_total != null) opts.repescagemTotal = td.repescagem_total;
+        setQualifierOpts(opts);
       }
     });
     loadPhaseStatuses();
@@ -258,22 +265,22 @@ export default function StandingsTab({ tournamentId }: Props) {
   const totalRows = sections.reduce((acc, s) => acc + s.rows.length, 0);
 
   const qualifiers = useMemo(
-    () => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick),
-    [filteredByFase, players],
+    () => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick, qualifierOpts),
+    [filteredByFase, players, qualifierOpts],
   );
   const nextFase = nextPhaseName(selectedFase);
   const showQualifiers = isConcluded && hasAnyGroup && !!nextFase;
 
   // === Projeção automática das fases eliminatórias ===
-  // Conta classificados saídos da Fase de Grupos (top-5 por grupo + 18 melhores 6º)
-  // ou, se não há grupos, simplesmente o total de jogadores cadastrados.
+  // Conta classificados saídos da Fase de Grupos (usando a regra configurada
+  // do torneio, ou o padrão histórico 5+18 quando vazia).
   const grupoResults = useMemo(
     () => results.filter(r => (r.fase || "Fase de Grupos") === "Fase de Grupos"),
     [results],
   );
   const grupoQualifiers = useMemo(
-    () => computeQualifiers(grupoResults, getPlayerName, getPlayerNick),
-    [grupoResults, players],
+    () => computeQualifiers(grupoResults, getPlayerName, getPlayerNick, qualifierOpts),
+    [grupoResults, players, qualifierOpts],
   );
   const classifiedCount = grupoQualifiers.hasGroups
     ? grupoQualifiers.direct.length + grupoQualifiers.repescagem.length

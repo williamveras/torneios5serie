@@ -34,6 +34,7 @@ interface Props {
   phaseStatuses: PhaseStatus[];
   matchups?: Matchup[];
   viewMode?: ViewMode;
+  qualifierOpts?: { directPerGroup?: number; repescagemTotal?: number };
 }
 
 const naturalGroupSort = (a: string, b: string) => {
@@ -49,7 +50,7 @@ const compactCardPadding = "p-3 min-[360px]:p-4";
 const keepTogether = (text: string | number) =>
   String(text).replace(/ /g, "\u00A0").replace(/-/g, "\u2011");
 
-export default function PublicStandings({ results, players, phaseStatuses, matchups = [], viewMode = "list" }: Props) {
+export default function PublicStandings({ results, players, phaseStatuses, matchups = [], viewMode = "list", qualifierOpts = {} }: Props) {
   // Default fase: latest concluded phase (so the public view follows the tournament progression).
   const latestConcludedFase = useMemo(() => {
     for (let i = FASES.length - 1; i >= 0; i--) {
@@ -120,8 +121,8 @@ export default function PublicStandings({ results, players, phaseStatuses, match
   const isConcluded = phaseStatus === "concluida";
 
   const qualifiers = useMemo(
-    () => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick),
-    [filteredByFase, players],
+    () => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick, qualifierOpts),
+    [filteredByFase, players, qualifierOpts],
   );
   const nextFase = nextPhaseName(selectedFase);
 
@@ -167,8 +168,8 @@ export default function PublicStandings({ results, players, phaseStatuses, match
     [results],
   );
   const grupoQualifiers = useMemo(
-    () => computeQualifiers(grupoResults, getPlayerName, getPlayerNick),
-    [grupoResults, players],
+    () => computeQualifiers(grupoResults, getPlayerName, getPlayerNick, qualifierOpts),
+    [grupoResults, players, qualifierOpts],
   );
   const classifiedCount = grupoQualifiers.hasGroups
     ? grupoQualifiers.direct.length + grupoQualifiers.repescagem.length

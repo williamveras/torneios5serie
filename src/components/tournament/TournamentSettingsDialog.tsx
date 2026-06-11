@@ -1,0 +1,255 @@
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CheckCircle2, AlertTriangle, Sparkles } from "lucide-react";
+import { toast } from "sonner";
+import type { Tables } from "@/integrations/supabase/types";
+import { suggestQualificationRules, isPow2 } from "@/lib/qualificationSuggest";
+
+type Tournament = Tables<"tournaments">;
+
+interface Props {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  tournamentId: string;
+  onSaved?: () => void;
+}
+
+export default function TournamentSettingsDialog({ open, onOpenChange, tournamentId, onSaved }: Props) {
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [t, setT] = useState<Tournament | null>(null);
+
+  const [nome, setNome] = useState("");
+  const [dataInicio, setDataInicio] = useState("");
+  const [numeroRodadas, setNumeroRodadas] = useState<string>("");
+  const [directPerGroup, setDirectPerGroup] = useState<string>("");
+  const [repescagemEnabled, setRepescagemEnabled] = useState(true);
+  const [repescagemTotal, setRepescagemTotal] = useState<string>("");
+
+  const [totalInscritos, setTotalInscritos] = useState(0);
+  const [numGrupos, setNumGrupos] = useState(0);
+
+  useEffect(() => {
+    if (!open) return;
+    setLoading(true);
+    Promise.all([
+      supabase.from("tournaments").select("*").eq("id", tournamentId).maybeSingle(),
+      supabase.from("players").select("grupo", { count: "exact" }).eq("tournament_id", tournamentId),
+    ]).then(([tr, pr]) => {
+      const tour = tr.data as Tournament | null;
+      if (tour) {
+        setT(tour);
+        setNome(tour.nome);
+        setDataInicio(tour.data_inicio);
+        setNumeroRodadas(tour.numero_rodadas?.toString() ?? "");
+        const anyT = tour as any;
+        setDirectPerGroup(anyT.direct_per_group?.toString() ?? "");
+        setRepescagemEnabled(anyT.repescagem_enabled ?? true);
+        setRepescagemTotal(anyT.repescagem_total?.toString() ?? "");
+      }
+      const players = (pr.data as { grupo: string | null }[] | null) ?? [];
+      setTotalInscritos(players.length);
+      const grupos = new Set(players.map(p => p.grupo).filter(g => !!g && g.trim() !== ""));
+      setNumGrupos(grupos.size);
+      setLoading(false);
+    });
+  }, [open, tournamentId]);
+
+  const suggestions = useMemo(
+    () => suggestQualificationRules(totalInscritos, numGrupos),
+    [totalInscritos, numGrupos],
+  );
+
+  const previewTotal = useMemo(() => {
+    const k = parseInt(directPerGroup, 10);
+    const r = parseInt(repescagemTotal, 10);
+    if (!Number.isFinite(k) || !numGrupos) return null;
+    const base = k * numGrupos;
+    const rep = repescagemEnabled && Number.isFinite(r) ? r : 0;
+    return base + rep;
+  }, [directPerGroup, repescagemTotal, repescagemEnabled, numGrupos]);
+
+  const applySuggestion = (s: typeof suggestions[number]) => {
+    setDirectPerGroup(s.directPerGroup.toString());
+    setRepescagemEnabled(s.repescagemEnabled);
+    setRepescagemTotal(s.repescagemEnabled ? s.repescagemTotal.toString() : "");
+  };
+
+  const handleSave = async () => {
+    if (!nome.trim() || !dataInicio) {
+      toast.error("Nome e data são obrigatórios");
+      return;
+    }
+    setSaving(true);
+    const dpg = directPerGroup.trim() ? parseInt(directPerGroup, 10) : null;
+    const rt = repescagemEnabled && repescagemTotal.trim() ? parseInt(repescagemTotal, 10) : null;
+    const nr = numeroRodadas.trim() ? parseInt(numeroRodadas, 10) : null;
+    const { error } = await (supabase.from("tournaments") as any)
+      .update({
+        nome: nome.trim(),
+        data_inicio: dataInicio,
+        numero_rodadas: nr,
+        direct_per_group: dpg,
+        repescagem_enabled: repescagemEnabled,
+        repescagem_total: rt,
+      })
+      .eq("id", tournamentId);
+    setSaving(false);
+    if (error) {
+      toast.error("Erro ao salvar", { description: error.message });
+      return;
+    }
+    toast.success("Configurações salvas");
+    onSaved?.();
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Configurações do torneio</DialogTitle>
+        </DialogHeader>
+
+        {loading ? (
+          <p className="text-sm text-muted-foreground">Carregando…</p>
+        ) : (
+          <div className="space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>Nome</Label>
+                <Input value={nome} onChange={e => setNome(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Data de início</Label>
+                <Input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Rodadas da Fase de Grupos</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={numeroRodadas}
+                  onChange={e => setNumeroRodadas(e.target.value)}
+                  placeholder="Ex: 7"
+                />
+              </div>
+            </div>
+
+            <div className="border-t pt-4 space-y-3">
+              <div>
+                <h3 className="font-semibold text-sm">Regra de classificação</h3>
+                <p className="text-xs text-muted-foreground">
+                  Define quem passa da Fase de Grupos para o mata-mata.
+                </p>
+              </div>
+
+              <div className="text-xs text-muted-foreground bg-muted/50 rounded-md p-2">
+                Inscritos no momento: <strong>{totalInscritos}</strong> · Grupos:{" "}
+                <strong>{numGrupos || "—"}</strong>
+              </div>
+
+              {suggestions.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5 text-xs font-medium">
+                    <Sparkles className="h-3.5 w-3.5 text-primary" />
+                    Sugestões automáticas
+                  </div>
+                  <div className="grid gap-2">
+                    {suggestions.map((s, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => applySuggestion(s)}
+                        className="text-left rounded-md border px-3 py-2 hover:bg-accent transition-colors text-sm flex items-center justify-between gap-2"
+                      >
+                        <span>{s.note}</span>
+                        {s.fitsBracket && (
+                          <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Classificados direto por grupo</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={directPerGroup}
+                    onChange={e => setDirectPerGroup(e.target.value)}
+                    placeholder="Padrão: 5"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Repescagem do próximo colocado</Label>
+                  <div className="flex items-center gap-2 h-10">
+                    <Switch
+                      checked={repescagemEnabled}
+                      onCheckedChange={setRepescagemEnabled}
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      {repescagemEnabled ? "Ativada" : "Desativada"}
+                    </span>
+                  </div>
+                </div>
+                {repescagemEnabled && (
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label>Quantos melhores entram na repescagem</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={repescagemTotal}
+                      onChange={e => setRepescagemTotal(e.target.value)}
+                      placeholder="Padrão: 18"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {previewTotal !== null && (
+                <Alert variant={isPow2(previewTotal) ? "default" : "destructive"}>
+                  {isPow2(previewTotal) ? (
+                    <CheckCircle2 className="h-4 w-4" />
+                  ) : (
+                    <AlertTriangle className="h-4 w-4" />
+                  )}
+                  <AlertDescription>
+                    Total de classificados:{" "}
+                    <strong>{previewTotal}</strong>{" "}
+                    {isPow2(previewTotal)
+                      ? "— fecha exatamente num bracket de mata-mata."
+                      : "— não é potência de 2 (16, 32, 64, 128…). O mata-mata terá byes ou ajustes."}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <p className="text-xs text-muted-foreground">
+                Deixe em branco para usar a regra padrão: 5 por grupo + 18 melhores 6º colocados na repescagem.
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? "Salvando…" : "Salvar"}
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}

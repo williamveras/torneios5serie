@@ -383,10 +383,13 @@ export type Database = {
           created_at: string
           created_by: string
           data_inicio: string
+          direct_per_group: number | null
           id: string
           nome: string
           numero_rodadas: number | null
           regulamento: string | null
+          repescagem_enabled: boolean
+          repescagem_total: number | null
           updated_at: string
         }
         Insert: {
@@ -394,10 +397,13 @@ export type Database = {
           created_at?: string
           created_by: string
           data_inicio: string
+          direct_per_group?: number | null
           id?: string
           nome: string
           numero_rodadas?: number | null
           regulamento?: string | null
+          repescagem_enabled?: boolean
+          repescagem_total?: number | null
           updated_at?: string
         }
         Update: {
@@ -405,10 +411,13 @@ export type Database = {
           created_at?: string
           created_by?: string
           data_inicio?: string
+          direct_per_group?: number | null
           id?: string
           nome?: string
           numero_rodadas?: number | null
           regulamento?: string | null
+          repescagem_enabled?: boolean
+          repescagem_total?: number | null
           updated_at?: string
         }
         Relationships: [

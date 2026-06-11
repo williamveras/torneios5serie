@@ -174,7 +174,21 @@ export default function PublicTournament() {
                 <div className="flex justify-end mb-3">
                   <ViewModeToggle value={standingsView} onChange={setStandingsView} />
                 </div>
-                <PublicStandings results={results} players={players} matchups={matchups} phaseStatuses={phaseStatuses} viewMode={standingsView} />
+                <PublicStandings
+                  results={results}
+                  players={players}
+                  matchups={matchups}
+                  phaseStatuses={phaseStatuses}
+                  viewMode={standingsView}
+                  qualifierOpts={(() => {
+                    const td = tournament as any;
+                    const opts: { directPerGroup?: number; repescagemTotal?: number } = {};
+                    if (td.direct_per_group != null) opts.directPerGroup = td.direct_per_group;
+                    if (td.repescagem_enabled === false) opts.repescagemTotal = 0;
+                    else if (td.repescagem_total != null) opts.repescagemTotal = td.repescagem_total;
+                    return opts;
+                  })()}
+                />
               </TabsContent>
               <TabsContent value="schedule">
                 <div className="flex justify-end mb-3">

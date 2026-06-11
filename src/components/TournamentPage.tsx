@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Share2 } from "lucide-react";
+import { ArrowLeft, Share2, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ import StandingsTab from "./tournament/StandingsTab";
 import StatsTab from "./tournament/StatsTab";
 import RegulamentoTab from "./tournament/RegulamentoTab";
 import RegistrationLinkTab from "./tournament/RegistrationLinkTab";
+import TournamentSettingsDialog from "./tournament/TournamentSettingsDialog";
 import { useStandingsTabLabel } from "@/hooks/useStandingsTabLabel";
 
 type Tournament = Tables<"tournaments">;

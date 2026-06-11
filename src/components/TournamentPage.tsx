@@ -71,8 +71,17 @@ export default function TournamentPage({ tournament, onBack }: Props) {
           <Button variant="outline" size="sm" onClick={handleSharePublicLink}>
             <Share2 className="h-4 w-4 mr-1" /> Compartilhar link público
           </Button>
+          <Button variant="ghost" size="icon" onClick={() => setSettingsOpen(true)} title="Configurações">
+            <Settings className="h-4 w-4" />
+          </Button>
         </div>
       </header>
+
+      <TournamentSettingsDialog
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        tournamentId={tournament.id}
+      />
 
       <main className="max-w-5xl mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>

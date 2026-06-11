@@ -265,22 +265,22 @@ export default function StandingsTab({ tournamentId }: Props) {
   const totalRows = sections.reduce((acc, s) => acc + s.rows.length, 0);
 
   const qualifiers = useMemo(
-    () => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick),
-    [filteredByFase, players],
+    () => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick, qualifierOpts),
+    [filteredByFase, players, qualifierOpts],
   );
   const nextFase = nextPhaseName(selectedFase);
   const showQualifiers = isConcluded && hasAnyGroup && !!nextFase;
 
   // === Projeção automática das fases eliminatórias ===
-  // Conta classificados saídos da Fase de Grupos (top-5 por grupo + 18 melhores 6º)
-  // ou, se não há grupos, simplesmente o total de jogadores cadastrados.
+  // Conta classificados saídos da Fase de Grupos (usando a regra configurada
+  // do torneio, ou o padrão histórico 5+18 quando vazia).
   const grupoResults = useMemo(
     () => results.filter(r => (r.fase || "Fase de Grupos") === "Fase de Grupos"),
     [results],
   );
   const grupoQualifiers = useMemo(
-    () => computeQualifiers(grupoResults, getPlayerName, getPlayerNick),
-    [grupoResults, players],
+    () => computeQualifiers(grupoResults, getPlayerName, getPlayerNick, qualifierOpts),
+    [grupoResults, players, qualifierOpts],
   );
   const classifiedCount = grupoQualifiers.hasGroups
     ? grupoQualifiers.direct.length + grupoQualifiers.repescagem.length

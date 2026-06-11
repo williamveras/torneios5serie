@@ -44,6 +44,7 @@ export default function StandingsTab({ tournamentId }: Props) {
   const [matchups, setMatchups] = useState<Tables<"matchups">[]>([]);
   const [numeroRodadas, setNumeroRodadas] = useState<number | null>(null);
   const [campeaoId, setCampeaoId] = useState<string | null>(null);
+  const [qualifierOpts, setQualifierOpts] = useState<{ directPerGroup?: number; repescagemTotal?: number }>({});
 
   const loadPhaseStatuses = () => {
     supabase.from("phase_status").select("*").eq("tournament_id", tournamentId).then(({ data }) => {

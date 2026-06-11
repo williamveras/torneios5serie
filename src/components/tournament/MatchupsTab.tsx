@@ -326,7 +326,10 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
     return byFase;
   })();
 
-  const sortedSavedFases = FASES.filter((f) => grouped[f]);
+  // Show only the matchups of the currently selected/active fase, so when a fase
+  // ends and focus shifts to the next one, the previous fase's confrontos are
+  // automatically removed from view.
+  const sortedSavedFases = FASES.filter((f) => grouped[f] && f === fase);
 
   return (
     <div className="space-y-6">
@@ -341,7 +344,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="matchup-fase">Fase</Label>
-              <Select value={fase} onValueChange={(v) => setFase(v as Fase)}>
+              <Select value={fase} onValueChange={(v) => { setFase(v as Fase); setUserPickedFase(true); }}>
                 <SelectTrigger id="matchup-fase"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {FASES.map((f) => (

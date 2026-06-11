@@ -121,8 +121,8 @@ export default function PublicStandings({ results, players, phaseStatuses, match
   const isConcluded = phaseStatus === "concluida";
 
   const qualifiers = useMemo(
-    () => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick),
-    [filteredByFase, players],
+    () => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick, qualifierOpts),
+    [filteredByFase, players, qualifierOpts],
   );
   const nextFase = nextPhaseName(selectedFase);
 

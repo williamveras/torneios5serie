@@ -123,7 +123,7 @@ export default function PublicTournament() {
     const hasPending = scheduledDraws.some(s => s.fase === f && s.status === "pending");
     if (hasMatchups || hasPending) { drawFase = f; break; }
   }
-  const showDrawTab = false; // drawFase != null;
+  const showDrawTab = drawFase != null;
   const drawTabLabel = drawFase ? `Sorteio dos confrontos - ${drawFase}` : "";
 
   const campeaoId = (tournament as any).campeao_id as string | null | undefined;

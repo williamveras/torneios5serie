@@ -57,6 +57,9 @@ export default function PublicDraw({ matchups, players, fase, scheduledDraws = [
     [matchups, fase],
   );
 
+  const mesaMap = useMemo(() => buildMesaMap(matchups as any, fase), [matchups, fase]);
+  const group = isGroupPhase(fase);
+
   // Group by grupo, then by rodada
   const groups = useMemo(() => {
     const byGroup = new Map<string, Matchup[]>();

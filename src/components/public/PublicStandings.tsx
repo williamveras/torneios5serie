@@ -168,8 +168,8 @@ export default function PublicStandings({ results, players, phaseStatuses, match
     [results],
   );
   const grupoQualifiers = useMemo(
-    () => computeQualifiers(grupoResults, getPlayerName, getPlayerNick),
-    [grupoResults, players],
+    () => computeQualifiers(grupoResults, getPlayerName, getPlayerNick, qualifierOpts),
+    [grupoResults, players, qualifierOpts],
   );
   const classifiedCount = grupoQualifiers.hasGroups
     ? grupoQualifiers.direct.length + grupoQualifiers.repescagem.length

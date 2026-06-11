@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Shuffle } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 import type { ViewMode } from "./ViewModeToggle";
+import { buildMesaMap, pairKey, isGroupPhase } from "@/lib/phase";
 
 type Matchup = Tables<"matchups">;
 

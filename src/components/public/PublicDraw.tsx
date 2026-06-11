@@ -145,7 +145,7 @@ export default function PublicDraw({ matchups, players, fase, scheduledDraws = [
                       {items.map(mu => (
                         <TableRow key={mu.id}>
                           <TableCell className="whitespace-nowrap tabular-nums">
-                            {mu.rodada ?? "—"}
+                            {group ? mu.grupo : (mesaMap.get(pairKey(mu.player1_id, mu.player2_id)) ?? "—")}
                           </TableCell>
                           <TableCell className={`font-medium ${noWrapText}`}>
                             {displayName(playerMap.get(mu.player1_id))} x {displayName(playerMap.get(mu.player2_id))}

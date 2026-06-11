@@ -57,14 +57,20 @@ export default function StandingsTab({ tournamentId }: Props) {
       fetchAllMatchResults(tournamentId).then(data => ({ data })),
       supabase.from("players").select("*").eq("tournament_id", tournamentId),
       supabase.from("matchups").select("*").eq("tournament_id", tournamentId),
-      supabase.from("tournaments").select("numero_rodadas, campeao_id").eq("id", tournamentId).maybeSingle(),
+      supabase.from("tournaments").select("*").eq("id", tournamentId).maybeSingle(),
     ]).then(([r, p, m, t]) => {
       if (r.data) setResults(r.data);
       if (p.data) setPlayers(p.data);
       if (m.data) setMatchups(m.data);
       if (t.data) {
-        setNumeroRodadas((t.data as any).numero_rodadas ?? null);
-        setCampeaoId((t.data as any).campeao_id ?? null);
+        const td = t.data as any;
+        setNumeroRodadas(td.numero_rodadas ?? null);
+        setCampeaoId(td.campeao_id ?? null);
+        const opts: { directPerGroup?: number; repescagemTotal?: number } = {};
+        if (td.direct_per_group != null) opts.directPerGroup = td.direct_per_group;
+        if (td.repescagem_enabled === false) opts.repescagemTotal = 0;
+        else if (td.repescagem_total != null) opts.repescagemTotal = td.repescagem_total;
+        setQualifierOpts(opts);
       }
     });
     loadPhaseStatuses();

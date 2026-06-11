@@ -234,9 +234,6 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                 </Alert>
               )}
 
-              <p className="text-xs text-muted-foreground">
-                Deixe em branco para usar a regra padrão: 5 por grupo + 18 melhores 6º colocados na repescagem.
-              </p>
             </div>
 
             <div className="flex justify-end gap-2 pt-2">

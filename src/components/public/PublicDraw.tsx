@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Shuffle } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 import type { ViewMode } from "./ViewModeToggle";
+import { buildMesaMap, pairKey, isGroupPhase } from "@/lib/phase";
 
 type Matchup = Tables<"matchups">;
 
@@ -55,6 +56,9 @@ export default function PublicDraw({ matchups, players, fase, scheduledDraws = [
     () => matchups.filter(m => (m.fase || "Fase de Grupos") === fase),
     [matchups, fase],
   );
+
+  const mesaMap = useMemo(() => buildMesaMap(matchups as any, fase), [matchups, fase]);
+  const group = isGroupPhase(fase);
 
   // Group by grupo, then by rodada
   const groups = useMemo(() => {
@@ -133,15 +137,15 @@ export default function PublicDraw({ matchups, players, fase, scheduledDraws = [
                   <Table className="min-w-max">
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="whitespace-nowrap">Rodada</TableHead>
-                        <TableHead className="whitespace-nowrap">Confronto</TableHead>
+                      <TableHead className="whitespace-nowrap">{group ? "Grupo" : "Mesa"}</TableHead>
+                      <TableHead className="whitespace-nowrap">Confronto</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {items.map(mu => (
                         <TableRow key={mu.id}>
                           <TableCell className="whitespace-nowrap tabular-nums">
-                            {mu.rodada ?? "—"}
+                            {group ? mu.grupo : (mesaMap.get(pairKey(mu.player1_id, mu.player2_id)) ?? "—")}
                           </TableCell>
                           <TableCell className={`font-medium ${noWrapText}`}>
                             {displayName(playerMap.get(mu.player1_id))} x {displayName(playerMap.get(mu.player2_id))}
@@ -160,7 +164,11 @@ export default function PublicDraw({ matchups, players, fase, scheduledDraws = [
                   <div key={mu.id} className="rounded-md border bg-muted/30 p-3 min-[360px]:p-4 min-w-0 overflow-hidden">
                     <div className={`text-sm text-muted-foreground ${scrollLine}`}>
                       <span className="public-line-content">
-                        {keepTogether(mu.rodada != null ? `Rodada ${mu.rodada}` : "Rodada a definir")}
+                        {keepTogether(
+                          group
+                            ? `Grupo ${mu.grupo}`
+                            : `Mesa ${mesaMap.get(pairKey(mu.player1_id, mu.player2_id)) ?? "—"}`
+                        )}
                       </span>
                     </div>
                     <h3 className={`text-base sm:text-lg font-semibold ${scrollLine}`}>

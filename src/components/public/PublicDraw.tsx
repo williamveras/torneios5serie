@@ -137,8 +137,8 @@ export default function PublicDraw({ matchups, players, fase, scheduledDraws = [
                   <Table className="min-w-max">
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="whitespace-nowrap">Rodada</TableHead>
-                        <TableHead className="whitespace-nowrap">Confronto</TableHead>
+                      <TableHead className="whitespace-nowrap">{group ? "Grupo" : "Mesa"}</TableHead>
+                      <TableHead className="whitespace-nowrap">Confronto</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

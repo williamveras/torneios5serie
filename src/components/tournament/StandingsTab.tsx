@@ -269,7 +269,41 @@ export default function StandingsTab({ tournamentId }: Props) {
     [filteredByFase, players, qualifierOpts],
   );
   const nextFase = nextPhaseName(selectedFase);
-  const showQualifiers = isConcluded && hasAnyGroup && !!nextFase;
+  const isGroupsPhase = selectedFase === "Fase de Grupos";
+
+  // Vencedores da fase eliminatória selecionada — formam a lista de classificados
+  // para a próxima fase (espelha o comportamento da página pública).
+  const elimWinnersQualifiers = useMemo(() => {
+    if (isGroupsPhase) return null;
+    const faseMatchups = matchups.filter(m => (m.fase || "Fase de Grupos") === selectedFase);
+    if (faseMatchups.length === 0) return null;
+    const byPlayer = new Map<string, MatchResult>();
+    filteredByFase.forEach(r => byPlayer.set(r.player_id, r));
+    const winners: string[] = [];
+    for (const m of faseMatchups) {
+      const r1 = byPlayer.get(m.player1_id);
+      const r2 = byPlayer.get(m.player2_id);
+      if (!r1 || !r2) continue;
+      let w: string | null = null;
+      if (r1.pontos_jogo > r2.pontos_jogo) w = m.player1_id;
+      else if (r2.pontos_jogo > r1.pontos_jogo) w = m.player2_id;
+      else if (r1.pontos_mesa > r2.pontos_mesa) w = m.player1_id;
+      else if (r2.pontos_mesa > r1.pontos_mesa) w = m.player2_id;
+      if (w) winners.push(w);
+    }
+    if (winners.length === 0) return null;
+    const winnersResults = filteredByFase
+      .filter(r => winners.includes(r.player_id))
+      .map(r => ({ ...r, grupo: "" })) as MatchResult[];
+    return computeQualifiers(winnersResults, getPlayerName, getPlayerNick);
+  }, [matchups, filteredByFase, selectedFase, isGroupsPhase, players]);
+
+  const showQualifiers = isConcluded && !!nextFase && totalRows > 0 && (
+    isGroupsPhase
+      ? hasAnyGroup
+      : (elimWinnersQualifiers !== null && elimWinnersQualifiers.direct.length > 0)
+  );
+  const qualifiersToShow = isGroupsPhase ? qualifiers : (elimWinnersQualifiers ?? qualifiers);
 
   // === Projeção automática das fases eliminatórias ===
   // Conta classificados saídos da Fase de Grupos (usando a regra configurada

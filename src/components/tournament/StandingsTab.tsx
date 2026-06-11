@@ -645,7 +645,7 @@ export default function StandingsTab({ tournamentId }: Props) {
               <div className="space-y-6">
                 <div className="space-y-4">
                   <h2 className="text-xl font-bold">Classificados para a {nextFase}</h2>
-                  <QualifiersView qualifiers={qualifiers} />
+                  <QualifiersView qualifiers={qualifiersToShow} />
                 </div>
                 <Accordion type="single" collapsible className="rounded-md border bg-background px-4">
                   <AccordionItem value="full-list" className="border-b-0">

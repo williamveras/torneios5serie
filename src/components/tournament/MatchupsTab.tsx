@@ -72,6 +72,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
   const [matchups, setMatchups] = useState<Matchup[]>([]);
   const [scheduledDraws, setScheduledDraws] = useState<ScheduledDraw[]>([]);
   const [fase, setFase] = useState<Fase>("Fase de Grupos");
+  const [userPickedFase, setUserPickedFase] = useState(false);
   const [mode, setMode] = useState<Mode>("por_grupo");
   const [rodadaGeral, setRodadaGeral] = useState("");
   const [drafts, setDrafts] = useState<DraftMatch[]>([]);
@@ -86,11 +87,22 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
     fetchPlayers();
     fetchMatchups();
     fetchScheduledDraws();
-  }, [tournamentId]);
-
-  useEffect(() => {
-    fetchPlayers();
-    fetchMatchups();
+    // Determine active phase (next after the latest concluded one).
+    (async () => {
+      const { data } = await supabase
+        .from("phase_status")
+        .select("fase,status")
+        .eq("tournament_id", tournamentId);
+      if (!data) return;
+      let lastConcludedIdx = -1;
+      for (let i = 0; i < FASES.length; i++) {
+        if (data.find((s) => s.fase === FASES[i])?.status === "concluida") lastConcludedIdx = i;
+      }
+      if (lastConcludedIdx >= 0) {
+        const next = FASES[Math.min(lastConcludedIdx + 1, FASES.length - 1)] as Fase;
+        if (!userPickedFase) setFase(next);
+      }
+    })();
   }, [tournamentId]);
 
   // Auto-adjust mode when fase changes
@@ -314,7 +326,10 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
     return byFase;
   })();
 
-  const sortedSavedFases = FASES.filter((f) => grouped[f]);
+  // Show only the matchups of the currently selected/active fase, so when a fase
+  // ends and focus shifts to the next one, the previous fase's confrontos are
+  // automatically removed from view.
+  const sortedSavedFases = FASES.filter((f) => grouped[f] && f === fase);
 
   return (
     <div className="space-y-6">
@@ -329,7 +344,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="matchup-fase">Fase</Label>
-              <Select value={fase} onValueChange={(v) => setFase(v as Fase)}>
+              <Select value={fase} onValueChange={(v) => { setFase(v as Fase); setUserPickedFase(true); }}>
                 <SelectTrigger id="matchup-fase"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {FASES.map((f) => (

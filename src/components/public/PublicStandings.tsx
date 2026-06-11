@@ -84,7 +84,12 @@ export default function PublicStandings({ results, players, phaseStatuses, match
     [results, selectedFase],
   );
 
-  const hasAnyGroup = useMemo(() => filteredByFase.some(r => hasGroup(r.grupo)), [filteredByFase]);
+  const isGroupsPhase = selectedFase === "Fase de Grupos";
+
+  const hasAnyGroup = useMemo(
+    () => isGroupsPhase && filteredByFase.some(r => hasGroup(r.grupo)),
+    [filteredByFase, isGroupsPhase],
+  );
 
   const groups = useMemo(
     () => [...new Set(filteredByFase.filter(r => hasGroup(r.grupo)).map(r => r.grupo))].sort(naturalGroupSort),
@@ -123,10 +128,10 @@ export default function PublicStandings({ results, players, phaseStatuses, match
   // Vencedores da fase eliminatória selecionada (quando concluída) — formam a lista
   // de classificados para a próxima fase, exibida da mesma forma que os classificados
   // saídos da Fase de Grupos.
-  const elimWinners = useMemo(() => {
-    if (selectedFase === "Fase de Grupos") return [];
+  const elimWinnersQualifiers = useMemo(() => {
+    if (isGroupsPhase) return null;
     const faseMatchups = matchups.filter(m => (m.fase || "Fase de Grupos") === selectedFase);
-    if (faseMatchups.length === 0) return [];
+    if (faseMatchups.length === 0) return null;
     const byPlayer = new Map<string, MatchResult>();
     filteredByFase.forEach(r => byPlayer.set(r.player_id, r));
     const winners: string[] = [];
@@ -141,19 +146,20 @@ export default function PublicStandings({ results, players, phaseStatuses, match
       else if (r2.pontos_mesa > r1.pontos_mesa) w = m.player2_id;
       if (w) winners.push(w);
     }
-    return winners;
-  }, [matchups, filteredByFase, selectedFase]);
-
-  const elimWinnersQualifiers = useMemo(() => {
-    if (elimWinners.length === 0) return null;
-    const winnersResults = filteredByFase.filter(r => elimWinners.includes(r.player_id));
+    if (winners.length === 0) return null;
+    const winnersResults = filteredByFase
+      .filter(r => winners.includes(r.player_id))
+      // Compute as a flat list, ignoring any synthetic `grupo` on elimination results.
+      .map(r => ({ ...r, grupo: "" })) as MatchResult[];
     return computeQualifiers(winnersResults, getPlayerName, getPlayerNick);
-  }, [elimWinners, filteredByFase, players]);
+  }, [matchups, filteredByFase, selectedFase, isGroupsPhase, players]);
 
   const showQualifiers = isConcluded && !!nextFase && totalRows > 0 && (
-    hasAnyGroup || (elimWinnersQualifiers !== null && elimWinnersQualifiers.direct.length > 0)
+    isGroupsPhase
+      ? hasAnyGroup
+      : (elimWinnersQualifiers !== null && elimWinnersQualifiers.direct.length > 0)
   );
-  const qualifiersToShow = hasAnyGroup ? qualifiers : (elimWinnersQualifiers ?? qualifiers);
+  const qualifiersToShow = isGroupsPhase ? qualifiers : (elimWinnersQualifiers ?? qualifiers);
 
   // Projeção de fases eliminatórias (visível na fase de grupos para mostrar o roadmap completo).
   const grupoResults = useMemo(

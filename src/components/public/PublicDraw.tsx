@@ -164,7 +164,11 @@ export default function PublicDraw({ matchups, players, fase, scheduledDraws = [
                   <div key={mu.id} className="rounded-md border bg-muted/30 p-3 min-[360px]:p-4 min-w-0 overflow-hidden">
                     <div className={`text-sm text-muted-foreground ${scrollLine}`}>
                       <span className="public-line-content">
-                        {keepTogether(mu.rodada != null ? `Rodada ${mu.rodada}` : "Rodada a definir")}
+                        {keepTogether(
+                          group
+                            ? `Grupo ${mu.grupo}`
+                            : `Mesa ${mesaMap.get(pairKey(mu.player1_id, mu.player2_id)) ?? "—"}`
+                        )}
                       </span>
                     </div>
                     <h3 className={`text-base sm:text-lg font-semibold ${scrollLine}`}>

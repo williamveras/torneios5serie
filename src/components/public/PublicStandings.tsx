@@ -34,6 +34,7 @@ interface Props {
   phaseStatuses: PhaseStatus[];
   matchups?: Matchup[];
   viewMode?: ViewMode;
+  qualifierOpts?: { directPerGroup?: number; repescagemTotal?: number };
 }
 
 const naturalGroupSort = (a: string, b: string) => {

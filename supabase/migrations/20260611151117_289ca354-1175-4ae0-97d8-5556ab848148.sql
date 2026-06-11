@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Anyone can view scheduled draws" ON public.scheduled_draws;

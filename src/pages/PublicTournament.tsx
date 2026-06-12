@@ -115,16 +115,10 @@ export default function PublicTournament() {
   const nextFaseLabel = latestConcluded ? nextPhaseName(latestConcluded) : "";
   const standingsTabLabel = latestConcluded && nextFaseLabel ? `Classificados (${nextFaseLabel})` : "Classificação";
 
-  // Latest fase (by FASES order) with matchups OR with a pending scheduled draw — drives the "Sorteio" tab.
-  let drawFase: string | null = null;
-  for (let i = FASES.length - 1; i >= 0; i--) {
-    const f = FASES[i];
-    const hasMatchups = matchups.some(m => (m.fase || "Fase de Grupos") === f);
-    const hasPending = scheduledDraws.some(s => s.fase === f && s.status === "pending");
-    if (hasMatchups || hasPending) { drawFase = f; break; }
-  }
-  const showDrawTab = drawFase != null;
-  const drawTabLabel = drawFase ? `Sorteio dos confrontos - ${drawFase}` : "";
+  // Sorteio tab temporariamente desabilitado.
+  const showDrawTab = false;
+  const drawFase: string | null = null;
+  const drawTabLabel = "";
 
   const campeaoId = (tournament as any).campeao_id as string | null | undefined;
   const campeao = campeaoId ? players.find(p => p.id === campeaoId) : null;

@@ -6,6 +6,7 @@ interface Props {
   qualifiers: QualifiersResult;
   variant?: "admin" | "public";
   viewMode?: ViewMode;
+  playerMesaMap?: Map<string, number>;
 }
 
 const noWrapText = "public-nowrap";
@@ -20,7 +21,7 @@ const naturalGroupSort = (a: string, b: string) => {
   return a.localeCompare(b);
 };
 
-function TableSection({ title, rows, usePos }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall" }) {
+function TableSection({ title, rows, usePos, playerMesaMap }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number> }) {
   return (
     <section>
       <h3 className="font-semibold text-lg mb-2">{title}</h3>
@@ -38,7 +39,9 @@ function TableSection({ title, rows, usePos }: { title: string; rows: QualifierR
           <TableBody>
             {rows.map(s => {
               const pos = usePos === "group" ? s.groupPosition : s.position;
-              const displayName = s.nick || s.playerName;
+              const baseName = s.nick || s.playerName;
+              const mesa = playerMesaMap?.get(s.playerId);
+              const displayName = mesa ? `${baseName}, mesa ${mesa}` : baseName;
               return (
                 <TableRow key={`${s.grupo}-${s.playerId}`} className={s.hasPenalty ? "bg-destructive/5" : ""}>
                   <TableCell className="font-bold tabular-nums">{pos}º</TableCell>
@@ -58,14 +61,16 @@ function TableSection({ title, rows, usePos }: { title: string; rows: QualifierR
   );
 }
 
-function ListSection({ title, rows, usePos }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall" }) {
+function ListSection({ title, rows, usePos, playerMesaMap }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number> }) {
   return (
     <section>
       <h3 className="font-semibold text-lg mb-2">{title}</h3>
       <ol className="space-y-2" aria-label={title}>
         {rows.map(s => {
           const pos = usePos === "group" ? s.groupPosition : s.position;
-          const displayName = s.nick || s.playerName;
+          const baseName = s.nick || s.playerName;
+          const mesa = playerMesaMap?.get(s.playerId);
+          const displayName = mesa ? `${baseName}, mesa ${mesa}` : baseName;
           return (
             <li
               key={`${s.grupo}-${s.playerId}`}
@@ -91,13 +96,13 @@ function ListSection({ title, rows, usePos }: { title: string; rows: QualifierRo
   );
 }
 
-export default function QualifiersView({ qualifiers, viewMode = "list" }: Props) {
+export default function QualifiersView({ qualifiers, viewMode = "list", playerMesaMap }: Props) {
   const Section = viewMode === "table" ? TableSection : ListSection;
 
   if (!qualifiers.hasGroups) {
     return (
       <div className="space-y-6">
-        <Section title="Classificados" rows={qualifiers.direct} usePos="overall" />
+        <Section title="Classificados" rows={qualifiers.direct} usePos="overall" playerMesaMap={playerMesaMap} />
       </div>
     );
   }
@@ -110,13 +115,14 @@ export default function QualifiersView({ qualifiers, viewMode = "list" }: Props)
         const rows = qualifiers.direct
           .filter(r => r.grupo === g)
           .sort((a, b) => a.groupPosition - b.groupPosition);
-        return <Section key={g} title={`Grupo ${g}`} rows={rows} usePos="group" />;
+        return <Section key={g} title={`Grupo ${g}`} rows={rows} usePos="group" playerMesaMap={playerMesaMap} />;
       })}
       {qualifiers.repescagem.length > 0 && (
         <Section
           title="Repescagem — melhores 6º colocados"
           rows={qualifiers.repescagem}
           usePos="overall"
+          playerMesaMap={playerMesaMap}
         />
       )}
     </div>

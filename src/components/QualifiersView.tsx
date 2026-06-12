@@ -96,13 +96,13 @@ function ListSection({ title, rows, usePos, playerMesaMap }: { title: string; ro
   );
 }
 
-export default function QualifiersView({ qualifiers, viewMode = "list" }: Props) {
+export default function QualifiersView({ qualifiers, viewMode = "list", playerMesaMap }: Props) {
   const Section = viewMode === "table" ? TableSection : ListSection;
 
   if (!qualifiers.hasGroups) {
     return (
       <div className="space-y-6">
-        <Section title="Classificados" rows={qualifiers.direct} usePos="overall" />
+        <Section title="Classificados" rows={qualifiers.direct} usePos="overall" playerMesaMap={playerMesaMap} />
       </div>
     );
   }
@@ -115,13 +115,14 @@ export default function QualifiersView({ qualifiers, viewMode = "list" }: Props)
         const rows = qualifiers.direct
           .filter(r => r.grupo === g)
           .sort((a, b) => a.groupPosition - b.groupPosition);
-        return <Section key={g} title={`Grupo ${g}`} rows={rows} usePos="group" />;
+        return <Section key={g} title={`Grupo ${g}`} rows={rows} usePos="group" playerMesaMap={playerMesaMap} />;
       })}
       {qualifiers.repescagem.length > 0 && (
         <Section
           title="Repescagem — melhores 6º colocados"
           rows={qualifiers.repescagem}
           usePos="overall"
+          playerMesaMap={playerMesaMap}
         />
       )}
     </div>

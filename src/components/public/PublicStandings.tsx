@@ -14,6 +14,7 @@ import { computeQualifiers, nextPhaseName } from "@/lib/qualifiers";
 import { projectPhases } from "@/lib/phaseProjection";
 import PhaseRoadmap from "@/components/PhaseRoadmap";
 import QualifiersView from "@/components/QualifiersView";
+import { buildMesaMap, isGroupPhase, pairKey } from "@/lib/phase";
 import type { ViewMode } from "./ViewModeToggle";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -96,6 +97,25 @@ export default function PublicStandings({ results, players, phaseStatuses, match
     () => [...new Set(filteredByFase.filter(r => hasGroup(r.grupo)).map(r => r.grupo))].sort(naturalGroupSort),
     [filteredByFase],
   );
+
+  // Mesa lookup per player for the selected fase (only meaningful for non-group fases,
+  // where each player participates in a single matchup/mesa).
+  const playerMesaMap = useMemo(() => {
+    const map = new Map<string, number>();
+    if (isGroupPhase(selectedFase)) return map;
+    const mesaMap = buildMesaMap(matchups, selectedFase);
+    matchups
+      .filter(mu => (mu.fase || "Fase de Grupos") === selectedFase)
+      .forEach(mu => {
+        const n = mesaMap.get(pairKey(mu.player1_id, mu.player2_id));
+        if (!n) return;
+        map.set(mu.player1_id, n);
+        map.set(mu.player2_id, n);
+      });
+    return map;
+  }, [matchups, selectedFase]);
+
+
 
   const sections = useMemo(() => {
     if (!hasAnyGroup) {
@@ -236,7 +256,9 @@ export default function PublicStandings({ results, players, phaseStatuses, match
                 </TableHeader>
                 <TableBody>
                   {sec.rows.map(s => {
-                    const displayName = s.nick || s.playerName;
+                    const baseName = s.nick || s.playerName;
+                    const mesa = playerMesaMap.get(s.playerId);
+                    const displayName = mesa ? `${baseName}, mesa ${mesa}` : baseName;
                     return (
                       <TableRow key={s.playerId} className={s.hasPenalty ? "bg-destructive/5" : ""}>
                         <TableCell className="font-bold tabular-nums">{s.position}º</TableCell>
@@ -273,7 +295,9 @@ export default function PublicStandings({ results, players, phaseStatuses, match
               }
             >
               {sec.rows.map(s => {
-                const displayName = s.nick || s.playerName;
+                const baseName = s.nick || s.playerName;
+                const mesa = playerMesaMap.get(s.playerId);
+                const displayName = mesa ? `${baseName}, mesa ${mesa}` : baseName;
                 return (
                   <li
                     key={s.playerId}

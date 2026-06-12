@@ -6,6 +6,7 @@ interface Props {
   qualifiers: QualifiersResult;
   variant?: "admin" | "public";
   viewMode?: ViewMode;
+  playerMesaMap?: Map<string, number>;
 }
 
 const noWrapText = "public-nowrap";

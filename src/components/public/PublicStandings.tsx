@@ -98,6 +98,25 @@ export default function PublicStandings({ results, players, phaseStatuses, match
     [filteredByFase],
   );
 
+  // Mesa lookup per player for the selected fase (only meaningful for non-group fases,
+  // where each player participates in a single matchup/mesa).
+  const playerMesaMap = useMemo(() => {
+    const map = new Map<string, number>();
+    if (isGroupPhase(selectedFase)) return map;
+    const mesaMap = buildMesaMap(matchups, selectedFase);
+    matchups
+      .filter(mu => (mu.fase || "Fase de Grupos") === selectedFase)
+      .forEach(mu => {
+        const n = mesaMap.get(pairKey(mu.player1_id, mu.player2_id));
+        if (!n) return;
+        map.set(mu.player1_id, n);
+        map.set(mu.player2_id, n);
+      });
+    return map;
+  }, [matchups, selectedFase]);
+
+
+
   const sections = useMemo(() => {
     if (!hasAnyGroup) {
       return [{

@@ -21,7 +21,7 @@ const naturalGroupSort = (a: string, b: string) => {
   return a.localeCompare(b);
 };
 
-function TableSection({ title, rows, usePos }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall" }) {
+function TableSection({ title, rows, usePos, playerMesaMap }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number> }) {
   return (
     <section>
       <h3 className="font-semibold text-lg mb-2">{title}</h3>

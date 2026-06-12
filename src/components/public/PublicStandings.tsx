@@ -146,6 +146,22 @@ export default function PublicStandings({ results, players, phaseStatuses, match
   );
   const nextFase = nextPhaseName(selectedFase);
 
+  // Mesa lookup for the NEXT phase — used to annotate qualifiers with the mesa where they will play.
+  const nextPhaseMesaMap = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!nextFase) return map;
+    const mesaMap = buildMesaMap(matchups, nextFase);
+    matchups
+      .filter(mu => (mu.fase || "Fase de Grupos") === nextFase)
+      .forEach(mu => {
+        const n = mesaMap.get(pairKey(mu.player1_id, mu.player2_id));
+        if (!n) return;
+        map.set(mu.player1_id, n);
+        map.set(mu.player2_id, n);
+      });
+    return map;
+  }, [matchups, nextFase]);
+
   // Vencedores da fase eliminatória selecionada (quando concluída) — formam a lista
   // de classificados para a próxima fase, exibida da mesma forma que os classificados
   // saídos da Fase de Grupos.

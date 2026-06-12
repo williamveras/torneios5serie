@@ -256,7 +256,9 @@ export default function PublicStandings({ results, players, phaseStatuses, match
                 </TableHeader>
                 <TableBody>
                   {sec.rows.map(s => {
-                    const displayName = s.nick || s.playerName;
+                    const baseName = s.nick || s.playerName;
+                    const mesa = playerMesaMap.get(s.playerId);
+                    const displayName = mesa ? `${baseName}, mesa ${mesa}` : baseName;
                     return (
                       <TableRow key={s.playerId} className={s.hasPenalty ? "bg-destructive/5" : ""}>
                         <TableCell className="font-bold tabular-nums">{s.position}º</TableCell>

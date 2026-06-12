@@ -61,14 +61,16 @@ function TableSection({ title, rows, usePos, playerMesaMap }: { title: string; r
   );
 }
 
-function ListSection({ title, rows, usePos }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall" }) {
+function ListSection({ title, rows, usePos, playerMesaMap }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number> }) {
   return (
     <section>
       <h3 className="font-semibold text-lg mb-2">{title}</h3>
       <ol className="space-y-2" aria-label={title}>
         {rows.map(s => {
           const pos = usePos === "group" ? s.groupPosition : s.position;
-          const displayName = s.nick || s.playerName;
+          const baseName = s.nick || s.playerName;
+          const mesa = playerMesaMap?.get(s.playerId);
+          const displayName = mesa ? `${baseName}, mesa ${mesa}` : baseName;
           return (
             <li
               key={`${s.grupo}-${s.playerId}`}

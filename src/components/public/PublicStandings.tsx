@@ -14,6 +14,7 @@ import { computeQualifiers, nextPhaseName } from "@/lib/qualifiers";
 import { projectPhases } from "@/lib/phaseProjection";
 import PhaseRoadmap from "@/components/PhaseRoadmap";
 import QualifiersView from "@/components/QualifiersView";
+import { buildMesaMap, isGroupPhase, pairKey } from "@/lib/phase";
 import type { ViewMode } from "./ViewModeToggle";
 import type { Tables } from "@/integrations/supabase/types";
 

@@ -295,7 +295,9 @@ export default function PublicStandings({ results, players, phaseStatuses, match
               }
             >
               {sec.rows.map(s => {
-                const displayName = s.nick || s.playerName;
+                const baseName = s.nick || s.playerName;
+                const mesa = playerMesaMap.get(s.playerId);
+                const displayName = mesa ? `${baseName}, mesa ${mesa}` : baseName;
                 return (
                   <li
                     key={s.playerId}

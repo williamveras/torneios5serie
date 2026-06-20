@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Shuffle, Trash2, CalendarPlus, Wand2, Save, RefreshCw, Clock, X } from "lucide-react";
 import { toast } from "sonner";
 import { FASES, type Fase } from "@/lib/constants";
+import { getActivePublicPhase } from "@/lib/phase";
 import { useAuth } from "@/hooks/useAuth";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -71,6 +72,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
   const [players, setPlayers] = useState<Player[]>([]);
   const [matchups, setMatchups] = useState<Matchup[]>([]);
   const [scheduledDraws, setScheduledDraws] = useState<ScheduledDraw[]>([]);
+  const [phaseStatuses, setPhaseStatuses] = useState<Array<{ fase: string; status: string }>>([]);
   const [fase, setFase] = useState<Fase>("Fase de Grupos");
   const [userPickedFase, setUserPickedFase] = useState(false);
   const [mode, setMode] = useState<Mode>("por_grupo");
@@ -87,23 +89,13 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
     fetchPlayers();
     fetchMatchups();
     fetchScheduledDraws();
-    // Determine active phase (next after the latest concluded one).
-    (async () => {
-      const { data } = await supabase
-        .from("phase_status")
-        .select("fase,status")
-        .eq("tournament_id", tournamentId);
-      if (!data) return;
-      let lastConcludedIdx = -1;
-      for (let i = 0; i < FASES.length; i++) {
-        if (data.find((s) => s.fase === FASES[i])?.status === "concluida") lastConcludedIdx = i;
-      }
-      if (lastConcludedIdx >= 0) {
-        const next = FASES[Math.min(lastConcludedIdx + 1, FASES.length - 1)] as Fase;
-        if (!userPickedFase) setFase(next);
-      }
-    })();
+    fetchPhaseStatuses();
   }, [tournamentId]);
+
+  useEffect(() => {
+    if (userPickedFase) return;
+    setFase(getActivePublicPhase(phaseStatuses) as Fase);
+  }, [phaseStatuses, userPickedFase]);
 
   // Auto-adjust mode when fase changes
   useEffect(() => {
@@ -136,6 +128,14 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
       .eq("tournament_id", tournamentId)
       .order("scheduled_at", { ascending: true });
     if (data) setScheduledDraws(data);
+  }
+
+  async function fetchPhaseStatuses() {
+    const { data } = await supabase
+      .from("phase_status")
+      .select("fase,status")
+      .eq("tournament_id", tournamentId);
+    if (data) setPhaseStatuses(data);
   }
 
   async function scheduleDraw() {

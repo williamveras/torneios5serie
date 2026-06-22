@@ -329,9 +329,16 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{players.length} participante(s)</p>
-        <div>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <p className="text-sm text-muted-foreground">
+          {players.length} {modalidade === "duplas" ? "dupla(s)" : "participante(s)"}
+        </p>
+        <div className="flex items-center gap-2">
+          {modalidade === "duplas" && (
+            <Button onClick={() => setTeamDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" /> Adicionar Dupla
+            </Button>
+          )}
           <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImport} />
           <Button variant="outline" onClick={() => fileRef.current?.click()}>
             <Upload className="h-4 w-4 mr-1" /> Importar Planilha

@@ -145,7 +145,14 @@ export default function Dashboard() {
               <Card key={t.id} className="cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99]" onClick={() => setSelectedTournament(t)}>
                 <CardContent className="py-4 flex items-center justify-between">
                   <div>
-                    <p className="font-medium">{t.nome}</p>
+                    <p className="font-medium flex items-center gap-2">
+                      {t.nome}
+                      {(t as any).modalidade === "duplas" && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-xs px-2 py-0.5">
+                          <Users className="h-3 w-3" /> Duplas
+                        </span>
+                      )}
+                    </p>
                     <p className="text-sm text-muted-foreground flex items-center gap-1">
                       <Calendar className="h-3.5 w-3.5" />
                       {format(new Date(t.data_inicio + "T00:00:00"), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}

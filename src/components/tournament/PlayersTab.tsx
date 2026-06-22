@@ -179,11 +179,26 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
     setEditWhats(p.whatsapp || "");
     setEditHorarios(p.preferencia_horarios || "");
     setEditGrupo(p.grupo || "");
+    if ((p as any).is_team) {
+      const existing = teamMembersMap[p.id] || [];
+      const m1 = existing.find(m => m.position === 1) || emptyMember(1);
+      const m2 = existing.find(m => m.position === 2) || emptyMember(2);
+      setEditMembers([m1, m2]);
+    } else {
+      setEditMembers([]);
+    }
   };
 
   const handleSaveEdit = async () => {
     if (!editPlayer) return;
     if (!editNome.trim()) { toast.error("Nome é obrigatório"); return; }
+    const isTeam = (editPlayer as any).is_team;
+    if (isTeam) {
+      if (!editMembers[0]?.member_nome.trim() || !editMembers[1]?.member_nome.trim()) {
+        toast.error("Informe o nome dos dois jogadores da dupla");
+        return;
+      }
+    }
     setSavingEdit(true);
     const { error } = await supabase.from("players").update({
       nome_completo: editNome.trim(),
@@ -192,14 +207,73 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
       preferencia_horarios: editHorarios.trim() || null,
       grupo: editGrupo.trim() || null,
     }).eq("id", editPlayer.id);
-    setSavingEdit(false);
     if (error) {
+      setSavingEdit(false);
       toast.error("Erro ao salvar: " + error.message);
-    } else {
-      toast.success("Jogador atualizado");
-      setEditPlayer(null);
-      fetchPlayers();
+      return;
     }
+    if (isTeam) {
+      // upsert members: delete + insert is simplest and safe (cascades not needed)
+      await (supabase.from("team_members") as any).delete().eq("team_id", editPlayer.id);
+      const rows = editMembers.map(m => ({
+        team_id: editPlayer.id,
+        member_nome: m.member_nome.trim(),
+        member_nick: m.member_nick?.trim() || null,
+        member_email: m.member_email?.trim() || null,
+        member_whatsapp: m.member_whatsapp?.trim() || null,
+        position: m.position,
+      }));
+      const { error: memErr } = await (supabase.from("team_members") as any).insert(rows);
+      if (memErr) {
+        setSavingEdit(false);
+        toast.error("Erro ao salvar jogadores da dupla: " + memErr.message);
+        return;
+      }
+    }
+    setSavingEdit(false);
+    toast.success(isTeam ? "Dupla atualizada" : "Jogador atualizado");
+    setEditPlayer(null);
+    fetchPlayers();
+  };
+
+  const handleCreateTeam = async () => {
+    const m1 = newTeamMembers[0];
+    const m2 = newTeamMembers[1];
+    if (!m1.member_nome.trim() || !m2.member_nome.trim()) {
+      toast.error("Informe o nome dos dois jogadores da dupla"); return;
+    }
+    const defaultName = [m1.member_nick?.trim() || m1.member_nome.trim(), m2.member_nick?.trim() || m2.member_nome.trim()].join(" & ");
+    const nome = newTeamName.trim() || defaultName;
+    const nick = [m1.member_nick?.trim(), m2.member_nick?.trim()].filter(Boolean).join(" / ") || null;
+    setSavingTeam(true);
+    const { data: team, error } = await (supabase.from("players") as any).insert({
+      tournament_id: tournamentId,
+      nome_completo: nome,
+      nick_playroom: nick,
+      grupo: newTeamGrupo.trim() || null,
+      is_team: true,
+    }).select("id").single();
+    if (error || !team) {
+      setSavingTeam(false);
+      toast.error("Erro ao criar dupla: " + (error?.message ?? ""));
+      return;
+    }
+    const rows = newTeamMembers.map(m => ({
+      team_id: team.id,
+      member_nome: m.member_nome.trim(),
+      member_nick: m.member_nick?.trim() || null,
+      member_email: m.member_email?.trim() || null,
+      member_whatsapp: m.member_whatsapp?.trim() || null,
+      position: m.position,
+    }));
+    const { error: memErr } = await (supabase.from("team_members") as any).insert(rows);
+    setSavingTeam(false);
+    if (memErr) { toast.error("Dupla criada, mas erro ao salvar jogadores: " + memErr.message); }
+    else { toast.success("Dupla cadastrada"); }
+    setNewTeamName(""); setNewTeamGrupo("");
+    setNewTeamMembers([emptyMember(1), emptyMember(2)]);
+    setTeamDialogOpen(false);
+    fetchPlayers();
   };
 
   const toggleEliminado = async (p: Player) => {

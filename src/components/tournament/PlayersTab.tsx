@@ -15,6 +15,7 @@ import * as XLSX from "xlsx";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Player = Tables<"players">;
+type TeamMember = { id?: string; team_id?: string; member_nome: string; member_nick: string | null; member_email: string | null; member_whatsapp: string | null; position: number };
 
 interface Props {
   tournamentId: string;

@@ -50,6 +50,8 @@ function distributeIntoGroups(players: Player[], perGroup: number): Map<string, 
 
 export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
   const [players, setPlayers] = useState<Player[]>([]);
+  const [modalidade, setModalidade] = useState<"individual" | "duplas">("individual");
+  const [teamMembersMap, setTeamMembersMap] = useState<Record<string, TeamMember[]>>({});
   const [perGroup, setPerGroup] = useState<string>("4");
   const [sorting, setSorting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);

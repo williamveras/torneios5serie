@@ -513,23 +513,50 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
 
       {/* Edit Dialog */}
       <Dialog open={!!editPlayer} onOpenChange={(open) => !open && setEditPlayer(null)}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Editar Participante</DialogTitle>
+            <DialogTitle>{(editPlayer as any)?.is_team ? "Editar Dupla" : "Editar Participante"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label htmlFor="edit-nome">Nome completo</Label>
+              <Label htmlFor="edit-nome">{(editPlayer as any)?.is_team ? "Nome da dupla" : "Nome completo"}</Label>
               <Input id="edit-nome" value={editNome} onChange={e => setEditNome(e.target.value)} />
             </div>
-            <div>
-              <Label htmlFor="edit-nick">Nick no Playroom</Label>
-              <Input id="edit-nick" value={editNick} onChange={e => setEditNick(e.target.value)} />
-            </div>
-            <div>
-              <Label htmlFor="edit-whats">WhatsApp</Label>
-              <Input id="edit-whats" value={editWhats} onChange={e => setEditWhats(e.target.value)} />
-            </div>
+            {!(editPlayer as any)?.is_team && (
+              <>
+                <div>
+                  <Label htmlFor="edit-nick">Nick no Playroom</Label>
+                  <Input id="edit-nick" value={editNick} onChange={e => setEditNick(e.target.value)} />
+                </div>
+                <div>
+                  <Label htmlFor="edit-whats">WhatsApp</Label>
+                  <Input id="edit-whats" value={editWhats} onChange={e => setEditWhats(e.target.value)} />
+                </div>
+              </>
+            )}
+            {(editPlayer as any)?.is_team && editMembers.map((m, idx) => (
+              <div key={idx} className="border rounded-md p-3 space-y-2">
+                <p className="text-sm font-semibold">Jogador {m.position}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs">Nome</Label>
+                    <Input value={m.member_nome} onChange={e => setEditMembers(prev => prev.map((x, i) => i === idx ? { ...x, member_nome: e.target.value } : x))} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Nick no Playroom</Label>
+                    <Input value={m.member_nick ?? ""} onChange={e => setEditMembers(prev => prev.map((x, i) => i === idx ? { ...x, member_nick: e.target.value } : x))} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">WhatsApp</Label>
+                    <Input value={m.member_whatsapp ?? ""} onChange={e => setEditMembers(prev => prev.map((x, i) => i === idx ? { ...x, member_whatsapp: e.target.value } : x))} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Email</Label>
+                    <Input value={m.member_email ?? ""} onChange={e => setEditMembers(prev => prev.map((x, i) => i === idx ? { ...x, member_email: e.target.value } : x))} />
+                  </div>
+                </div>
+              </div>
+            ))}
             <div>
               <Label htmlFor="edit-horarios">Preferência de horários</Label>
               <Input id="edit-horarios" value={editHorarios} onChange={e => setEditHorarios(e.target.value)} />
@@ -542,6 +569,56 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditPlayer(null)}>Cancelar</Button>
             <Button onClick={handleSaveEdit} disabled={savingEdit}>{savingEdit ? "Salvando..." : "Salvar"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Team Dialog */}
+      <Dialog open={teamDialogOpen} onOpenChange={setTeamDialogOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Adicionar Dupla</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Nome da dupla (opcional)</Label>
+              <Input
+                value={newTeamName}
+                onChange={e => setNewTeamName(e.target.value)}
+                placeholder="Deixe em branco para gerar a partir dos nicks/nomes"
+              />
+            </div>
+            <div>
+              <Label>Grupo (opcional)</Label>
+              <Input value={newTeamGrupo} onChange={e => setNewTeamGrupo(e.target.value)} placeholder="Ex: 1, 2, 3..." />
+            </div>
+            {newTeamMembers.map((m, idx) => (
+              <div key={idx} className="border rounded-md p-3 space-y-2">
+                <p className="text-sm font-semibold">Jogador {m.position}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs">Nome *</Label>
+                    <Input value={m.member_nome} onChange={e => setNewTeamMembers(prev => prev.map((x, i) => i === idx ? { ...x, member_nome: e.target.value } : x))} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Nick no Playroom</Label>
+                    <Input value={m.member_nick ?? ""} onChange={e => setNewTeamMembers(prev => prev.map((x, i) => i === idx ? { ...x, member_nick: e.target.value } : x))} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">WhatsApp</Label>
+                    <Input value={m.member_whatsapp ?? ""} onChange={e => setNewTeamMembers(prev => prev.map((x, i) => i === idx ? { ...x, member_whatsapp: e.target.value } : x))} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Email</Label>
+                    <Input value={m.member_email ?? ""} onChange={e => setNewTeamMembers(prev => prev.map((x, i) => i === idx ? { ...x, member_email: e.target.value } : x))} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTeamDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleCreateTeam} disabled={savingTeam}>{savingTeam ? "Salvando..." : "Criar dupla"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -23,6 +23,7 @@ export default function Dashboard() {
   const [nome, setNome] = useState("");
   const [dataInicio, setDataInicio] = useState("");
   const [numeroRodadas, setNumeroRodadas] = useState("");
+  const [modalidade, setModalidade] = useState<"individual" | "duplas">("individual");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 

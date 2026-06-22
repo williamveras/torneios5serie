@@ -422,14 +422,35 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {list.map(p => (
+                    {list.map(p => {
+                      const isTeam = (p as any).is_team;
+                      const members = teamMembersMap[p.id] || [];
+                      return (
                       <TableRow key={p.id}>
                         <TableCell className="font-medium">
                           {p.nome_completo}
+                          {isTeam && (
+                            <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-xs px-2 py-0.5">
+                              <Users className="h-3 w-3" /> Dupla
+                            </span>
+                          )}
                           {p.eliminado && <Badge variant="destructive" className="ml-2">Eliminado por W.O</Badge>}
+                          {isTeam && members.length > 0 && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {members.map(m => m.member_nome).join(" & ")}
+                            </div>
+                          )}
                         </TableCell>
-                        <TableCell>{p.nick_playroom || "—"}</TableCell>
-                        <TableCell>{p.whatsapp || "—"}</TableCell>
+                        <TableCell>
+                          {isTeam
+                            ? (members.map(m => m.member_nick).filter(Boolean).join(" / ") || p.nick_playroom || "—")
+                            : (p.nick_playroom || "—")}
+                        </TableCell>
+                        <TableCell>
+                          {isTeam
+                            ? (members.map(m => m.member_whatsapp).filter(Boolean).join(" / ") || "—")
+                            : (p.whatsapp || "—")}
+                        </TableCell>
                         <TableCell className="max-w-[200px] truncate">{p.preferencia_horarios || "—"}</TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
@@ -463,7 +484,8 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
                           </DropdownMenu>
                         </TableCell>
                       </TableRow>
-                    ))}
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>

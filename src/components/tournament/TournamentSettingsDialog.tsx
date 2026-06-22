@@ -55,6 +55,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
         setDirectPerGroup(anyT.direct_per_group?.toString() ?? "");
         setRepescagemEnabled(anyT.repescagem_enabled ?? true);
         setRepescagemTotal(anyT.repescagem_total?.toString() ?? "");
+        setModalidade((anyT.modalidade as "individual" | "duplas") ?? "individual");
       }
       const players = (pr.data as { grupo: string | null }[] | null) ?? [];
       setTotalInscritos(players.length);

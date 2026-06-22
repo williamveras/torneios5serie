@@ -145,6 +145,25 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                   placeholder="Ex: 7"
                 />
               </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>Modalidade</Label>
+                <Select
+                  value={modalidade}
+                  onValueChange={(v) => setModalidade(v as "individual" | "duplas")}
+                  disabled={totalInscritos > 0}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="individual">Individual (1 vs 1)</SelectItem>
+                    <SelectItem value="duplas">Duplas (2 vs 2)</SelectItem>
+                  </SelectContent>
+                </Select>
+                {totalInscritos > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Não é possível alterar a modalidade com competidores já cadastrados.
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="border-t pt-4 space-y-3">

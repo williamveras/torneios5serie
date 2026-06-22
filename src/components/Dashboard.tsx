@@ -48,6 +48,7 @@ export default function Dashboard() {
       data_inicio: dataInicio,
       created_by: user.id,
       numero_rodadas: rodadasNum,
+      modalidade,
     } as any);
     if (error) {
       toast.error("Erro ao criar torneio");
@@ -56,6 +57,7 @@ export default function Dashboard() {
       setNome("");
       setDataInicio("");
       setNumeroRodadas("");
+      setModalidade("individual");
       setDialogOpen(false);
       fetchTournaments();
     }

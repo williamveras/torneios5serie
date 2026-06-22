@@ -63,14 +63,43 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
   const [editWhats, setEditWhats] = useState("");
   const [editHorarios, setEditHorarios] = useState("");
   const [editGrupo, setEditGrupo] = useState("");
+  const [editMembers, setEditMembers] = useState<TeamMember[]>([]);
   const [savingEdit, setSavingEdit] = useState(false);
+
+  // Team create dialog
+  const [teamDialogOpen, setTeamDialogOpen] = useState(false);
+  const emptyMember = (pos: number): TeamMember => ({ member_nome: "", member_nick: "", member_email: "", member_whatsapp: "", position: pos });
+  const [newTeamName, setNewTeamName] = useState("");
+  const [newTeamGrupo, setNewTeamGrupo] = useState("");
+  const [newTeamMembers, setNewTeamMembers] = useState<TeamMember[]>([emptyMember(1), emptyMember(2)]);
+  const [savingTeam, setSavingTeam] = useState(false);
 
   // Delete confirmation
   const [deletePlayer, setDeletePlayer] = useState<Player | null>(null);
 
   const fetchPlayers = async () => {
-    const { data } = await supabase.from("players").select("*").eq("tournament_id", tournamentId).order("grupo").order("nome_completo");
-    if (data) setPlayers(data);
+    const [{ data: tour }, { data: pls }] = await Promise.all([
+      (supabase.from("tournaments") as any).select("modalidade").eq("id", tournamentId).maybeSingle(),
+      supabase.from("players").select("*").eq("tournament_id", tournamentId).order("grupo").order("nome_completo"),
+    ]);
+    setModalidade(((tour as any)?.modalidade ?? "individual") as "individual" | "duplas");
+    if (pls) setPlayers(pls);
+    const teamIds = (pls || []).filter((p: any) => p.is_team).map((p: any) => p.id);
+    if (teamIds.length > 0) {
+      const { data: members } = await (supabase.from("team_members") as any)
+        .select("*")
+        .in("team_id", teamIds);
+      const map: Record<string, TeamMember[]> = {};
+      (members || []).forEach((m: TeamMember) => {
+        const tid = m.team_id!;
+        if (!map[tid]) map[tid] = [];
+        map[tid].push(m);
+      });
+      Object.values(map).forEach(arr => arr.sort((a, b) => a.position - b.position));
+      setTeamMembersMap(map);
+    } else {
+      setTeamMembersMap({});
+    }
   };
 
   useEffect(() => { fetchPlayers(); }, [tournamentId]);

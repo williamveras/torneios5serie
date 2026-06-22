@@ -111,6 +111,19 @@ export default function Dashboard() {
                     Usado para calcular automaticamente a rodada atual e o encerramento da fase.
                   </p>
                 </div>
+                <div className="space-y-2">
+                  <Label>Modalidade</Label>
+                  <Select value={modalidade} onValueChange={(v) => setModalidade(v as "individual" | "duplas")}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="individual">Individual (1 vs 1)</SelectItem>
+                      <SelectItem value="duplas">Duplas (2 vs 2)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Em torneios de duplas, cada "competidor" é uma dupla com 2 jogadores. Não pode ser alterado depois de cadastrar competidores.
+                  </p>
+                </div>
                 <Button type="submit" className="w-full" disabled={loading}>{loading ? "Criando..." : "Criar"}</Button>
 
               </form>

@@ -33,6 +33,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
   const [directPerGroup, setDirectPerGroup] = useState<string>("");
   const [repescagemEnabled, setRepescagemEnabled] = useState(true);
   const [repescagemTotal, setRepescagemTotal] = useState<string>("");
+  const [modalidade, setModalidade] = useState<"individual" | "duplas">("individual");
 
   const [totalInscritos, setTotalInscritos] = useState(0);
   const [numGrupos, setNumGrupos] = useState(0);

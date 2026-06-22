@@ -102,6 +102,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
         direct_per_group: dpg,
         repescagem_enabled: repescagemEnabled,
         repescagem_total: rt,
+        modalidade,
       })
       .eq("id", tournamentId);
     setSaving(false);

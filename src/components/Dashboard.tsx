@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Trophy, Plus, Calendar, LogOut } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Trophy, Plus, Calendar, LogOut, Users } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -22,6 +23,7 @@ export default function Dashboard() {
   const [nome, setNome] = useState("");
   const [dataInicio, setDataInicio] = useState("");
   const [numeroRodadas, setNumeroRodadas] = useState("");
+  const [modalidade, setModalidade] = useState<"individual" | "duplas">("individual");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -46,6 +48,7 @@ export default function Dashboard() {
       data_inicio: dataInicio,
       created_by: user.id,
       numero_rodadas: rodadasNum,
+      modalidade,
     } as any);
     if (error) {
       toast.error("Erro ao criar torneio");
@@ -54,6 +57,7 @@ export default function Dashboard() {
       setNome("");
       setDataInicio("");
       setNumeroRodadas("");
+      setModalidade("individual");
       setDialogOpen(false);
       fetchTournaments();
     }
@@ -107,6 +111,19 @@ export default function Dashboard() {
                     Usado para calcular automaticamente a rodada atual e o encerramento da fase.
                   </p>
                 </div>
+                <div className="space-y-2">
+                  <Label>Modalidade</Label>
+                  <Select value={modalidade} onValueChange={(v) => setModalidade(v as "individual" | "duplas")}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="individual">Individual (1 vs 1)</SelectItem>
+                      <SelectItem value="duplas">Duplas (2 vs 2)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Em torneios de duplas, cada "competidor" é uma dupla com 2 jogadores. Não pode ser alterado depois de cadastrar competidores.
+                  </p>
+                </div>
                 <Button type="submit" className="w-full" disabled={loading}>{loading ? "Criando..." : "Criar"}</Button>
 
               </form>
@@ -128,7 +145,14 @@ export default function Dashboard() {
               <Card key={t.id} className="cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99]" onClick={() => setSelectedTournament(t)}>
                 <CardContent className="py-4 flex items-center justify-between">
                   <div>
-                    <p className="font-medium">{t.nome}</p>
+                    <p className="font-medium flex items-center gap-2">
+                      {t.nome}
+                      {(t as any).modalidade === "duplas" && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-xs px-2 py-0.5">
+                          <Users className="h-3 w-3" /> Duplas
+                        </span>
+                      )}
+                    </p>
                     <p className="text-sm text-muted-foreground flex items-center gap-1">
                       <Calendar className="h-3.5 w-3.5" />
                       {format(new Date(t.data_inicio + "T00:00:00"), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}

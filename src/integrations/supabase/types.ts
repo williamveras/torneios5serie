@@ -245,6 +245,7 @@ export type Database = {
           email: string | null
           grupo: string | null
           id: string
+          is_team: boolean
           nick_playroom: string | null
           nome_completo: string
           preferencia_horarios: string | null
@@ -258,6 +259,7 @@ export type Database = {
           email?: string | null
           grupo?: string | null
           id?: string
+          is_team?: boolean
           nick_playroom?: string | null
           nome_completo: string
           preferencia_horarios?: string | null
@@ -271,6 +273,7 @@ export type Database = {
           email?: string | null
           grupo?: string | null
           id?: string
+          is_team?: boolean
           nick_playroom?: string | null
           nome_completo?: string
           preferencia_horarios?: string | null
@@ -377,6 +380,54 @@ export type Database = {
         }
         Relationships: []
       }
+      team_members: {
+        Row: {
+          created_at: string
+          id: string
+          member_email: string | null
+          member_nick: string | null
+          member_nome: string
+          member_whatsapp: string | null
+          position: number
+          team_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          member_email?: string | null
+          member_nick?: string | null
+          member_nome: string
+          member_whatsapp?: string | null
+          position: number
+          team_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          member_email?: string | null
+          member_nick?: string | null
+          member_nome?: string
+          member_whatsapp?: string | null
+          position?: number
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tournaments: {
         Row: {
           campeao_id: string | null
@@ -385,6 +436,7 @@ export type Database = {
           data_inicio: string
           direct_per_group: number | null
           id: string
+          modalidade: string
           nome: string
           numero_rodadas: number | null
           regulamento: string | null
@@ -399,6 +451,7 @@ export type Database = {
           data_inicio: string
           direct_per_group?: number | null
           id?: string
+          modalidade?: string
           nome: string
           numero_rodadas?: number | null
           regulamento?: string | null
@@ -413,6 +466,7 @@ export type Database = {
           data_inicio?: string
           direct_per_group?: number | null
           id?: string
+          modalidade?: string
           nome?: string
           numero_rodadas?: number | null
           regulamento?: string | null

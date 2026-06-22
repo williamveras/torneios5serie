@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle2, AlertTriangle, Sparkles } from "lucide-react";
@@ -32,6 +33,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
   const [directPerGroup, setDirectPerGroup] = useState<string>("");
   const [repescagemEnabled, setRepescagemEnabled] = useState(true);
   const [repescagemTotal, setRepescagemTotal] = useState<string>("");
+  const [modalidade, setModalidade] = useState<"individual" | "duplas">("individual");
 
   const [totalInscritos, setTotalInscritos] = useState(0);
   const [numGrupos, setNumGrupos] = useState(0);
@@ -53,6 +55,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
         setDirectPerGroup(anyT.direct_per_group?.toString() ?? "");
         setRepescagemEnabled(anyT.repescagem_enabled ?? true);
         setRepescagemTotal(anyT.repescagem_total?.toString() ?? "");
+        setModalidade((anyT.modalidade as "individual" | "duplas") ?? "individual");
       }
       const players = (pr.data as { grupo: string | null }[] | null) ?? [];
       setTotalInscritos(players.length);
@@ -99,6 +102,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
         direct_per_group: dpg,
         repescagem_enabled: repescagemEnabled,
         repescagem_total: rt,
+        modalidade,
       })
       .eq("id", tournamentId);
     setSaving(false);
@@ -140,6 +144,25 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                   onChange={e => setNumeroRodadas(e.target.value)}
                   placeholder="Ex: 7"
                 />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>Modalidade</Label>
+                <Select
+                  value={modalidade}
+                  onValueChange={(v) => setModalidade(v as "individual" | "duplas")}
+                  disabled={totalInscritos > 0}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="individual">Individual (1 vs 1)</SelectItem>
+                    <SelectItem value="duplas">Duplas (2 vs 2)</SelectItem>
+                  </SelectContent>
+                </Select>
+                {totalInscritos > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Não é possível alterar a modalidade com competidores já cadastrados.
+                  </p>
+                )}
               </div>
             </div>
 

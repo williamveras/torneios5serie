@@ -8,13 +8,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, Trash2, Users, Shuffle, Lightbulb, MoreHorizontal, Pencil, CalendarPlus, Ban, RotateCcw } from "lucide-react";
+import { Upload, Trash2, Users, Shuffle, Lightbulb, MoreHorizontal, Pencil, CalendarPlus, Ban, RotateCcw, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Player = Tables<"players">;
+type TeamMember = { id?: string; team_id?: string; member_nome: string; member_nick: string | null; member_email: string | null; member_whatsapp: string | null; position: number };
 
 interface Props {
   tournamentId: string;
@@ -49,6 +50,8 @@ function distributeIntoGroups(players: Player[], perGroup: number): Map<string, 
 
 export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
   const [players, setPlayers] = useState<Player[]>([]);
+  const [modalidade, setModalidade] = useState<"individual" | "duplas">("individual");
+  const [teamMembersMap, setTeamMembersMap] = useState<Record<string, TeamMember[]>>({});
   const [perGroup, setPerGroup] = useState<string>("4");
   const [sorting, setSorting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -60,14 +63,43 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
   const [editWhats, setEditWhats] = useState("");
   const [editHorarios, setEditHorarios] = useState("");
   const [editGrupo, setEditGrupo] = useState("");
+  const [editMembers, setEditMembers] = useState<TeamMember[]>([]);
   const [savingEdit, setSavingEdit] = useState(false);
+
+  // Team create dialog
+  const [teamDialogOpen, setTeamDialogOpen] = useState(false);
+  const emptyMember = (pos: number): TeamMember => ({ member_nome: "", member_nick: "", member_email: "", member_whatsapp: "", position: pos });
+  const [newTeamName, setNewTeamName] = useState("");
+  const [newTeamGrupo, setNewTeamGrupo] = useState("");
+  const [newTeamMembers, setNewTeamMembers] = useState<TeamMember[]>([emptyMember(1), emptyMember(2)]);
+  const [savingTeam, setSavingTeam] = useState(false);
 
   // Delete confirmation
   const [deletePlayer, setDeletePlayer] = useState<Player | null>(null);
 
   const fetchPlayers = async () => {
-    const { data } = await supabase.from("players").select("*").eq("tournament_id", tournamentId).order("grupo").order("nome_completo");
-    if (data) setPlayers(data);
+    const [{ data: tour }, { data: pls }] = await Promise.all([
+      (supabase.from("tournaments") as any).select("modalidade").eq("id", tournamentId).maybeSingle(),
+      supabase.from("players").select("*").eq("tournament_id", tournamentId).order("grupo").order("nome_completo"),
+    ]);
+    setModalidade(((tour as any)?.modalidade ?? "individual") as "individual" | "duplas");
+    if (pls) setPlayers(pls);
+    const teamIds = (pls || []).filter((p: any) => p.is_team).map((p: any) => p.id);
+    if (teamIds.length > 0) {
+      const { data: members } = await (supabase.from("team_members") as any)
+        .select("*")
+        .in("team_id", teamIds);
+      const map: Record<string, TeamMember[]> = {};
+      (members || []).forEach((m: TeamMember) => {
+        const tid = m.team_id!;
+        if (!map[tid]) map[tid] = [];
+        map[tid].push(m);
+      });
+      Object.values(map).forEach(arr => arr.sort((a, b) => a.position - b.position));
+      setTeamMembersMap(map);
+    } else {
+      setTeamMembersMap({});
+    }
   };
 
   useEffect(() => { fetchPlayers(); }, [tournamentId]);
@@ -147,11 +179,26 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
     setEditWhats(p.whatsapp || "");
     setEditHorarios(p.preferencia_horarios || "");
     setEditGrupo(p.grupo || "");
+    if ((p as any).is_team) {
+      const existing = teamMembersMap[p.id] || [];
+      const m1 = existing.find(m => m.position === 1) || emptyMember(1);
+      const m2 = existing.find(m => m.position === 2) || emptyMember(2);
+      setEditMembers([m1, m2]);
+    } else {
+      setEditMembers([]);
+    }
   };
 
   const handleSaveEdit = async () => {
     if (!editPlayer) return;
     if (!editNome.trim()) { toast.error("Nome é obrigatório"); return; }
+    const isTeam = (editPlayer as any).is_team;
+    if (isTeam) {
+      if (!editMembers[0]?.member_nome.trim() || !editMembers[1]?.member_nome.trim()) {
+        toast.error("Informe o nome dos dois jogadores da dupla");
+        return;
+      }
+    }
     setSavingEdit(true);
     const { error } = await supabase.from("players").update({
       nome_completo: editNome.trim(),
@@ -160,14 +207,73 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
       preferencia_horarios: editHorarios.trim() || null,
       grupo: editGrupo.trim() || null,
     }).eq("id", editPlayer.id);
-    setSavingEdit(false);
     if (error) {
+      setSavingEdit(false);
       toast.error("Erro ao salvar: " + error.message);
-    } else {
-      toast.success("Jogador atualizado");
-      setEditPlayer(null);
-      fetchPlayers();
+      return;
     }
+    if (isTeam) {
+      // upsert members: delete + insert is simplest and safe (cascades not needed)
+      await (supabase.from("team_members") as any).delete().eq("team_id", editPlayer.id);
+      const rows = editMembers.map(m => ({
+        team_id: editPlayer.id,
+        member_nome: m.member_nome.trim(),
+        member_nick: m.member_nick?.trim() || null,
+        member_email: m.member_email?.trim() || null,
+        member_whatsapp: m.member_whatsapp?.trim() || null,
+        position: m.position,
+      }));
+      const { error: memErr } = await (supabase.from("team_members") as any).insert(rows);
+      if (memErr) {
+        setSavingEdit(false);
+        toast.error("Erro ao salvar jogadores da dupla: " + memErr.message);
+        return;
+      }
+    }
+    setSavingEdit(false);
+    toast.success(isTeam ? "Dupla atualizada" : "Jogador atualizado");
+    setEditPlayer(null);
+    fetchPlayers();
+  };
+
+  const handleCreateTeam = async () => {
+    const m1 = newTeamMembers[0];
+    const m2 = newTeamMembers[1];
+    if (!m1.member_nome.trim() || !m2.member_nome.trim()) {
+      toast.error("Informe o nome dos dois jogadores da dupla"); return;
+    }
+    const defaultName = [m1.member_nick?.trim() || m1.member_nome.trim(), m2.member_nick?.trim() || m2.member_nome.trim()].join(" & ");
+    const nome = newTeamName.trim() || defaultName;
+    const nick = [m1.member_nick?.trim(), m2.member_nick?.trim()].filter(Boolean).join(" / ") || null;
+    setSavingTeam(true);
+    const { data: team, error } = await (supabase.from("players") as any).insert({
+      tournament_id: tournamentId,
+      nome_completo: nome,
+      nick_playroom: nick,
+      grupo: newTeamGrupo.trim() || null,
+      is_team: true,
+    }).select("id").single();
+    if (error || !team) {
+      setSavingTeam(false);
+      toast.error("Erro ao criar dupla: " + (error?.message ?? ""));
+      return;
+    }
+    const rows = newTeamMembers.map(m => ({
+      team_id: team.id,
+      member_nome: m.member_nome.trim(),
+      member_nick: m.member_nick?.trim() || null,
+      member_email: m.member_email?.trim() || null,
+      member_whatsapp: m.member_whatsapp?.trim() || null,
+      position: m.position,
+    }));
+    const { error: memErr } = await (supabase.from("team_members") as any).insert(rows);
+    setSavingTeam(false);
+    if (memErr) { toast.error("Dupla criada, mas erro ao salvar jogadores: " + memErr.message); }
+    else { toast.success("Dupla cadastrada"); }
+    setNewTeamName(""); setNewTeamGrupo("");
+    setNewTeamMembers([emptyMember(1), emptyMember(2)]);
+    setTeamDialogOpen(false);
+    fetchPlayers();
   };
 
   const toggleEliminado = async (p: Player) => {
@@ -223,9 +329,16 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{players.length} participante(s)</p>
-        <div>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <p className="text-sm text-muted-foreground">
+          {players.length} {modalidade === "duplas" ? "dupla(s)" : "participante(s)"}
+        </p>
+        <div className="flex items-center gap-2">
+          {modalidade === "duplas" && (
+            <Button onClick={() => setTeamDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" /> Adicionar Dupla
+            </Button>
+          )}
           <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImport} />
           <Button variant="outline" onClick={() => fileRef.current?.click()}>
             <Upload className="h-4 w-4 mr-1" /> Importar Planilha
@@ -309,14 +422,35 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {list.map(p => (
+                    {list.map(p => {
+                      const isTeam = (p as any).is_team;
+                      const members = teamMembersMap[p.id] || [];
+                      return (
                       <TableRow key={p.id}>
                         <TableCell className="font-medium">
                           {p.nome_completo}
+                          {isTeam && (
+                            <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-xs px-2 py-0.5">
+                              <Users className="h-3 w-3" /> Dupla
+                            </span>
+                          )}
                           {p.eliminado && <Badge variant="destructive" className="ml-2">Eliminado por W.O</Badge>}
+                          {isTeam && members.length > 0 && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {members.map(m => m.member_nome).join(" & ")}
+                            </div>
+                          )}
                         </TableCell>
-                        <TableCell>{p.nick_playroom || "—"}</TableCell>
-                        <TableCell>{p.whatsapp || "—"}</TableCell>
+                        <TableCell>
+                          {isTeam
+                            ? (members.map(m => m.member_nick).filter(Boolean).join(" / ") || p.nick_playroom || "—")
+                            : (p.nick_playroom || "—")}
+                        </TableCell>
+                        <TableCell>
+                          {isTeam
+                            ? (members.map(m => m.member_whatsapp).filter(Boolean).join(" / ") || "—")
+                            : (p.whatsapp || "—")}
+                        </TableCell>
                         <TableCell className="max-w-[200px] truncate">{p.preferencia_horarios || "—"}</TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
@@ -350,7 +484,8 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
                           </DropdownMenu>
                         </TableCell>
                       </TableRow>
-                    ))}
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
@@ -378,23 +513,50 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
 
       {/* Edit Dialog */}
       <Dialog open={!!editPlayer} onOpenChange={(open) => !open && setEditPlayer(null)}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Editar Participante</DialogTitle>
+            <DialogTitle>{(editPlayer as any)?.is_team ? "Editar Dupla" : "Editar Participante"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label htmlFor="edit-nome">Nome completo</Label>
+              <Label htmlFor="edit-nome">{(editPlayer as any)?.is_team ? "Nome da dupla" : "Nome completo"}</Label>
               <Input id="edit-nome" value={editNome} onChange={e => setEditNome(e.target.value)} />
             </div>
-            <div>
-              <Label htmlFor="edit-nick">Nick no Playroom</Label>
-              <Input id="edit-nick" value={editNick} onChange={e => setEditNick(e.target.value)} />
-            </div>
-            <div>
-              <Label htmlFor="edit-whats">WhatsApp</Label>
-              <Input id="edit-whats" value={editWhats} onChange={e => setEditWhats(e.target.value)} />
-            </div>
+            {!(editPlayer as any)?.is_team && (
+              <>
+                <div>
+                  <Label htmlFor="edit-nick">Nick no Playroom</Label>
+                  <Input id="edit-nick" value={editNick} onChange={e => setEditNick(e.target.value)} />
+                </div>
+                <div>
+                  <Label htmlFor="edit-whats">WhatsApp</Label>
+                  <Input id="edit-whats" value={editWhats} onChange={e => setEditWhats(e.target.value)} />
+                </div>
+              </>
+            )}
+            {(editPlayer as any)?.is_team && editMembers.map((m, idx) => (
+              <div key={idx} className="border rounded-md p-3 space-y-2">
+                <p className="text-sm font-semibold">Jogador {m.position}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs">Nome</Label>
+                    <Input value={m.member_nome} onChange={e => setEditMembers(prev => prev.map((x, i) => i === idx ? { ...x, member_nome: e.target.value } : x))} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Nick no Playroom</Label>
+                    <Input value={m.member_nick ?? ""} onChange={e => setEditMembers(prev => prev.map((x, i) => i === idx ? { ...x, member_nick: e.target.value } : x))} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">WhatsApp</Label>
+                    <Input value={m.member_whatsapp ?? ""} onChange={e => setEditMembers(prev => prev.map((x, i) => i === idx ? { ...x, member_whatsapp: e.target.value } : x))} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Email</Label>
+                    <Input value={m.member_email ?? ""} onChange={e => setEditMembers(prev => prev.map((x, i) => i === idx ? { ...x, member_email: e.target.value } : x))} />
+                  </div>
+                </div>
+              </div>
+            ))}
             <div>
               <Label htmlFor="edit-horarios">Preferência de horários</Label>
               <Input id="edit-horarios" value={editHorarios} onChange={e => setEditHorarios(e.target.value)} />
@@ -407,6 +569,56 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditPlayer(null)}>Cancelar</Button>
             <Button onClick={handleSaveEdit} disabled={savingEdit}>{savingEdit ? "Salvando..." : "Salvar"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Team Dialog */}
+      <Dialog open={teamDialogOpen} onOpenChange={setTeamDialogOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Adicionar Dupla</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Nome da dupla (opcional)</Label>
+              <Input
+                value={newTeamName}
+                onChange={e => setNewTeamName(e.target.value)}
+                placeholder="Deixe em branco para gerar a partir dos nicks/nomes"
+              />
+            </div>
+            <div>
+              <Label>Grupo (opcional)</Label>
+              <Input value={newTeamGrupo} onChange={e => setNewTeamGrupo(e.target.value)} placeholder="Ex: 1, 2, 3..." />
+            </div>
+            {newTeamMembers.map((m, idx) => (
+              <div key={idx} className="border rounded-md p-3 space-y-2">
+                <p className="text-sm font-semibold">Jogador {m.position}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs">Nome *</Label>
+                    <Input value={m.member_nome} onChange={e => setNewTeamMembers(prev => prev.map((x, i) => i === idx ? { ...x, member_nome: e.target.value } : x))} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Nick no Playroom</Label>
+                    <Input value={m.member_nick ?? ""} onChange={e => setNewTeamMembers(prev => prev.map((x, i) => i === idx ? { ...x, member_nick: e.target.value } : x))} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">WhatsApp</Label>
+                    <Input value={m.member_whatsapp ?? ""} onChange={e => setNewTeamMembers(prev => prev.map((x, i) => i === idx ? { ...x, member_whatsapp: e.target.value } : x))} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Email</Label>
+                    <Input value={m.member_email ?? ""} onChange={e => setNewTeamMembers(prev => prev.map((x, i) => i === idx ? { ...x, member_email: e.target.value } : x))} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTeamDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleCreateTeam} disabled={savingTeam}>{savingTeam ? "Salvando..." : "Criar dupla"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

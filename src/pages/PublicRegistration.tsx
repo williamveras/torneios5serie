@@ -80,6 +80,7 @@ export default function PublicRegistration() {
 
     setSubmitting(true);
     let err: any = null;
+    const horariosStr = horarios.join(", ") || null;
 
     if (isDuplas) {
       if (!p1Nome.trim() || !p2Nome.trim()) { toast.error("Informe o nome completo dos dois jogadores"); setSubmitting(false); return; }

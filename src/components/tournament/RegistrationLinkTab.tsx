@@ -25,7 +25,7 @@ function genToken() {
 }
 
 function buildUrl(token: string) {
-  return `${window.location.origin}/inscricao/${token}`;
+  return `https://torneios5serie.lovable.app/inscricao/${token}`;
 }
 
 export default function RegistrationLinkTab({ tournamentId }: Props) {

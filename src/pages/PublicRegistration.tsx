@@ -195,7 +195,6 @@ export default function PublicRegistration() {
                       value={teamName}
                       onChange={(e) => setTeamName(e.target.value)}
                       maxLength={200}
-                      placeholder="Se vazio, usa 'Jogador 1 / Jogador 2'"
                     />
                   </div>
 

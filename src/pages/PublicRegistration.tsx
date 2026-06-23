@@ -109,7 +109,7 @@ export default function PublicRegistration() {
         _nick_playroom: nick.trim() || null,
         _email: email.trim(),
         _whatsapp: whats.trim() || null,
-        _preferencia_horarios: horarios.trim() || null,
+        _preferencia_horarios: horariosStr,
         _comentario: comentario.trim() || null,
       });
       err = res.error;

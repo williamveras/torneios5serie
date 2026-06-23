@@ -8,6 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { CheckCircle2, XCircle, Loader2, Users } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+
+const HORARIO_OPTIONS = ["Manhã", "Tarde", "Noite", "Qualquer horário"] as const;
 
 type LinkInfo = {
   tournament_id: string;
@@ -42,8 +45,12 @@ export default function PublicRegistration() {
   const [p2Whats, setP2Whats] = useState("");
 
   // Shared
-  const [horarios, setHorarios] = useState("");
+  const [horarios, setHorarios] = useState<string[]>([]);
   const [comentario, setComentario] = useState("");
+
+  const toggleHorario = (opt: string, checked: boolean) => {
+    setHorarios((prev) => (checked ? [...prev, opt] : prev.filter((h) => h !== opt)));
+  };
 
   useEffect(() => {
     (async () => {
@@ -65,6 +72,13 @@ export default function PublicRegistration() {
     })();
   }, [token]);
 
+  useEffect(() => {
+    if (!link?.tournament_name) return;
+    const prev = document.title;
+    document.title = `Inscrição — ${link.tournament_name}`;
+    return () => { document.title = prev; };
+  }, [link?.tournament_name]);
+
   const isDuplas = link?.modalidade === "duplas";
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -73,6 +87,7 @@ export default function PublicRegistration() {
 
     setSubmitting(true);
     let err: any = null;
+    const horariosStr = horarios.join(", ") || null;
 
     if (isDuplas) {
       if (!p1Nome.trim() || !p2Nome.trim()) { toast.error("Informe o nome completo dos dois jogadores"); setSubmitting(false); return; }
@@ -88,7 +103,7 @@ export default function PublicRegistration() {
         _p2_nick: p2Nick.trim() || null,
         _p2_email: p2Email.trim(),
         _p2_whatsapp: p2Whats.trim() || null,
-        _preferencia_horarios: horarios.trim() || null,
+        _preferencia_horarios: horariosStr,
         _comentario: comentario.trim() || null,
       });
       err = res.error;
@@ -101,7 +116,7 @@ export default function PublicRegistration() {
         _nick_playroom: nick.trim() || null,
         _email: email.trim(),
         _whatsapp: whats.trim() || null,
-        _preferencia_horarios: horarios.trim() || null,
+        _preferencia_horarios: horariosStr,
         _comentario: comentario.trim() || null,
       });
       err = res.error;
@@ -187,7 +202,6 @@ export default function PublicRegistration() {
                       value={teamName}
                       onChange={(e) => setTeamName(e.target.value)}
                       maxLength={200}
-                      placeholder="Se vazio, usa 'Jogador 1 / Jogador 2'"
                     />
                   </div>
 
@@ -253,8 +267,27 @@ export default function PublicRegistration() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="horarios">Preferência de horários</Label>
-                <Input id="horarios" value={horarios} onChange={(e) => setHorarios(e.target.value)} maxLength={200} />
+                <Label>Preferência de horários</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {HORARIO_OPTIONS.map((opt) => {
+                    const id = `horario-${opt}`;
+                    const checked = horarios.includes(opt);
+                    return (
+                      <label
+                        key={opt}
+                        htmlFor={id}
+                        className="flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer hover:bg-muted/50"
+                      >
+                        <Checkbox
+                          id={id}
+                          checked={checked}
+                          onCheckedChange={(c) => toggleHorario(opt, c === true)}
+                        />
+                        <span className="text-sm">{opt}</span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="comentario">Comentário</Label>

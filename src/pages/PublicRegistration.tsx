@@ -261,8 +261,27 @@ export default function PublicRegistration() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="horarios">Preferência de horários</Label>
-                <Input id="horarios" value={horarios} onChange={(e) => setHorarios(e.target.value)} maxLength={200} />
+                <Label>Preferência de horários</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {HORARIO_OPTIONS.map((opt) => {
+                    const id = `horario-${opt}`;
+                    const checked = horarios.includes(opt);
+                    return (
+                      <label
+                        key={opt}
+                        htmlFor={id}
+                        className="flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer hover:bg-muted/50"
+                      >
+                        <Checkbox
+                          id={id}
+                          checked={checked}
+                          onCheckedChange={(c) => toggleHorario(opt, c === true)}
+                        />
+                        <span className="text-sm">{opt}</span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="comentario">Comentário</Label>

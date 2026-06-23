@@ -560,10 +560,28 @@ export type Database = {
         }
         Returns: string
       }
+      register_team_via_token: {
+        Args: {
+          _comentario: string
+          _p1_email: string
+          _p1_nick: string
+          _p1_nome: string
+          _p1_whatsapp: string
+          _p2_email: string
+          _p2_nick: string
+          _p2_nome: string
+          _p2_whatsapp: string
+          _preferencia_horarios: string
+          _team_name: string
+          _token: string
+        }
+        Returns: string
+      }
       validate_registration_token: {
         Args: { _token: string }
         Returns: {
           expires_at: string
+          modalidade: string
           tournament_id: string
           tournament_name: string
         }[]

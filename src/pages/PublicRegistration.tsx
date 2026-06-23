@@ -8,6 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { CheckCircle2, XCircle, Loader2, Users } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+
+const HORARIO_OPTIONS = ["Manhã", "Tarde", "Noite", "Qualquer horário"] as const;
 
 type LinkInfo = {
   tournament_id: string;

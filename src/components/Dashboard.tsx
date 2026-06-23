@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrganizations, createOrganization } from "@/hooks/useOrganizations";
+import OrganizationMembersDialog from "@/components/OrganizationMembersDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trophy, Plus, Calendar, LogOut, Users } from "lucide-react";
+import { Trophy, Plus, Calendar, LogOut, Users, Building2, UserCog } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -18,6 +20,7 @@ type Tournament = Tables<"tournaments">;
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
+  const { orgs, activeOrg, activeOrgId, setActiveOrgId, refetch: refetchOrgs } = useOrganizations();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [nome, setNome] = useState("");
@@ -27,16 +30,27 @@ export default function Dashboard() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Org dialogs
+  const [newOrgOpen, setNewOrgOpen] = useState(false);
+  const [newOrgName, setNewOrgName] = useState("");
+  const [creatingOrg, setCreatingOrg] = useState(false);
+  const [membersOpen, setMembersOpen] = useState(false);
+
   const fetchTournaments = async () => {
-    const { data } = await supabase.from("tournaments").select("*").order("data_inicio", { ascending: false });
-    if (data) setTournaments(data);
+    if (!activeOrgId) { setTournaments([]); return; }
+    const { data } = await supabase
+      .from("tournaments")
+      .select("*")
+      .eq("organization_id" as any, activeOrgId)
+      .order("data_inicio", { ascending: false });
+    if (data) setTournaments(data as any);
   };
 
-  useEffect(() => { fetchTournaments(); }, []);
+  useEffect(() => { fetchTournaments(); /* eslint-disable-next-line */ }, [activeOrgId]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || !activeOrgId) return;
     const rodadasNum = numeroRodadas.trim() ? parseInt(numeroRodadas.trim(), 10) : null;
     if (numeroRodadas.trim() && (isNaN(rodadasNum!) || rodadasNum! < 1)) {
       toast.error("Número de rodadas inválido.");
@@ -49,6 +63,7 @@ export default function Dashboard() {
       created_by: user.id,
       numero_rodadas: rodadasNum,
       modalidade,
+      organization_id: activeOrgId,
     } as any);
     if (error) {
       toast.error("Erro ao criar torneio");
@@ -64,6 +79,24 @@ export default function Dashboard() {
     setLoading(false);
   };
 
+  const handleCreateOrg = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !newOrgName.trim()) return;
+    setCreatingOrg(true);
+    try {
+      const id = await createOrganization(newOrgName, user.id);
+      toast.success("Organização criada!");
+      setNewOrgName("");
+      setNewOrgOpen(false);
+      await refetchOrgs();
+      setActiveOrgId(id);
+    } catch (err: any) {
+      toast.error(err?.message ?? "Erro ao criar organização");
+    } finally {
+      setCreatingOrg(false);
+    }
+  };
+
   if (selectedTournament) {
     return <TournamentPage tournament={selectedTournament} onBack={() => { setSelectedTournament(null); fetchTournaments(); }} />;
   }
@@ -71,21 +104,70 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-muted/30">
       <header className="border-b bg-background">
-        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-primary" />
-            <span className="font-semibold text-lg">Gerenciador de Torneios</span>
+        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <Trophy className="h-5 w-5 text-primary shrink-0" />
+            <span className="font-semibold text-lg truncate">Gerenciador de Torneios</span>
           </div>
           <Button variant="ghost" size="sm" onClick={signOut}><LogOut className="h-4 w-4 mr-1" /> Sair</Button>
         </div>
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-8">
+        {/* Organization selector */}
+        <div className="flex flex-wrap items-end gap-2 mb-6">
+          <div className="flex-1 min-w-[200px] space-y-1">
+            <Label className="text-xs text-muted-foreground flex items-center gap-1">
+              <Building2 className="h-3.5 w-3.5" /> Organização
+            </Label>
+            <Select value={activeOrgId ?? ""} onValueChange={(v) => setActiveOrgId(v)}>
+              <SelectTrigger><SelectValue placeholder="Selecione uma organização" /></SelectTrigger>
+              <SelectContent>
+                {orgs.map((o) => (
+                  <SelectItem key={o.id} value={o.id}>
+                    {o.nome} <span className="text-xs text-muted-foreground ml-1">({o.role})</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Dialog open={newOrgOpen} onOpenChange={setNewOrgOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm"><Plus className="h-4 w-4 mr-1" /> Nova organização</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Nova organização</DialogTitle></DialogHeader>
+              <form onSubmit={handleCreateOrg} className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Nome da organização</Label>
+                  <Input value={newOrgName} onChange={(e) => setNewOrgName(e.target.value)} required placeholder="Ex: Liga Scopas BH" />
+                </div>
+                <Button type="submit" className="w-full" disabled={creatingOrg}>
+                  {creatingOrg ? "Criando..." : "Criar"}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+          {activeOrg && (
+            <Button variant="outline" size="sm" onClick={() => setMembersOpen(true)}>
+              <UserCog className="h-4 w-4 mr-1" /> Membros
+            </Button>
+          )}
+        </div>
+
+        {activeOrg && (
+          <OrganizationMembersDialog
+            open={membersOpen}
+            onOpenChange={setMembersOpen}
+            org={activeOrg}
+          />
+        )}
+
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">Meus Torneios</h1>
+          <h1 className="text-2xl font-bold">Torneios</h1>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button><Plus className="h-4 w-4 mr-1" /> Novo Torneio</Button>
+              <Button disabled={!activeOrgId}><Plus className="h-4 w-4 mr-1" /> Novo Torneio</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Criar Torneio</DialogTitle></DialogHeader>
@@ -125,17 +207,24 @@ export default function Dashboard() {
                   </p>
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>{loading ? "Criando..." : "Criar"}</Button>
-
               </form>
             </DialogContent>
           </Dialog>
         </div>
 
-        {tournaments.length === 0 ? (
+        {!activeOrgId ? (
+          <Card>
+            <CardContent className="py-12 text-center text-muted-foreground">
+              <Building2 className="h-10 w-10 mx-auto mb-3 opacity-40" />
+              <p>Você ainda não pertence a nenhuma organização.</p>
+              <p className="text-sm">Crie uma nova organização para começar.</p>
+            </CardContent>
+          </Card>
+        ) : tournaments.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center text-muted-foreground">
               <Trophy className="h-10 w-10 mx-auto mb-3 opacity-40" />
-              <p>Nenhum torneio cadastrado ainda.</p>
+              <p>Nenhum torneio cadastrado nesta organização ainda.</p>
               <p className="text-sm">Clique em "Novo Torneio" para começar.</p>
             </CardContent>
           </Card>

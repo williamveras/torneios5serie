@@ -82,6 +82,12 @@ export default function PublicTournament() {
     return () => { cancelled = true; };
   }, [tournamentId]);
 
+  useEffect(() => {
+    const prev = document.title;
+    if (tournament?.nome) document.title = `${tournament.nome} - Torneios Quinta Série`;
+    return () => { document.title = prev; };
+  }, [tournament?.nome]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">

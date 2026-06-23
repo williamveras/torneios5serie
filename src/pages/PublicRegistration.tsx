@@ -72,6 +72,13 @@ export default function PublicRegistration() {
     })();
   }, [token]);
 
+  useEffect(() => {
+    if (!link?.tournament_name) return;
+    const prev = document.title;
+    document.title = `Inscrição — ${link.tournament_name}`;
+    return () => { document.title = prev; };
+  }, [link?.tournament_name]);
+
   const isDuplas = link?.modalidade === "duplas";
 
   const handleSubmit = async (e: React.FormEvent) => {

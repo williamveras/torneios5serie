@@ -38,10 +38,10 @@ export default function Dashboard() {
 
   const fetchTournaments = async () => {
     if (!activeOrgId) { setTournaments([]); return; }
-    const { data } = await supabase
-      .from("tournaments")
+    const { data } = await (supabase
+      .from("tournaments") as any)
       .select("*")
-      .eq("organization_id" as any, activeOrgId)
+      .eq("organization_id", activeOrgId)
       .order("data_inicio", { ascending: false });
     if (data) setTournaments(data as any);
   };

@@ -210,6 +210,65 @@ export type Database = {
         }
         Relationships: []
       }
+      organization_members: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          role: Database["public"]["Enums"]["org_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          role?: Database["public"]["Enums"]["org_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          role?: Database["public"]["Enums"]["org_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          nome: string
+          slug: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome: string
+          slug?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome?: string
+          slug?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       phase_status: {
         Row: {
           created_at: string
@@ -439,6 +498,7 @@ export type Database = {
           modalidade: string
           nome: string
           numero_rodadas: number | null
+          organization_id: string
           regulamento: string | null
           repescagem_enabled: boolean
           repescagem_total: number | null
@@ -454,6 +514,7 @@ export type Database = {
           modalidade?: string
           nome: string
           numero_rodadas?: number | null
+          organization_id: string
           regulamento?: string | null
           repescagem_enabled?: boolean
           repescagem_total?: number | null
@@ -469,6 +530,7 @@ export type Database = {
           modalidade?: string
           nome?: string
           numero_rodadas?: number | null
+          organization_id?: string
           regulamento?: string | null
           repescagem_enabled?: boolean
           repescagem_total?: number | null
@@ -487,6 +549,13 @@ export type Database = {
             columns: ["campeao_id"]
             isOneToOne: false
             referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournaments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -530,6 +599,7 @@ export type Database = {
       }
     }
     Functions: {
+      can_access_tournament: { Args: { _t: string }; Returns: boolean }
       execute_scheduled_draws: { Args: never; Returns: undefined }
       get_moderators_public: {
         Args: { _tournament_id: string }
@@ -548,6 +618,15 @@ export type Database = {
           tournament_id: string
         }[]
       }
+      has_org_role: {
+        Args: {
+          _org: string
+          _roles: Database["public"]["Enums"]["org_role"][]
+          _user: string
+        }
+        Returns: boolean
+      }
+      is_org_member: { Args: { _org: string; _user: string }; Returns: boolean }
       register_player_via_token: {
         Args: {
           _comentario: string
@@ -588,7 +667,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      org_role: "owner" | "admin" | "member"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -715,6 +794,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      org_role: ["owner", "admin", "member"],
+    },
   },
 } as const

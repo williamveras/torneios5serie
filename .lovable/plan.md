@@ -1,59 +1,61 @@
-# Suporte a torneios em duplas
+# Plano: Organizações (multi-tenant)
 
-Objetivo: permitir criar torneios onde cada "competidor" é uma dupla (2 jogadores), mantendo todas as regras atuais (fases, sorteio, classificação, penalidades, mesa, página pública), sem quebrar os torneios individuais existentes.
+Hoje todos os torneios aparecem juntos no dashboard. Vamos introduzir o conceito de **Organização** para que cada grupo (ex.: "Torneios Quinta Série") tenha seus próprios torneios, jogadores, links e configurações, isoladamente.
 
-## Abordagem
+## Conceito
 
-Adicionar uma **modalidade** ao torneio (`individual` | `duplas`) e introduzir o conceito de **dupla** como uma entidade que se comporta exatamente como um "player" hoje. Para minimizar refatoração, a dupla será representada na própria tabela `players` (registro "virtual" representando a dupla), com uma nova tabela auxiliar `team_members` ligando os 2 jogadores reais à dupla.
-
-Vantagem: `matchups`, `match_schedule`, `match_results`, sorteio, standings, mesa, classificados, página pública continuam funcionando sem alterações estruturais — eles operam sobre o "player" que, em torneios de dupla, representa a dupla.
+- Uma **Organização** é um espaço isolado (ex.: "Torneios Quinta Série", "Liga Scopas BH").
+- Cada **usuário** pode pertencer a uma ou mais organizações, com papéis: `owner`, `admin`, `member`.
+- Cada **torneio** pertence a exatamente uma organização.
+- O usuário escolhe a organização ativa no topo do app (seletor) e só vê os torneios dela.
+- Links públicos (`/inscricao/:token` e `/torneio/:id`) continuam funcionando para qualquer pessoa — eles já são públicos por torneio, então não mudam.
 
 ## Mudanças no banco
 
-1. `tournaments`: adicionar coluna `modalidade text not null default 'individual'` (`'individual' | 'duplas'`).
-2. `players`: adicionar `is_team boolean not null default false`. Em torneios de dupla, o registro da dupla terá `is_team = true` e `nome_completo` = nome da dupla; `nick_playroom` = nicks concatenados (ex: "nick1 / nick2").
-3. Nova tabela `team_members`:
-   - `id uuid pk`, `team_id uuid -> players(id) on delete cascade`, `member_nome text not null`, `member_nick text`, `member_email text`, `member_whatsapp text`, `position smallint` (1 ou 2).
-   - GRANTs para `authenticated` e `service_role`; RLS aberta como nas outras tabelas do projeto.
-4. Sem mudanças em `matchups`/`match_results`/`match_schedule` — continuam apontando para `players.id` (que é a dupla quando `is_team=true`).
+1. Nova tabela `organizations` (nome, slug, created_by).
+2. Nova tabela `organization_members` (organization_id, user_id, role) — fonte da verdade de quem pode acessar o quê. Roles via enum, seguindo o padrão seguro (separado de `profiles`).
+3. Coluna `organization_id` em `tournaments` (NOT NULL após migração).
+4. Função `has_org_role(_user, _org, _role)` `SECURITY DEFINER` para usar nas policies sem recursão.
+5. **Migração de dados existentes:** criar uma organização padrão "Torneios Quinta Série", mover todos os torneios atuais para ela, e adicionar todos os usuários existentes como `member` (o primeiro usuário criado vira `owner`).
+6. Atualizar RLS de `tournaments` (e tabelas dependentes via `tournament_id`) para exigir que o usuário seja membro da organização do torneio.
 
-## Mudanças no app
+Os links públicos continuam usando RPCs `SECURITY DEFINER` (`validate_registration_token`, `get_players_public`, etc.), então não são afetados pelo RLS novo.
 
-### Criação/configuração do torneio
-- `TournamentSettingsDialog` (ou criação): seletor "Modalidade" (Individual / Duplas). Bloquear troca após existirem players.
+## Mudanças no frontend
 
-### Cadastro de duplas
-- `PlayersTab`: quando `modalidade='duplas'`, formulário com 2 blocos (Jogador 1 / Jogador 2: nome, nick, email, whatsapp) + "Nome da dupla" opcional (default: "nick1 & nick2"). Salva 1 row em `players` (is_team=true) + 2 rows em `team_members`.
-- Link público de inscrição (`PublicRegistration` + `register_player_via_token`): adicionar campos do parceiro quando o torneio for de duplas; função RPC adaptada para criar a dupla + membros.
+1. **Seletor de organização** no topo do `Dashboard`: dropdown com as orgs do usuário + botão "Nova organização" + botão "Convidar membro" (gera link/usa email).
+2. Persistir a org ativa em `localStorage` (`activeOrgId`).
+3. `Dashboard.fetchTournaments` filtra por `organization_id = activeOrgId`.
+4. `handleCreate` de torneio passa `organization_id: activeOrgId`.
+5. Tela simples de **gerenciar membros** da organização (listar, mudar papel, remover) — acessível só para `owner`/`admin`.
+6. Quando um novo usuário se cadastra sem convite, criar automaticamente uma organização pessoal pra ele (ex.: "Organização de {nome}") para que o dashboard não fique vazio.
 
-### Exibição
-- Helpers `getPlayerName`/`getPlayerNick` passam a, para `is_team=true`, retornar o nome da dupla e os nicks combinados.
-- Página pública (Standings, Schedule, Results, Draw, Qualifiers), `MatchupsTab`, `ResultsTab`, `ScheduleTab`, `BracketView`: nenhuma mudança lógica; apenas o label já fica correto via helper. Ajustar somente onde houver UI específica para "Jogador".
-- "eder.bononi, mesa X" vira "nick1 & nick2, mesa X" em duplas.
+## Convites
 
-### Sorteio e fases
-- `execute_scheduled_draws` continua funcionando: sorteia entre `players` ativos do torneio. Como cada dupla é 1 row, o pareamento já fica dupla x dupla.
-- Lógica de promoção entre fases / qualificação (`qualificationSuggest`, `phaseProjection`, `StandingsTab`) opera sobre `player_id` — sem alteração.
+Versão simples nesta primeira iteração: o `owner`/`admin` adiciona um membro pelo **email** do usuário já cadastrado. Se quiser convite por link (para usuários ainda não cadastrados), faço numa segunda etapa.
 
-### Importação / resultados
-- `ImportMatchupsDialog`, `ImportResultsDialog`, `matchupParser`, `resultsParser`: aceitar como identificador o nome/nick da dupla. Resolver para `players.id` (is_team=true) por correspondência igual ao individual.
+## Detalhes técnicos
 
-### Inscrição via Google Forms (CSV/XLSX)
-- Mapper de importação (memória `player-import`): em modalidade duplas, mapear 2 conjuntos de colunas (Jogador 1 / Jogador 2) e criar dupla + membros.
+- Enum: `create type public.org_role as enum ('owner','admin','member');`
+- Tabela `organization_members(org_id, user_id, role)` com unique `(org_id,user_id)`.
+- Função:
+  ```sql
+  create function public.is_org_member(_org uuid, _user uuid)
+  returns boolean language sql stable security definer set search_path=public as $$
+    select exists(select 1 from public.organization_members
+                  where organization_id=_org and user_id=_user);
+  $$;
+  ```
+- RLS em `tournaments`:
+  - SELECT/INSERT/UPDATE/DELETE: `public.is_org_member(organization_id, auth.uid())`
+  - INSERT exige também que `auth.uid()` seja membro da org passada.
+- GRANTs explícitos em todas as tabelas novas (`authenticated` + `service_role`; sem `anon`).
+- Migração de dados num único bloco transacional para não quebrar o app entre passos.
 
-## Compatibilidade
-- Torneios existentes: `modalidade='individual'` por default; comportamento idêntico ao atual.
-- Helpers checam `is_team` antes de mudar formato — sem impacto em individual.
+## Fora do escopo desta etapa
 
-## Itens fora deste escopo (pode virar follow-up)
-- Estatísticas por jogador dentro da dupla.
-- Trocar parceiro no meio do torneio.
-- Rankings cruzados (jogador aparece em várias duplas).
+- Convidar usuário ainda não cadastrado por email/link (faço depois se quiser).
+- Branding por organização (logo/título customizado nas páginas públicas).
+- Cobrança/limites por organização.
 
-## Ordem de implementação
-1. Migração: `tournaments.modalidade`, `players.is_team`, tabela `team_members` (+ GRANTs + RLS).
-2. Seletor de modalidade na criação/configuração do torneio.
-3. Cadastro manual de duplas em `PlayersTab` + helpers de nome/nick.
-4. Link público de inscrição e importação CSV adaptados.
-5. Ajustes finos de UI nas abas e página pública (rótulos "Jogador" → "Dupla").
-6. Teste end-to-end com um torneio de duplas pequeno antes do torneio real.
+Posso seguir com a implementação?

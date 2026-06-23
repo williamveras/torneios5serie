@@ -96,7 +96,7 @@ export default function PublicRegistration() {
         _p2_nick: p2Nick.trim() || null,
         _p2_email: p2Email.trim(),
         _p2_whatsapp: p2Whats.trim() || null,
-        _preferencia_horarios: horarios.trim() || null,
+        _preferencia_horarios: horariosStr,
         _comentario: comentario.trim() || null,
       });
       err = res.error;

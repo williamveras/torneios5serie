@@ -45,8 +45,12 @@ export default function PublicRegistration() {
   const [p2Whats, setP2Whats] = useState("");
 
   // Shared
-  const [horarios, setHorarios] = useState("");
+  const [horarios, setHorarios] = useState<string[]>([]);
   const [comentario, setComentario] = useState("");
+
+  const toggleHorario = (opt: string, checked: boolean) => {
+    setHorarios((prev) => (checked ? [...prev, opt] : prev.filter((h) => h !== opt)));
+  };
 
   useEffect(() => {
     (async () => {

@@ -259,7 +259,12 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
     }).select("id").single();
     if (error || !team) {
       setSavingTeam(false);
-      toast.error("Erro ao criar dupla: " + (error?.message ?? ""));
+      const msg = String(error?.message ?? "");
+      if (msg.includes("max_participants_reached")) {
+        toast.error("Limite de participantes atingido", { description: "Aumente o limite nas configurações do torneio para cadastrar mais duplas." });
+      } else {
+        toast.error("Erro ao criar dupla: " + msg);
+      }
       return;
     }
     const rows = newTeamMembers.map(m => ({

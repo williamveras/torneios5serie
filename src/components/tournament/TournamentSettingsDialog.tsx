@@ -92,6 +92,16 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
       toast.error("Nome e data são obrigatórios");
       return;
     }
+    const mxStr = maxParticipants.trim();
+    const mx = mxStr ? parseInt(mxStr, 10) : null;
+    if (mxStr && (!Number.isFinite(mx) || (mx as number) < 2)) {
+      toast.error("Limite de participantes inválido (mínimo 2).");
+      return;
+    }
+    if (mx !== null && totalInscritos > mx) {
+      toast.error(`Já há ${totalInscritos} participantes cadastrados. Aumente o limite ou remova inscrições.`);
+      return;
+    }
     setSaving(true);
     const dpg = directPerGroup.trim() ? parseInt(directPerGroup, 10) : null;
     const rt = repescagemEnabled && repescagemTotal.trim() ? parseInt(repescagemTotal, 10) : null;
@@ -105,6 +115,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
         repescagem_enabled: repescagemEnabled,
         repescagem_total: rt,
         modalidade,
+        max_participants: mx,
       })
       .eq("id", tournamentId);
     setSaving(false);

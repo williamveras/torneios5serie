@@ -57,6 +57,11 @@ export default function Dashboard() {
       toast.error("Número de rodadas inválido.");
       return;
     }
+    const maxNum = maxParticipants.trim() ? parseInt(maxParticipants.trim(), 10) : null;
+    if (maxParticipants.trim() && (isNaN(maxNum!) || maxNum! < 2)) {
+      toast.error("Limite de participantes inválido (mínimo 2).");
+      return;
+    }
     setLoading(true);
     const { error } = await supabase.from("tournaments").insert({
       nome,
@@ -65,6 +70,7 @@ export default function Dashboard() {
       numero_rodadas: rodadasNum,
       modalidade,
       organization_id: activeOrgId,
+      max_participants: maxNum,
     } as any);
     if (error) {
       toast.error("Erro ao criar torneio");
@@ -74,6 +80,7 @@ export default function Dashboard() {
       setDataInicio("");
       setNumeroRodadas("");
       setModalidade("individual");
+      setMaxParticipants("");
       setDialogOpen(false);
       fetchTournaments();
     }

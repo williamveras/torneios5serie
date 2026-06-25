@@ -214,6 +214,19 @@ export default function Dashboard() {
                     Em torneios de duplas, cada "competidor" é uma dupla com 2 jogadores. Não pode ser alterado depois de cadastrar competidores.
                   </p>
                 </div>
+                <div className="space-y-2">
+                  <Label>Limite de participantes (opcional)</Label>
+                  <Input
+                    type="number"
+                    min={2}
+                    value={maxParticipants}
+                    onChange={e => setMaxParticipants(e.target.value)}
+                    placeholder="Ex: 128"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Se definido, novas inscrições serão bloqueadas ao atingir esse número. Deixe em branco para não limitar.
+                  </p>
+                </div>
                 <Button type="submit" className="w-full" disabled={loading}>{loading ? "Criando..." : "Criar"}</Button>
               </form>
             </DialogContent>

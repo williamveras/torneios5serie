@@ -443,6 +443,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_captain: boolean
           member_email: string | null
           member_nick: string | null
           member_nome: string
@@ -453,6 +454,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_captain?: boolean
           member_email?: string | null
           member_nick?: string | null
           member_nome: string
@@ -463,6 +465,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_captain?: boolean
           member_email?: string | null
           member_nick?: string | null
           member_nome?: string
@@ -646,10 +649,12 @@ export type Database = {
         Args: {
           _comentario: string
           _p1_email: string
+          _p1_is_captain?: boolean
           _p1_nick: string
           _p1_nome: string
           _p1_whatsapp: string
           _p2_email: string
+          _p2_is_captain?: boolean
           _p2_nick: string
           _p2_nome: string
           _p2_whatsapp: string

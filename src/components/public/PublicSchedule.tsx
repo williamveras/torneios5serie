@@ -182,7 +182,9 @@ export default function PublicSchedule({ schedules, players, matchups, results =
 
   const description = isGroup
     ? "Atenção aos confrontos e horários dos jogos ainda a decorrer:"
-    : `Confrontos da ${activeFase}.`;
+    : (activeFase === "Final" && includeThirdPlace
+        ? "Confrontos da final e disputa de terceiro."
+        : `Confrontos da ${activeFase}.`);
 
   // ===== Elimination (non-group) rendering =====
   if (!isGroup) {

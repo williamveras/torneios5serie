@@ -242,11 +242,16 @@ export default function PublicSchedule({ schedules, players, matchups, results =
                   <TableBody>
                     {dateEntries.flatMap(([date, items]) =>
                       items.map(it => (
-                        <TableRow key={`${date}-${it.mesa}-${it.player1_id}`}>
+                        <TableRow key={`${date}-${it.fase}-${it.mesa}-${it.player1_id}`}>
                           <TableCell className="whitespace-nowrap">
                             {date === NO_DATE_KEY ? "Sem data definida" : formatDate(date)}
                           </TableCell>
-                          <TableCell className="whitespace-nowrap tabular-nums">Mesa {it.mesa}</TableCell>
+                          <TableCell className="whitespace-nowrap tabular-nums">
+                            Mesa {it.mesa}
+                            {it.fase === SIDE_FASE_3RD && (
+                              <span className="ml-2 text-xs text-amber-700 dark:text-amber-300">(3º lugar)</span>
+                            )}
+                          </TableCell>
                           <TableCell className={`font-medium ${noWrapText}`}>
                             {displayName(playerMap.get(it.player1_id))} x {displayName(playerMap.get(it.player2_id))}
                           </TableCell>

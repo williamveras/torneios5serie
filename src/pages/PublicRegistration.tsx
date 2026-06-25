@@ -215,18 +215,7 @@ export default function PublicRegistration() {
                   </div>
 
                   <div className="rounded-lg border p-4 space-y-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <h3 className="font-semibold text-sm">Jogador 1</h3>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={captain === 1 ? "default" : "outline"}
-                        onClick={() => setCaptain(1)}
-                      >
-                        <Crown className="h-3.5 w-3.5 mr-1" />
-                        {captain === 1 ? "Capitão da equipe" : "Definir como capitão"}
-                      </Button>
-                    </div>
+                    <h3 className="font-semibold text-sm">Jogador 1</h3>
                     <div className="space-y-2">
                       <Label htmlFor="p1Nome">Nome completo *</Label>
                       <Input id="p1Nome" value={p1Nome} onChange={(e) => setP1Nome(e.target.value)} required maxLength={200} />
@@ -243,21 +232,20 @@ export default function PublicRegistration() {
                       <Label htmlFor="p1Whats">WhatsApp</Label>
                       <Input id="p1Whats" value={p1Whats} onChange={(e) => setP1Whats(e.target.value)} maxLength={50} />
                     </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={captain === 1 ? "default" : "outline"}
+                      onClick={() => setCaptain(1)}
+                      className="w-full"
+                    >
+                      <Crown className="h-3.5 w-3.5 mr-1" />
+                      {captain === 1 ? "Capitão da equipe" : "Definir como capitão"}
+                    </Button>
                   </div>
 
                   <div className="rounded-lg border p-4 space-y-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <h3 className="font-semibold text-sm">Jogador 2</h3>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={captain === 2 ? "default" : "outline"}
-                        onClick={() => setCaptain(2)}
-                      >
-                        <Crown className="h-3.5 w-3.5 mr-1" />
-                        {captain === 2 ? "Capitão da equipe" : "Definir como capitão"}
-                      </Button>
-                    </div>
+                    <h3 className="font-semibold text-sm">Jogador 2</h3>
                     <div className="space-y-2">
                       <Label htmlFor="p2Nome">Nome completo *</Label>
                       <Input id="p2Nome" value={p2Nome} onChange={(e) => setP2Nome(e.target.value)} required maxLength={200} />
@@ -274,6 +262,16 @@ export default function PublicRegistration() {
                       <Label htmlFor="p2Whats">WhatsApp</Label>
                       <Input id="p2Whats" value={p2Whats} onChange={(e) => setP2Whats(e.target.value)} maxLength={50} />
                     </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={captain === 2 ? "default" : "outline"}
+                      onClick={() => setCaptain(2)}
+                      className="w-full"
+                    >
+                      <Crown className="h-3.5 w-3.5 mr-1" />
+                      {captain === 2 ? "Capitão da equipe" : "Definir como capitão"}
+                    </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
                     O capitão será a pessoa de contato da dupla em caso de necessidade.

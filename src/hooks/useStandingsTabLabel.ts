@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { FASES } from "@/lib/constants";
+import { FASES, isSideFase } from "@/lib/constants";
 import { nextPhaseName } from "@/lib/qualifiers";
 import type { Tables } from "@/integrations/supabase/types";
 

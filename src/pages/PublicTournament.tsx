@@ -116,6 +116,7 @@ export default function PublicTournament() {
   let latestConcluded: string | null = null;
   for (let i = FASES.length - 1; i >= 0; i--) {
     const f = FASES[i];
+    if (isSideFase(f)) continue;
     if (phaseStatuses.find(p => p.fase === f)?.status === "concluida") { latestConcluded = f; break; }
   }
   const nextFaseLabel = latestConcluded ? nextPhaseName(latestConcluded) : "";

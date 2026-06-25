@@ -1,0 +1,1 @@
+UPDATE public.matchups SET fase = 'Disputa de 3º Lugar' WHERE id = 'ad02c686-5887-414a-9e1b-49004be66e26';

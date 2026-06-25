@@ -177,6 +177,19 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                   </p>
                 )}
               </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>Limite de participantes (opcional)</Label>
+                <Input
+                  type="number"
+                  min={2}
+                  value={maxParticipants}
+                  onChange={e => setMaxParticipants(e.target.value)}
+                  placeholder="Ex: 128"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Se definido, novas inscrições serão bloqueadas ao atingir esse número. Atualmente cadastrados: <strong>{totalInscritos}</strong>.
+                </p>
+              </div>
             </div>
 
             <div className="border-t pt-4 space-y-3">

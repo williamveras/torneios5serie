@@ -56,6 +56,7 @@ export default function PublicStandings({ results, players, phaseStatuses, match
   const latestConcludedFase = useMemo(() => {
     for (let i = FASES.length - 1; i >= 0; i--) {
       const f = FASES[i];
+      if (isSideFase(f)) continue;
       if (phaseStatuses.find(p => p.fase === f)?.status === "concluida") return f;
     }
     return "Fase de Grupos";

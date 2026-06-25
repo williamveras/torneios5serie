@@ -32,6 +32,7 @@ export default function RegistrationLinkTab({ tournamentId }: Props) {
   const [links, setLinks] = useState<RegLink[]>([]);
   const [open, setOpen] = useState(false);
   const [expiresDate, setExpiresDate] = useState("");
+  const [expiresTime, setExpiresTime] = useState("");
   const [creating, setCreating] = useState(false);
 
   const fetchLinks = async () => {
@@ -51,14 +52,15 @@ export default function RegistrationLinkTab({ tournamentId }: Props) {
       return;
     }
     setCreating(true);
-    // expira no fim do dia escolhido (23:59:59 local)
-    const endOfDay = new Date(`${expiresDate}T23:59:59`);
+    // se horário informado, usa ele; senão, 23:59:59 do dia escolhido (local)
+    const timePart = expiresTime ? `${expiresTime}:00` : "23:59:59";
+    const expiresAt = new Date(`${expiresDate}T${timePart}`);
     const token = genToken();
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("registration_links").insert({
       tournament_id: tournamentId,
       token,
-      expires_at: endOfDay.toISOString(),
+      expires_at: expiresAt.toISOString(),
       created_by: user?.id ?? null,
     });
     setCreating(false);
@@ -68,6 +70,7 @@ export default function RegistrationLinkTab({ tournamentId }: Props) {
     }
     setOpen(false);
     setExpiresDate("");
+    setExpiresTime("");
     toast.success("Link de inscrição gerado!");
     fetchLinks();
   };

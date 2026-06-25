@@ -57,6 +57,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
         setRepescagemEnabled(anyT.repescagem_enabled ?? true);
         setRepescagemTotal(anyT.repescagem_total?.toString() ?? "");
         setModalidade((anyT.modalidade as "individual" | "duplas") ?? "individual");
+        setMaxParticipants(anyT.max_participants?.toString() ?? "");
       }
       const players = (pr.data as { grupo: string | null }[] | null) ?? [];
       setTotalInscritos(players.length);

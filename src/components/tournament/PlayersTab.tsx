@@ -156,7 +156,11 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
 
     const { error } = await supabase.from("players").insert(playersToInsert);
     if (error) {
-      toast.error("Erro ao importar jogadores");
+      if (String(error.message || "").includes("max_participants_reached")) {
+        toast.error("Limite de participantes atingido", { description: "Aumente o limite nas configurações do torneio para importar mais." });
+      } else {
+        toast.error("Erro ao importar jogadores");
+      }
     } else {
       toast.success(`${playersToInsert.length} jogador(es) importado(s)!${skipped > 0 ? ` ${skipped} duplicata(s) ignorada(s).` : ""}`);
       fetchPlayers();

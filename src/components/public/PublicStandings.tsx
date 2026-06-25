@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { AlertTriangle, CheckCircle2, BarChart3, Download } from "lucide-react";
 import * as XLSX from "xlsx";
-import { FASES } from "@/lib/constants";
+import { FASES, isSideFase } from "@/lib/constants";
 import { computeStandings } from "@/lib/standings";
 import { computeQualifiers, nextPhaseName } from "@/lib/qualifiers";
 import { projectPhases } from "@/lib/phaseProjection";

@@ -156,7 +156,11 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
 
     const { error } = await supabase.from("players").insert(playersToInsert);
     if (error) {
-      toast.error("Erro ao importar jogadores");
+      if (String(error.message || "").includes("max_participants_reached")) {
+        toast.error("Limite de participantes atingido", { description: "Aumente o limite nas configurações do torneio para importar mais." });
+      } else {
+        toast.error("Erro ao importar jogadores");
+      }
     } else {
       toast.success(`${playersToInsert.length} jogador(es) importado(s)!${skipped > 0 ? ` ${skipped} duplicata(s) ignorada(s).` : ""}`);
       fetchPlayers();
@@ -255,7 +259,12 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
     }).select("id").single();
     if (error || !team) {
       setSavingTeam(false);
-      toast.error("Erro ao criar dupla: " + (error?.message ?? ""));
+      const msg = String(error?.message ?? "");
+      if (msg.includes("max_participants_reached")) {
+        toast.error("Limite de participantes atingido", { description: "Aumente o limite nas configurações do torneio para cadastrar mais duplas." });
+      } else {
+        toast.error("Erro ao criar dupla: " + msg);
+      }
       return;
     }
     const rows = newTeamMembers.map(m => ({

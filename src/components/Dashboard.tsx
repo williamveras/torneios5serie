@@ -27,6 +27,7 @@ export default function Dashboard() {
   const [dataInicio, setDataInicio] = useState("");
   const [numeroRodadas, setNumeroRodadas] = useState("");
   const [modalidade, setModalidade] = useState<"individual" | "duplas">("individual");
+  const [maxParticipants, setMaxParticipants] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -56,6 +57,11 @@ export default function Dashboard() {
       toast.error("Número de rodadas inválido.");
       return;
     }
+    const maxNum = maxParticipants.trim() ? parseInt(maxParticipants.trim(), 10) : null;
+    if (maxParticipants.trim() && (isNaN(maxNum!) || maxNum! < 2)) {
+      toast.error("Limite de participantes inválido (mínimo 2).");
+      return;
+    }
     setLoading(true);
     const { error } = await supabase.from("tournaments").insert({
       nome,
@@ -64,6 +70,7 @@ export default function Dashboard() {
       numero_rodadas: rodadasNum,
       modalidade,
       organization_id: activeOrgId,
+      max_participants: maxNum,
     } as any);
     if (error) {
       toast.error("Erro ao criar torneio");
@@ -73,6 +80,7 @@ export default function Dashboard() {
       setDataInicio("");
       setNumeroRodadas("");
       setModalidade("individual");
+      setMaxParticipants("");
       setDialogOpen(false);
       fetchTournaments();
     }
@@ -204,6 +212,19 @@ export default function Dashboard() {
                   </Select>
                   <p className="text-xs text-muted-foreground">
                     Em torneios de duplas, cada "competidor" é uma dupla com 2 jogadores. Não pode ser alterado depois de cadastrar competidores.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Limite de participantes (opcional)</Label>
+                  <Input
+                    type="number"
+                    min={2}
+                    value={maxParticipants}
+                    onChange={e => setMaxParticipants(e.target.value)}
+                    placeholder="Ex: 128"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Se definido, novas inscrições serão bloqueadas ao atingir esse número. Deixe em branco para não limitar.
                   </p>
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>{loading ? "Criando..." : "Criar"}</Button>

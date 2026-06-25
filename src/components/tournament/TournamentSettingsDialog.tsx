@@ -34,6 +34,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
   const [repescagemEnabled, setRepescagemEnabled] = useState(true);
   const [repescagemTotal, setRepescagemTotal] = useState<string>("");
   const [modalidade, setModalidade] = useState<"individual" | "duplas">("individual");
+  const [maxParticipants, setMaxParticipants] = useState<string>("");
 
   const [totalInscritos, setTotalInscritos] = useState(0);
   const [numGrupos, setNumGrupos] = useState(0);
@@ -56,6 +57,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
         setRepescagemEnabled(anyT.repescagem_enabled ?? true);
         setRepescagemTotal(anyT.repescagem_total?.toString() ?? "");
         setModalidade((anyT.modalidade as "individual" | "duplas") ?? "individual");
+        setMaxParticipants(anyT.max_participants?.toString() ?? "");
       }
       const players = (pr.data as { grupo: string | null }[] | null) ?? [];
       setTotalInscritos(players.length);
@@ -90,6 +92,16 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
       toast.error("Nome e data são obrigatórios");
       return;
     }
+    const mxStr = maxParticipants.trim();
+    const mx = mxStr ? parseInt(mxStr, 10) : null;
+    if (mxStr && (!Number.isFinite(mx) || (mx as number) < 2)) {
+      toast.error("Limite de participantes inválido (mínimo 2).");
+      return;
+    }
+    if (mx !== null && totalInscritos > mx) {
+      toast.error(`Já há ${totalInscritos} participantes cadastrados. Aumente o limite ou remova inscrições.`);
+      return;
+    }
     setSaving(true);
     const dpg = directPerGroup.trim() ? parseInt(directPerGroup, 10) : null;
     const rt = repescagemEnabled && repescagemTotal.trim() ? parseInt(repescagemTotal, 10) : null;
@@ -103,6 +115,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
         repescagem_enabled: repescagemEnabled,
         repescagem_total: rt,
         modalidade,
+        max_participants: mx,
       })
       .eq("id", tournamentId);
     setSaving(false);
@@ -163,6 +176,19 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                     Não é possível alterar a modalidade com competidores já cadastrados.
                   </p>
                 )}
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>Limite de participantes (opcional)</Label>
+                <Input
+                  type="number"
+                  min={2}
+                  value={maxParticipants}
+                  onChange={e => setMaxParticipants(e.target.value)}
+                  placeholder="Ex: 128"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Se definido, novas inscrições serão bloqueadas ao atingir esse número. Atualmente cadastrados: <strong>{totalInscritos}</strong>.
+                </p>
               </div>
             </div>
 

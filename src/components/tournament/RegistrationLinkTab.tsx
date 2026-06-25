@@ -154,17 +154,32 @@ export default function RegistrationLinkTab({ tournamentId }: Props) {
               Escolha até quando o link ficará ativo. Após essa data, o formulário será fechado automaticamente.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="expires">Válido até</Label>
-            <Input
-              id="expires"
-              type="date"
-              value={expiresDate}
-              onChange={(e) => setExpiresDate(e.target.value)}
-              min={new Date().toISOString().split("T")[0]}
-            />
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="expires">Válido até (data)</Label>
+                <Input
+                  id="expires"
+                  type="date"
+                  value={expiresDate}
+                  onChange={(e) => setExpiresDate(e.target.value)}
+                  min={new Date().toISOString().split("T")[0]}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="expires-time">Horário (opcional)</Label>
+                <Input
+                  id="expires-time"
+                  type="time"
+                  value={expiresTime}
+                  onChange={(e) => setExpiresTime(e.target.value)}
+                />
+              </div>
+            </div>
             <p className="text-xs text-muted-foreground">
-              O link expirará às 23:59 do dia escolhido.
+              {expiresTime
+                ? `O link expirará às ${expiresTime} do dia escolhido.`
+                : "Sem horário definido, o link expirará às 23:59 do dia escolhido."}
             </p>
           </div>
           <DialogFooter>

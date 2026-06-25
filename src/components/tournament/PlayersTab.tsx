@@ -639,7 +639,18 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
             </div>
             {newTeamMembers.map((m, idx) => (
               <div key={idx} className="border rounded-md p-3 space-y-2">
-                <p className="text-sm font-semibold">Jogador {m.position}</p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold">Jogador {m.position}</p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={m.is_captain ? "default" : "outline"}
+                    onClick={() => setNewTeamMembers(prev => prev.map((x, i) => ({ ...x, is_captain: i === idx })))}
+                  >
+                    <Crown className="h-3.5 w-3.5 mr-1" />
+                    {m.is_captain ? "Capitão" : "Definir capitão"}
+                  </Button>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
                     <Label className="text-xs">Nome *</Label>

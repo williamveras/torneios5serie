@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, Loader2, Users } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, Users, Crown } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
 const HORARIO_OPTIONS = ["Manhã", "Tarde", "Noite", "Qualquer horário"] as const;
@@ -43,6 +43,8 @@ export default function PublicRegistration() {
   const [p2Nick, setP2Nick] = useState("");
   const [p2Email, setP2Email] = useState("");
   const [p2Whats, setP2Whats] = useState("");
+  // 1 = jogador 1 é capitão; 2 = jogador 2
+  const [captain, setCaptain] = useState<1 | 2>(1);
 
   // Shared
   const [horarios, setHorarios] = useState<string[]>([]);
@@ -105,6 +107,8 @@ export default function PublicRegistration() {
         _p2_whatsapp: p2Whats.trim() || null,
         _preferencia_horarios: horariosStr,
         _comentario: comentario.trim() || null,
+        _p1_is_captain: captain === 1,
+        _p2_is_captain: captain === 2,
       });
       err = res.error;
     } else {

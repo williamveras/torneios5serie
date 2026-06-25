@@ -666,7 +666,7 @@ export default function StandingsTab({ tournamentId }: Props) {
       )}
 
       {(() => {
-        const elimFases = FASES.filter(f => f !== "Fase de Grupos");
+        const elimFases = FASES.filter(f => f !== "Fase de Grupos" && !isSideFase(f));
         // Fase eliminatória mais avançada que já tem confrontos cadastrados.
         let activeElim: string | null = null;
         for (let i = elimFases.length - 1; i >= 0; i--) {

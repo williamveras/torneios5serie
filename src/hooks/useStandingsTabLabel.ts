@@ -64,7 +64,8 @@ export function useStandingsTabLabel(tournamentId: string, initial?: PhaseStatus
   }
 
   const next = concludedFase ? nextPhaseName(concludedFase) : "";
-  const label = concludedFase && next ? `Classificados para a ${next}` : "Classificação";
+  const nextLabel = next === "Final" ? "grande final e disputa de terceiro" : next;
+  const label = concludedFase && next ? `Classificados para a ${nextLabel}` : "Classificação";
 
   return { label, concludedFase, statuses };
 }

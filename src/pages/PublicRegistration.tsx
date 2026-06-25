@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, Loader2, Users } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, Users, Crown } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
 const HORARIO_OPTIONS = ["Manhã", "Tarde", "Noite", "Qualquer horário"] as const;
@@ -43,6 +43,8 @@ export default function PublicRegistration() {
   const [p2Nick, setP2Nick] = useState("");
   const [p2Email, setP2Email] = useState("");
   const [p2Whats, setP2Whats] = useState("");
+  // 1 = jogador 1 é capitão; 2 = jogador 2
+  const [captain, setCaptain] = useState<1 | 2>(1);
 
   // Shared
   const [horarios, setHorarios] = useState<string[]>([]);
@@ -105,6 +107,8 @@ export default function PublicRegistration() {
         _p2_whatsapp: p2Whats.trim() || null,
         _preferencia_horarios: horariosStr,
         _comentario: comentario.trim() || null,
+        _p1_is_captain: captain === 1,
+        _p2_is_captain: captain === 2,
       });
       err = res.error;
     } else {
@@ -211,7 +215,18 @@ export default function PublicRegistration() {
                   </div>
 
                   <div className="rounded-lg border p-4 space-y-3">
-                    <h3 className="font-semibold text-sm">Jogador 1</h3>
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="font-semibold text-sm">Jogador 1</h3>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={captain === 1 ? "default" : "outline"}
+                        onClick={() => setCaptain(1)}
+                      >
+                        <Crown className="h-3.5 w-3.5 mr-1" />
+                        {captain === 1 ? "Capitão da equipe" : "Definir como capitão"}
+                      </Button>
+                    </div>
                     <div className="space-y-2">
                       <Label htmlFor="p1Nome">Nome completo *</Label>
                       <Input id="p1Nome" value={p1Nome} onChange={(e) => setP1Nome(e.target.value)} required maxLength={200} />
@@ -231,7 +246,18 @@ export default function PublicRegistration() {
                   </div>
 
                   <div className="rounded-lg border p-4 space-y-3">
-                    <h3 className="font-semibold text-sm">Jogador 2</h3>
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="font-semibold text-sm">Jogador 2</h3>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={captain === 2 ? "default" : "outline"}
+                        onClick={() => setCaptain(2)}
+                      >
+                        <Crown className="h-3.5 w-3.5 mr-1" />
+                        {captain === 2 ? "Capitão da equipe" : "Definir como capitão"}
+                      </Button>
+                    </div>
                     <div className="space-y-2">
                       <Label htmlFor="p2Nome">Nome completo *</Label>
                       <Input id="p2Nome" value={p2Nome} onChange={(e) => setP2Nome(e.target.value)} required maxLength={200} />
@@ -249,6 +275,9 @@ export default function PublicRegistration() {
                       <Input id="p2Whats" value={p2Whats} onChange={(e) => setP2Whats(e.target.value)} maxLength={50} />
                     </div>
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    O capitão será a pessoa de contato da dupla em caso de necessidade.
+                  </p>
                 </>
               ) : (
                 <>

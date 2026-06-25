@@ -8,14 +8,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, Trash2, Users, Shuffle, Lightbulb, MoreHorizontal, Pencil, CalendarPlus, Ban, RotateCcw, Plus } from "lucide-react";
+import { Upload, Trash2, Users, Shuffle, Lightbulb, MoreHorizontal, Pencil, CalendarPlus, Ban, RotateCcw, Plus, Crown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Player = Tables<"players">;
-type TeamMember = { id?: string; team_id?: string; member_nome: string; member_nick: string | null; member_email: string | null; member_whatsapp: string | null; position: number };
+type TeamMember = { id?: string; team_id?: string; member_nome: string; member_nick: string | null; member_email: string | null; member_whatsapp: string | null; position: number; is_captain?: boolean };
 
 interface Props {
   tournamentId: string;
@@ -68,7 +68,7 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
 
   // Team create dialog
   const [teamDialogOpen, setTeamDialogOpen] = useState(false);
-  const emptyMember = (pos: number): TeamMember => ({ member_nome: "", member_nick: "", member_email: "", member_whatsapp: "", position: pos });
+  const emptyMember = (pos: number): TeamMember => ({ member_nome: "", member_nick: "", member_email: "", member_whatsapp: "", position: pos, is_captain: pos === 1 });
   const [newTeamName, setNewTeamName] = useState("");
   const [newTeamGrupo, setNewTeamGrupo] = useState("");
   const [newTeamMembers, setNewTeamMembers] = useState<TeamMember[]>([emptyMember(1), emptyMember(2)]);
@@ -226,6 +226,7 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
         member_email: m.member_email?.trim() || null,
         member_whatsapp: m.member_whatsapp?.trim() || null,
         position: m.position,
+        is_captain: !!m.is_captain,
       }));
       const { error: memErr } = await (supabase.from("team_members") as any).insert(rows);
       if (memErr) {
@@ -274,6 +275,7 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
       member_email: m.member_email?.trim() || null,
       member_whatsapp: m.member_whatsapp?.trim() || null,
       position: m.position,
+      is_captain: !!m.is_captain,
     }));
     const { error: memErr } = await (supabase.from("team_members") as any).insert(rows);
     setSavingTeam(false);
@@ -444,11 +446,31 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
                             </span>
                           )}
                           {p.eliminado && <Badge variant="destructive" className="ml-2">Eliminado por W.O</Badge>}
-                          {isTeam && members.length > 0 && (
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {members.map(m => m.member_nome).join(" & ")}
-                            </div>
-                          )}
+                          {isTeam && members.length > 0 && (() => {
+                            const captain = members.find(m => m.is_captain);
+                            return (
+                              <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                                <div>
+                                  {members.map(m => (
+                                    <span key={m.position}>
+                                      {m.member_nome}
+                                      {m.is_captain && (
+                                        <Crown className="inline h-3 w-3 ml-1 -mt-0.5 text-amber-500" aria-label="Capitão" />
+                                      )}
+                                      {m.position === 1 ? " & " : ""}
+                                    </span>
+                                  ))}
+                                </div>
+                                {captain && (
+                                  <div className="text-foreground/80">
+                                    <span className="font-medium">Capitão:</span> {captain.member_nome}
+                                    {captain.member_email ? ` • ${captain.member_email}` : ""}
+                                    {captain.member_whatsapp ? ` • ${captain.member_whatsapp}` : ""}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </TableCell>
                         <TableCell>
                           {isTeam
@@ -457,7 +479,10 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
                         </TableCell>
                         <TableCell>
                           {isTeam
-                            ? (members.map(m => m.member_whatsapp).filter(Boolean).join(" / ") || "—")
+                            ? (() => {
+                                const cap = members.find(m => m.is_captain);
+                                return cap?.member_whatsapp || members.map(m => m.member_whatsapp).filter(Boolean).join(" / ") || "—";
+                              })()
                             : (p.whatsapp || "—")}
                         </TableCell>
                         <TableCell className="max-w-[200px] truncate">{p.preferencia_horarios || "—"}</TableCell>
@@ -545,7 +570,18 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
             )}
             {(editPlayer as any)?.is_team && editMembers.map((m, idx) => (
               <div key={idx} className="border rounded-md p-3 space-y-2">
-                <p className="text-sm font-semibold">Jogador {m.position}</p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold">Jogador {m.position}</p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={m.is_captain ? "default" : "outline"}
+                    onClick={() => setEditMembers(prev => prev.map((x, i) => ({ ...x, is_captain: i === idx })))}
+                  >
+                    <Crown className="h-3.5 w-3.5 mr-1" />
+                    {m.is_captain ? "Capitão" : "Definir capitão"}
+                  </Button>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
                     <Label className="text-xs">Nome</Label>
@@ -603,7 +639,18 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
             </div>
             {newTeamMembers.map((m, idx) => (
               <div key={idx} className="border rounded-md p-3 space-y-2">
-                <p className="text-sm font-semibold">Jogador {m.position}</p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold">Jogador {m.position}</p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={m.is_captain ? "default" : "outline"}
+                    onClick={() => setNewTeamMembers(prev => prev.map((x, i) => ({ ...x, is_captain: i === idx })))}
+                  >
+                    <Crown className="h-3.5 w-3.5 mr-1" />
+                    {m.is_captain ? "Capitão" : "Definir capitão"}
+                  </Button>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
                     <Label className="text-xs">Nome *</Label>

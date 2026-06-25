@@ -8,14 +8,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, Trash2, Users, Shuffle, Lightbulb, MoreHorizontal, Pencil, CalendarPlus, Ban, RotateCcw, Plus } from "lucide-react";
+import { Upload, Trash2, Users, Shuffle, Lightbulb, MoreHorizontal, Pencil, CalendarPlus, Ban, RotateCcw, Plus, Crown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Player = Tables<"players">;
-type TeamMember = { id?: string; team_id?: string; member_nome: string; member_nick: string | null; member_email: string | null; member_whatsapp: string | null; position: number };
+type TeamMember = { id?: string; team_id?: string; member_nome: string; member_nick: string | null; member_email: string | null; member_whatsapp: string | null; position: number; is_captain?: boolean };
 
 interface Props {
   tournamentId: string;
@@ -68,7 +68,7 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
 
   // Team create dialog
   const [teamDialogOpen, setTeamDialogOpen] = useState(false);
-  const emptyMember = (pos: number): TeamMember => ({ member_nome: "", member_nick: "", member_email: "", member_whatsapp: "", position: pos });
+  const emptyMember = (pos: number): TeamMember => ({ member_nome: "", member_nick: "", member_email: "", member_whatsapp: "", position: pos, is_captain: pos === 1 });
   const [newTeamName, setNewTeamName] = useState("");
   const [newTeamGrupo, setNewTeamGrupo] = useState("");
   const [newTeamMembers, setNewTeamMembers] = useState<TeamMember[]>([emptyMember(1), emptyMember(2)]);
@@ -226,6 +226,7 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
         member_email: m.member_email?.trim() || null,
         member_whatsapp: m.member_whatsapp?.trim() || null,
         position: m.position,
+        is_captain: !!m.is_captain,
       }));
       const { error: memErr } = await (supabase.from("team_members") as any).insert(rows);
       if (memErr) {
@@ -274,6 +275,7 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
       member_email: m.member_email?.trim() || null,
       member_whatsapp: m.member_whatsapp?.trim() || null,
       position: m.position,
+      is_captain: !!m.is_captain,
     }));
     const { error: memErr } = await (supabase.from("team_members") as any).insert(rows);
     setSavingTeam(false);

@@ -495,6 +495,7 @@ export type Database = {
           data_inicio: string
           direct_per_group: number | null
           id: string
+          max_participants: number | null
           modalidade: string
           nome: string
           numero_rodadas: number | null
@@ -511,6 +512,7 @@ export type Database = {
           data_inicio: string
           direct_per_group?: number | null
           id?: string
+          max_participants?: number | null
           modalidade?: string
           nome: string
           numero_rodadas?: number | null
@@ -527,6 +529,7 @@ export type Database = {
           data_inicio?: string
           direct_per_group?: number | null
           id?: string
+          max_participants?: number | null
           modalidade?: string
           nome?: string
           numero_rodadas?: number | null

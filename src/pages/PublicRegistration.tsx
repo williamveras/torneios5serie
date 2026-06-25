@@ -124,7 +124,12 @@ export default function PublicRegistration() {
 
     setSubmitting(false);
     if (err) {
-      toast.error("Erro ao enviar inscrição", { description: err.message });
+      const msg = String(err.message || "");
+      if (msg.includes("max_participants_reached")) {
+        toast.error("Inscrições encerradas", { description: "O limite de participantes deste torneio já foi atingido." });
+      } else {
+        toast.error("Erro ao enviar inscrição", { description: err.message });
+      }
       return;
     }
     setDone(true);

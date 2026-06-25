@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Download, BarChart3, Lock, Unlock, Info } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
-import { FASES } from "@/lib/constants";
+import { FASES, isSideFase } from "@/lib/constants";
 import { computeStandings } from "@/lib/standings";
 import { computeQualifiers, nextPhaseName } from "@/lib/qualifiers";
 import QualifiersView from "@/components/QualifiersView";

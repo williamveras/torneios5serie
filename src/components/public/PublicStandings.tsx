@@ -392,7 +392,7 @@ export default function PublicStandings({ results, players, phaseStatuses, match
       ) : showQualifiers ? (
         <div className="space-y-6">
           <div className="space-y-4">
-            <h2 className="text-xl font-bold">Classificados para a {nextFase}</h2>
+            <h2 className="text-xl font-bold">Classificados para a {nextFase === "Final" ? "grande final e disputa de terceiro" : nextFase}</h2>
             <QualifiersView qualifiers={qualifiersToShow} viewMode={viewMode} playerMesaMap={nextPhaseMesaMap.size > 0 ? nextPhaseMesaMap : playerMesaMap} />
           </div>
           <Accordion type="single" collapsible className="rounded-md border bg-background px-4">

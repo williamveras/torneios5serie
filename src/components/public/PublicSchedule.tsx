@@ -276,13 +276,16 @@ export default function PublicSchedule({ schedules, players, matchups, results =
                   </h3>
                   <div className="space-y-2">
                     {items.map(it => (
-                      <div key={`${it.mesa}-${it.player1_id}`} className={`rounded-md border bg-muted/30 min-w-0 overflow-hidden ${compactCardPadding}`}>
+                      <div key={`${it.fase}-${it.mesa}-${it.player1_id}`} className={`rounded-md border bg-muted/30 min-w-0 overflow-hidden ${compactCardPadding}`}>
                         <h3 className={`text-base sm:text-lg font-semibold ${scrollLine}`}>
                           <span className="public-line-content">
                             <span>{keepTogether(displayName(playerMap.get(it.player1_id)))}</span>{" "}
                             <span className="text-muted-foreground font-normal">x</span>{" "}
                             <span>{keepTogether(displayName(playerMap.get(it.player2_id)))}</span>{" "}
                             <span className="text-muted-foreground font-normal text-sm">{keepTogether(`(mesa ${it.mesa})`)}</span>
+                            {it.fase === SIDE_FASE_3RD && (
+                              <span className="ml-2 text-xs font-medium text-amber-700 dark:text-amber-300">— Disputa de 3º Lugar</span>
+                            )}
                           </span>
                         </h3>
                         <div className={`text-sm font-medium tabular-nums mt-1 ${scrollLine}`}>

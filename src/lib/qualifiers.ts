@@ -85,7 +85,9 @@ export function computeQualifiers(
 }
 
 export function nextPhaseName(currentFase: string): string {
-  const i = FASES.indexOf(currentFase as any);
-  if (i < 0 || i === FASES.length - 1) return "";
-  return FASES[i + 1];
+  // Caminho principal ignora fases laterais como "Disputa de 3º Lugar".
+  const main = FASES.filter(f => f !== "Disputa de 3º Lugar");
+  const i = main.indexOf(currentFase as any);
+  if (i < 0 || i === main.length - 1) return "";
+  return main[i + 1];
 }

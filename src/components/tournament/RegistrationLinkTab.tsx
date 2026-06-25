@@ -32,6 +32,7 @@ export default function RegistrationLinkTab({ tournamentId }: Props) {
   const [links, setLinks] = useState<RegLink[]>([]);
   const [open, setOpen] = useState(false);
   const [expiresDate, setExpiresDate] = useState("");
+  const [expiresTime, setExpiresTime] = useState("");
   const [creating, setCreating] = useState(false);
 
   const fetchLinks = async () => {
@@ -51,14 +52,15 @@ export default function RegistrationLinkTab({ tournamentId }: Props) {
       return;
     }
     setCreating(true);
-    // expira no fim do dia escolhido (23:59:59 local)
-    const endOfDay = new Date(`${expiresDate}T23:59:59`);
+    // se horário informado, usa ele; senão, 23:59:59 do dia escolhido (local)
+    const timePart = expiresTime ? `${expiresTime}:00` : "23:59:59";
+    const expiresAt = new Date(`${expiresDate}T${timePart}`);
     const token = genToken();
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("registration_links").insert({
       tournament_id: tournamentId,
       token,
-      expires_at: endOfDay.toISOString(),
+      expires_at: expiresAt.toISOString(),
       created_by: user?.id ?? null,
     });
     setCreating(false);
@@ -68,6 +70,7 @@ export default function RegistrationLinkTab({ tournamentId }: Props) {
     }
     setOpen(false);
     setExpiresDate("");
+    setExpiresTime("");
     toast.success("Link de inscrição gerado!");
     fetchLinks();
   };
@@ -151,17 +154,32 @@ export default function RegistrationLinkTab({ tournamentId }: Props) {
               Escolha até quando o link ficará ativo. Após essa data, o formulário será fechado automaticamente.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="expires">Válido até</Label>
-            <Input
-              id="expires"
-              type="date"
-              value={expiresDate}
-              onChange={(e) => setExpiresDate(e.target.value)}
-              min={new Date().toISOString().split("T")[0]}
-            />
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="expires">Válido até (data)</Label>
+                <Input
+                  id="expires"
+                  type="date"
+                  value={expiresDate}
+                  onChange={(e) => setExpiresDate(e.target.value)}
+                  min={new Date().toISOString().split("T")[0]}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="expires-time">Horário (opcional)</Label>
+                <Input
+                  id="expires-time"
+                  type="time"
+                  value={expiresTime}
+                  onChange={(e) => setExpiresTime(e.target.value)}
+                />
+              </div>
+            </div>
             <p className="text-xs text-muted-foreground">
-              O link expirará às 23:59 do dia escolhido.
+              {expiresTime
+                ? `O link expirará às ${expiresTime} do dia escolhido.`
+                : "Sem horário definido, o link expirará às 23:59 do dia escolhido."}
             </p>
           </div>
           <DialogFooter>

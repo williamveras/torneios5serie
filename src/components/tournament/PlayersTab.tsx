@@ -446,11 +446,31 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
                             </span>
                           )}
                           {p.eliminado && <Badge variant="destructive" className="ml-2">Eliminado por W.O</Badge>}
-                          {isTeam && members.length > 0 && (
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {members.map(m => m.member_nome).join(" & ")}
-                            </div>
-                          )}
+                          {isTeam && members.length > 0 && (() => {
+                            const captain = members.find(m => m.is_captain);
+                            return (
+                              <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                                <div>
+                                  {members.map(m => (
+                                    <span key={m.position}>
+                                      {m.member_nome}
+                                      {m.is_captain && (
+                                        <Crown className="inline h-3 w-3 ml-1 -mt-0.5 text-amber-500" aria-label="Capitão" />
+                                      )}
+                                      {m.position === 1 ? " & " : ""}
+                                    </span>
+                                  ))}
+                                </div>
+                                {captain && (
+                                  <div className="text-foreground/80">
+                                    <span className="font-medium">Capitão:</span> {captain.member_nome}
+                                    {captain.member_email ? ` • ${captain.member_email}` : ""}
+                                    {captain.member_whatsapp ? ` • ${captain.member_whatsapp}` : ""}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </TableCell>
                         <TableCell>
                           {isTeam
@@ -459,7 +479,10 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
                         </TableCell>
                         <TableCell>
                           {isTeam
-                            ? (members.map(m => m.member_whatsapp).filter(Boolean).join(" / ") || "—")
+                            ? (() => {
+                                const cap = members.find(m => m.is_captain);
+                                return cap?.member_whatsapp || members.map(m => m.member_whatsapp).filter(Boolean).join(" / ") || "—";
+                              })()
                             : (p.whatsapp || "—")}
                         </TableCell>
                         <TableCell className="max-w-[200px] truncate">{p.preferencia_horarios || "—"}</TableCell>

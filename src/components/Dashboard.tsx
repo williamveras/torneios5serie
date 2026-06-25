@@ -27,6 +27,7 @@ export default function Dashboard() {
   const [dataInicio, setDataInicio] = useState("");
   const [numeroRodadas, setNumeroRodadas] = useState("");
   const [modalidade, setModalidade] = useState<"individual" | "duplas">("individual");
+  const [maxParticipants, setMaxParticipants] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 

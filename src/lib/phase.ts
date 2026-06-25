@@ -1,21 +1,24 @@
-import { FASES } from "./constants";
+import { FASES, isSideFase } from "./constants";
 
 export interface PhaseStatusLite { fase: string; status: string; }
 
 /**
  * Public-facing "current" phase:
- * - Returns the phase immediately AFTER the last phase marked "concluida".
+ * - Returns the phase immediately AFTER the last phase marked "concluida",
+ *   pulando fases laterais (ex.: "Disputa de 3º Lugar"), que não fazem parte
+ *   do caminho principal Semifinal -> Final.
  * - If no phase concluded yet, returns "Fase de Grupos".
  * - If the last possible phase ("Final") is concluded, returns it.
  */
 export const getActivePublicPhase = (statuses: PhaseStatusLite[]): string => {
+  const mainFases = FASES.filter(f => !isSideFase(f));
   let lastConcludedIdx = -1;
-  for (let i = 0; i < FASES.length; i++) {
-    if (statuses.find(s => s.fase === FASES[i])?.status === "concluida") lastConcludedIdx = i;
+  for (let i = 0; i < mainFases.length; i++) {
+    if (statuses.find(s => s.fase === mainFases[i])?.status === "concluida") lastConcludedIdx = i;
   }
   if (lastConcludedIdx === -1) return "Fase de Grupos";
-  const nextIdx = Math.min(lastConcludedIdx + 1, FASES.length - 1);
-  return FASES[nextIdx];
+  const nextIdx = Math.min(lastConcludedIdx + 1, mainFases.length - 1);
+  return mainFases[nextIdx];
 };
 
 export const isGroupPhase = (fase: string) => fase === "Fase de Grupos";

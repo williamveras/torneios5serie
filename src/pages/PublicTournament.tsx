@@ -12,7 +12,7 @@ import PublicStandings from "@/components/public/PublicStandings";
 import PublicRegulamento from "@/components/public/PublicRegulamento";
 import PublicDraw from "@/components/public/PublicDraw";
 
-import { FASES } from "@/lib/constants";
+import { FASES, isSideFase } from "@/lib/constants";
 import { nextPhaseName } from "@/lib/qualifiers";
 import ViewModeToggle, { type ViewMode } from "@/components/public/ViewModeToggle";
 
@@ -116,6 +116,7 @@ export default function PublicTournament() {
   let latestConcluded: string | null = null;
   for (let i = FASES.length - 1; i >= 0; i--) {
     const f = FASES[i];
+    if (isSideFase(f)) continue;
     if (phaseStatuses.find(p => p.fase === f)?.status === "concluida") { latestConcluded = f; break; }
   }
   const nextFaseLabel = latestConcluded ? nextPhaseName(latestConcluded) : "";

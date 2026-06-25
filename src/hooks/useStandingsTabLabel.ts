@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { FASES } from "@/lib/constants";
+import { FASES, isSideFase } from "@/lib/constants";
 import { nextPhaseName } from "@/lib/qualifiers";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -49,10 +49,13 @@ export function useStandingsTabLabel(tournamentId: string, initial?: PhaseStatus
     };
   }, [tournamentId, initial]);
 
-  // Find the latest concluded fase (by FASES order)
+  // Find the latest concluded fase (by FASES order), ignorando fases laterais
+  // como "Disputa de 3º Lugar" para que o label do tab acompanhe o caminho
+  // principal Semifinal -> Final.
   let concludedFase: string | null = null;
   for (let i = FASES.length - 1; i >= 0; i--) {
     const f = FASES[i];
+    if (isSideFase(f)) continue;
     const s = statuses.find(p => p.fase === f);
     if (s?.status === "concluida") {
       concludedFase = f;

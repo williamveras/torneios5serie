@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Download, BarChart3, Lock, Unlock, Info } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
-import { FASES } from "@/lib/constants";
+import { FASES, isSideFase } from "@/lib/constants";
 import { computeStandings } from "@/lib/standings";
 import { computeQualifiers, nextPhaseName } from "@/lib/qualifiers";
 import QualifiersView from "@/components/QualifiersView";
@@ -666,7 +666,7 @@ export default function StandingsTab({ tournamentId }: Props) {
       )}
 
       {(() => {
-        const elimFases = FASES.filter(f => f !== "Fase de Grupos");
+        const elimFases = FASES.filter(f => f !== "Fase de Grupos" && !isSideFase(f));
         // Fase eliminatória mais avançada que já tem confrontos cadastrados.
         let activeElim: string | null = null;
         for (let i = elimFases.length - 1; i >= 0; i--) {

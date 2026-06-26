@@ -241,30 +241,6 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                 )}
               </div>
 
-            <div className="border-t pt-4 space-y-3">
-              <div>
-                <h3 className="font-semibold text-sm">Regra de classificação</h3>
-                <p className="text-xs text-muted-foreground">
-                  Define quem passa da Fase de Grupos para o mata-mata.
-                </p>
-              </div>
-
-              <div className="text-xs text-muted-foreground bg-muted/50 rounded-md p-2">
-                Inscritos no momento: <strong>{totalInscritos}</strong> · Grupos:{" "}
-                <strong>{numGrupos || "—"}</strong>
-                {numGrupos === 0 && effectiveGrupos === 0 && effectiveTotal >= 2 && (
-                  <span className="block mt-1 text-amber-700 dark:text-amber-300">
-                    Preencha <strong>Rodadas da Fase de Grupos</strong> acima para gerar sugestões automáticas
-                    (cada grupo terá <em>rodadas + 1</em> competidores).
-                  </span>
-                )}
-                {numGrupos === 0 && effectiveGrupos > 0 && (
-                  <span className="block mt-1">
-                    Sugestões baseadas no planejamento: <strong>{effectiveTotal}</strong> participantes
-                    · <strong>{effectiveGrupos}</strong> grupos estimados ({(parseInt(numeroRodadas, 10) || 0) + 1} por grupo).
-                  </span>
-                )}
-              </div>
 
               {suggestions.length > 0 && (
                 <div className="space-y-2">

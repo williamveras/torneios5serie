@@ -172,7 +172,7 @@ export default function PublicStandings({ results, players, phaseStatuses, match
     if (faseMatchups.length === 0) return null;
     const byPlayer = new Map<string, MatchResult>();
     filteredByFase.forEach(r => byPlayer.set(r.player_id, r));
-    const winners: string[] = [];
+    const qualifiedIds = new Set<string>();
     for (const m of faseMatchups) {
       const r1 = byPlayer.get(m.player1_id);
       const r2 = byPlayer.get(m.player2_id);
@@ -182,11 +182,18 @@ export default function PublicStandings({ results, players, phaseStatuses, match
       else if (r2.pontos_jogo > r1.pontos_jogo) w = m.player2_id;
       else if (r1.pontos_mesa > r2.pontos_mesa) w = m.player1_id;
       else if (r2.pontos_mesa > r1.pontos_mesa) w = m.player2_id;
-      if (w) winners.push(w);
+      if (w) qualifiedIds.add(w);
     }
-    if (winners.length === 0) return null;
+    // Quando há "Disputa de 3º Lugar" cadastrada, inclui também os jogadores
+    // dessa fase paralela na lista de classificados para a Final + 3º.
+    const thirdPlaceMatchups = matchups.filter(m => (m.fase || "") === "Disputa de 3º Lugar");
+    for (const m of thirdPlaceMatchups) {
+      if (m.player1_id) qualifiedIds.add(m.player1_id);
+      if (m.player2_id) qualifiedIds.add(m.player2_id);
+    }
+    if (qualifiedIds.size === 0) return null;
     const winnersResults = filteredByFase
-      .filter(r => winners.includes(r.player_id))
+      .filter(r => qualifiedIds.has(r.player_id))
       // Compute as a flat list, ignoring any synthetic `grupo` on elimination results.
       .map(r => ({ ...r, grupo: "" })) as MatchResult[];
     return computeQualifiers(winnersResults, getPlayerName, getPlayerNick);

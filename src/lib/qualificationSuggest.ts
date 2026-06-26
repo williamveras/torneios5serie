@@ -90,7 +90,7 @@ export function suggestQualificationRules(
       repescagemTotal: Math.min(18, numGrupos),
       totalClassificados: total,
       fitsBracket: isPow2(total),
-      note: `Regra padrão: 5 por grupo + repescagem dos 6º (total ${total})`,
+      note: `Regra padrão: 5 ${_unitP} por grupo + repescagem dos 6º colocados (total ${total} ${_unitP})`,
     });
   }
 

@@ -307,6 +307,9 @@ export default function PublicSchedule({ schedules, players, matchups, results =
                             {it.fase === SIDE_FASE_3RD && (
                               <span className="ml-2 text-xs font-medium text-amber-700 dark:text-amber-300">— Disputa de 3º Lugar</span>
                             )}
+                            {it.fase === "Final" && (
+                              <span className="ml-2 text-xs font-semibold text-amber-700 dark:text-amber-300">— grande final!</span>
+                            )}
                           </span>
                         </h3>
                         <div className={`text-sm font-medium tabular-nums mt-1 ${scrollLine}`}>

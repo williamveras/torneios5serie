@@ -67,9 +67,16 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
     });
   }, [open, tournamentId]);
 
+  // Termos adaptados conforme modalidade (individual vs duplas).
+  // Em torneios de duplas, cada "competidor" é uma dupla — uma dupla joga uma partida.
+  const isDuplas = modalidade === "duplas";
+  const termSing = isDuplas ? "dupla" : "jogador";
+  const termPlur = isDuplas ? "duplas" : "jogadores";
+  const termPlurCap = isDuplas ? "Duplas" : "Jogadores";
+
   // Para sugestões: se ainda não há inscritos, usa o limite planejado (max_participants)
   // e deriva o número de grupos a partir das rodadas configuradas
-  // (numero_rodadas + 1 = jogadores por grupo, num round-robin).
+  // (numero_rodadas + 1 = competidores por grupo, num round-robin).
   const effectiveTotal = useMemo(() => {
     if (totalInscritos > 0) return totalInscritos;
     const mx = parseInt(maxParticipants, 10);
@@ -83,8 +90,8 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
     return Math.max(1, Math.floor(effectiveTotal / perGroup));
   }, [numGrupos, numeroRodadas, effectiveTotal]);
   const suggestions = useMemo(
-    () => suggestQualificationRules(effectiveTotal, effectiveGrupos),
-    [effectiveTotal, effectiveGrupos],
+    () => suggestQualificationRules(effectiveTotal, effectiveGrupos, { unitSingular: termSing, unitPlural: termPlur }),
+    [effectiveTotal, effectiveGrupos, termSing, termPlur],
   );
 
   const previewTotal = useMemo(() => {

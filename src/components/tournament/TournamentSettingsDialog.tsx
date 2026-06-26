@@ -268,7 +268,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>Classificados direto por grupo</Label>
+                  <Label>{isDuplas ? "Duplas classificadas direto por grupo" : "Classificados direto por grupo"}</Label>
                   <Input
                     type="number"
                     min={1}

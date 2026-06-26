@@ -75,7 +75,7 @@ export function suggestQualificationRules(
         repescagemTotal: r,
         totalClassificados: target,
         fitsBracket: true,
-        note: `${k} por grupo + ${r} melhores ${k + 1}º = ${target} (fecha em ${target})`,
+        note: `${k} ${k === 1 ? _unitS : _unitP} por grupo + ${r} melhores ${k + 1}º colocados = ${target} ${_unitP} (fecha em ${target})`,
       });
     }
   }

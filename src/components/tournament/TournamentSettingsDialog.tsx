@@ -200,19 +200,46 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                 )}
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label>Limite de participantes (opcional)</Label>
+                <Label>Limite de {termPlur} participantes (opcional)</Label>
                 <Input
                   type="number"
                   min={2}
                   value={maxParticipants}
                   onChange={e => setMaxParticipants(e.target.value)}
-                  placeholder="Ex: 128"
+                  placeholder={isDuplas ? "Ex: 64" : "Ex: 128"}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Se definido, novas inscrições serão bloqueadas ao atingir esse número. Atualmente cadastrados: <strong>{totalInscritos}</strong>.
+                  {isDuplas
+                    ? <>Em torneios de duplas, cada dupla conta como <strong>1 participante</strong> (joga 1 partida por rodada). Se definido, novas inscrições serão bloqueadas ao atingir esse número. Atualmente cadastradas: <strong>{totalInscritos}</strong> {totalInscritos === 1 ? "dupla" : "duplas"}.</>
+                    : <>Se definido, novas inscrições serão bloqueadas ao atingir esse número. Atualmente cadastrados: <strong>{totalInscritos}</strong>.</>}
                 </p>
               </div>
             </div>
+
+            <div className="border-t pt-4 space-y-3">
+              <div>
+                <h3 className="font-semibold text-sm">Regra de classificação</h3>
+                <p className="text-xs text-muted-foreground">
+                  Define quais {termPlur} passam da Fase de Grupos para o mata-mata.
+                </p>
+              </div>
+
+              <div className="text-xs text-muted-foreground bg-muted/50 rounded-md p-2">
+                {termPlurCap} inscrit{isDuplas ? "as" : "os"} no momento: <strong>{totalInscritos}</strong> · Grupos:{" "}
+                <strong>{numGrupos || "—"}</strong>
+                {numGrupos === 0 && effectiveGrupos === 0 && effectiveTotal >= 2 && (
+                  <span className="block mt-1 text-amber-700 dark:text-amber-300">
+                    Preencha <strong>Rodadas da Fase de Grupos</strong> acima para gerar sugestões automáticas
+                    (cada grupo terá <em>rodadas + 1</em> {termPlur}).
+                  </span>
+                )}
+                {numGrupos === 0 && effectiveGrupos > 0 && (
+                  <span className="block mt-1">
+                    Sugestões baseadas no planejamento: <strong>{effectiveTotal}</strong> {termPlur}
+                    · <strong>{effectiveGrupos}</strong> grupos estimados ({(parseInt(numeroRodadas, 10) || 0) + 1} {termPlur} por grupo).
+                  </span>
+                )}
+              </div>
 
             <div className="border-t pt-4 space-y-3">
               <div>

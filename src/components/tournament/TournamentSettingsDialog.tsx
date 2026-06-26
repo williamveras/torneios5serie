@@ -218,10 +218,16 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
               <div className="text-xs text-muted-foreground bg-muted/50 rounded-md p-2">
                 Inscritos no momento: <strong>{totalInscritos}</strong> · Grupos:{" "}
                 <strong>{numGrupos || "—"}</strong>
-                {totalInscritos === 0 && effectiveTotal > 0 && (
+                {numGrupos === 0 && effectiveGrupos === 0 && effectiveTotal >= 2 && (
+                  <span className="block mt-1 text-amber-700 dark:text-amber-300">
+                    Preencha <strong>Rodadas da Fase de Grupos</strong> acima para gerar sugestões automáticas
+                    (cada grupo terá <em>rodadas + 1</em> competidores).
+                  </span>
+                )}
+                {numGrupos === 0 && effectiveGrupos > 0 && (
                   <span className="block mt-1">
                     Sugestões baseadas no planejamento: <strong>{effectiveTotal}</strong> participantes
-                    {effectiveGrupos > 0 && <> · <strong>{effectiveGrupos}</strong> grupos estimados</>}.
+                    · <strong>{effectiveGrupos}</strong> grupos estimados ({(parseInt(numeroRodadas, 10) || 0) + 1} por grupo).
                   </span>
                 )}
               </div>

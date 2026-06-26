@@ -67,9 +67,24 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
     });
   }, [open, tournamentId]);
 
+  // Para sugestões: se ainda não há inscritos, usa o limite planejado (max_participants)
+  // e deriva o número de grupos a partir das rodadas configuradas
+  // (numero_rodadas + 1 = jogadores por grupo, num round-robin).
+  const effectiveTotal = useMemo(() => {
+    if (totalInscritos > 0) return totalInscritos;
+    const mx = parseInt(maxParticipants, 10);
+    return Number.isFinite(mx) && mx > 0 ? mx : 0;
+  }, [totalInscritos, maxParticipants]);
+  const effectiveGrupos = useMemo(() => {
+    if (numGrupos > 0) return numGrupos;
+    const nr = parseInt(numeroRodadas, 10);
+    if (!Number.isFinite(nr) || nr < 1 || effectiveTotal < 2) return 0;
+    const perGroup = nr + 1;
+    return Math.max(1, Math.floor(effectiveTotal / perGroup));
+  }, [numGrupos, numeroRodadas, effectiveTotal]);
   const suggestions = useMemo(
-    () => suggestQualificationRules(totalInscritos, numGrupos),
-    [totalInscritos, numGrupos],
+    () => suggestQualificationRules(effectiveTotal, effectiveGrupos),
+    [effectiveTotal, effectiveGrupos],
   );
 
   const previewTotal = useMemo(() => {

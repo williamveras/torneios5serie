@@ -272,6 +272,9 @@ export default function PublicSchedule({ schedules, players, matchups, results =
                           </TableCell>
                           <TableCell className={`font-medium ${noWrapText}`}>
                             {displayName(playerMap.get(it.player1_id))} x {displayName(playerMap.get(it.player2_id))}
+                            {it.fase === "Final" && (
+                              <span className="ml-2 text-xs font-semibold text-amber-700 dark:text-amber-300">— grande final!</span>
+                            )}
                           </TableCell>
                           <TableCell className="tabular-nums whitespace-nowrap">
                             {it.schedule?.horario ? it.schedule.horario.slice(0, 5) : (it.schedule?.observacao || "A definir")}
@@ -303,6 +306,9 @@ export default function PublicSchedule({ schedules, players, matchups, results =
                             <span className="text-muted-foreground font-normal text-sm">{keepTogether(`(mesa ${it.mesa})`)}</span>
                             {it.fase === SIDE_FASE_3RD && (
                               <span className="ml-2 text-xs font-medium text-amber-700 dark:text-amber-300">— Disputa de 3º Lugar</span>
+                            )}
+                            {it.fase === "Final" && (
+                              <span className="ml-2 text-xs font-semibold text-amber-700 dark:text-amber-300">— grande final!</span>
                             )}
                           </span>
                         </h3>

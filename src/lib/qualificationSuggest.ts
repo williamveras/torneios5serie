@@ -29,7 +29,10 @@ const prevPow2 = (n: number) => {
 export function suggestQualificationRules(
   totalInscritos: number,
   numGrupos: number,
+  opts?: { unitSingular?: string; unitPlural?: string },
 ): QualificationSuggestion[] {
+  const _unitS = opts?.unitSingular ?? "jogador";
+  const _unitP = opts?.unitPlural ?? "jogadores";
   if (!Number.isFinite(totalInscritos) || !Number.isFinite(numGrupos)) return [];
   if (totalInscritos < 2 || numGrupos < 1) return [];
 

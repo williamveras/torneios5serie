@@ -240,7 +240,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
     }
     const finalGrupo = inGroupPhase
       ? (grupo || players.find(p => p.id === player1)?.grupo || "")
-      : activePhase;
+      : (grupo || activePhase);
     if (!finalGrupo) {
       toast.error("Selecione o grupo ou defina os grupos dos jogadores.");
       return;

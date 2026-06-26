@@ -67,19 +67,34 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
     });
   }, [open, tournamentId]);
 
+  // Para sugestões: se ainda não há inscritos, usa o limite planejado (max_participants)
+  // e deriva o número de grupos a partir das rodadas configuradas
+  // (numero_rodadas + 1 = jogadores por grupo, num round-robin).
+  const effectiveTotal = useMemo(() => {
+    if (totalInscritos > 0) return totalInscritos;
+    const mx = parseInt(maxParticipants, 10);
+    return Number.isFinite(mx) && mx > 0 ? mx : 0;
+  }, [totalInscritos, maxParticipants]);
+  const effectiveGrupos = useMemo(() => {
+    if (numGrupos > 0) return numGrupos;
+    const nr = parseInt(numeroRodadas, 10);
+    if (!Number.isFinite(nr) || nr < 1 || effectiveTotal < 2) return 0;
+    const perGroup = nr + 1;
+    return Math.max(1, Math.floor(effectiveTotal / perGroup));
+  }, [numGrupos, numeroRodadas, effectiveTotal]);
   const suggestions = useMemo(
-    () => suggestQualificationRules(totalInscritos, numGrupos),
-    [totalInscritos, numGrupos],
+    () => suggestQualificationRules(effectiveTotal, effectiveGrupos),
+    [effectiveTotal, effectiveGrupos],
   );
 
   const previewTotal = useMemo(() => {
     const k = parseInt(directPerGroup, 10);
     const r = parseInt(repescagemTotal, 10);
-    if (!Number.isFinite(k) || !numGrupos) return null;
-    const base = k * numGrupos;
+    if (!Number.isFinite(k) || !effectiveGrupos) return null;
+    const base = k * effectiveGrupos;
     const rep = repescagemEnabled && Number.isFinite(r) ? r : 0;
     return base + rep;
-  }, [directPerGroup, repescagemTotal, repescagemEnabled, numGrupos]);
+  }, [directPerGroup, repescagemTotal, repescagemEnabled, effectiveGrupos]);
 
   const applySuggestion = (s: typeof suggestions[number]) => {
     setDirectPerGroup(s.directPerGroup.toString());
@@ -203,6 +218,12 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
               <div className="text-xs text-muted-foreground bg-muted/50 rounded-md p-2">
                 Inscritos no momento: <strong>{totalInscritos}</strong> · Grupos:{" "}
                 <strong>{numGrupos || "—"}</strong>
+                {totalInscritos === 0 && effectiveTotal > 0 && (
+                  <span className="block mt-1">
+                    Sugestões baseadas no planejamento: <strong>{effectiveTotal}</strong> participantes
+                    {effectiveGrupos > 0 && <> · <strong>{effectiveGrupos}</strong> grupos estimados</>}.
+                  </span>
+                )}
               </div>
 
               {suggestions.length > 0 && (

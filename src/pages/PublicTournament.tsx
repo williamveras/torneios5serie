@@ -120,7 +120,8 @@ export default function PublicTournament() {
     if (phaseStatuses.find(p => p.fase === f)?.status === "concluida") { latestConcluded = f; break; }
   }
   const nextFaseLabel = latestConcluded ? nextPhaseName(latestConcluded) : "";
-  const standingsTabLabel = latestConcluded && nextFaseLabel ? `Classificados (${nextFaseLabel})` : "Classificação";
+  const nextFaseDisplay = nextFaseLabel === "Final" ? "grande final e disputa de terceiro" : nextFaseLabel;
+  const standingsTabLabel = latestConcluded && nextFaseLabel ? `Classificados (${nextFaseDisplay})` : "Classificação";
 
   // Sorteio tab temporariamente desabilitado.
   const showDrawTab = false;

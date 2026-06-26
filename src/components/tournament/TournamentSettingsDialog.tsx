@@ -90,11 +90,11 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
   const previewTotal = useMemo(() => {
     const k = parseInt(directPerGroup, 10);
     const r = parseInt(repescagemTotal, 10);
-    if (!Number.isFinite(k) || !numGrupos) return null;
-    const base = k * numGrupos;
+    if (!Number.isFinite(k) || !effectiveGrupos) return null;
+    const base = k * effectiveGrupos;
     const rep = repescagemEnabled && Number.isFinite(r) ? r : 0;
     return base + rep;
-  }, [directPerGroup, repescagemTotal, repescagemEnabled, numGrupos]);
+  }, [directPerGroup, repescagemTotal, repescagemEnabled, effectiveGrupos]);
 
   const applySuggestion = (s: typeof suggestions[number]) => {
     setDirectPerGroup(s.directPerGroup.toString());

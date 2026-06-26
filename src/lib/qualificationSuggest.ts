@@ -58,7 +58,7 @@ export function suggestQualificationRules(
         repescagemTotal: 0,
         totalClassificados: total,
         fitsBracket: true,
-        note: `${k} por grupo × ${numGrupos} grupos = ${total} (fecha em ${total})`,
+        note: `${k} ${k === 1 ? _unitS : _unitP} por grupo × ${numGrupos} grupos = ${total} ${_unitP} (fecha em ${total})`,
       });
     }
   }

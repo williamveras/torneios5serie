@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, Loader2, Users, Crown } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, Users, Crown, ExternalLink } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
 const HORARIO_OPTIONS = ["Manhã", "Tarde", "Noite", "Qualquer horário"] as const;
@@ -163,15 +163,25 @@ export default function PublicRegistration() {
   }
 
   if (done) {
+    const publicUrl = `${window.location.origin}/p/${link?.tournament_id}`;
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-muted/30">
         <Card className="max-w-md w-full">
-          <CardContent className="py-10 text-center space-y-3">
+          <CardContent className="py-10 text-center space-y-4">
             <CheckCircle2 className="h-12 w-12 text-primary mx-auto" />
             <h1 className="text-xl font-semibold">Inscrição enviada!</h1>
             <p className="text-muted-foreground">
               Sua inscrição em <strong>{link?.tournament_name}</strong> foi recebida com sucesso.
             </p>
+            <a
+              href={publicUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Acompanhar torneio
+            </a>
           </CardContent>
         </Card>
       </div>

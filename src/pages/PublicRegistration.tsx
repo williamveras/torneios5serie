@@ -205,11 +205,12 @@ export default function PublicRegistration() {
               {isDuplas ? (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="teamName">Nome da dupla (opcional)</Label>
+                    <Label htmlFor="teamName">Nome da equipe *</Label>
                     <Input
                       id="teamName"
                       value={teamName}
                       onChange={(e) => setTeamName(e.target.value)}
+                      required
                       maxLength={200}
                     />
                   </div>

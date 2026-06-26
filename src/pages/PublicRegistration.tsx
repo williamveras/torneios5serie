@@ -92,6 +92,7 @@ export default function PublicRegistration() {
     const horariosStr = horarios.join(", ") || null;
 
     if (isDuplas) {
+      if (!teamName.trim()) { toast.error("Informe o nome da equipe"); setSubmitting(false); return; }
       if (!p1Nome.trim() || !p2Nome.trim()) { toast.error("Informe o nome completo dos dois jogadores"); setSubmitting(false); return; }
       if (!p1Email.trim() || !p2Email.trim()) { toast.error("Informe o e-mail dos dois jogadores"); setSubmitting(false); return; }
       const res = await (supabase as any).rpc("register_team_via_token", {
@@ -205,11 +206,12 @@ export default function PublicRegistration() {
               {isDuplas ? (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="teamName">Nome da dupla (opcional)</Label>
+                    <Label htmlFor="teamName">Nome da equipe *</Label>
                     <Input
                       id="teamName"
                       value={teamName}
                       onChange={(e) => setTeamName(e.target.value)}
+                      required
                       maxLength={200}
                     />
                   </div>

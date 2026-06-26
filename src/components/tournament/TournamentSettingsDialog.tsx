@@ -311,7 +311,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                     <AlertTriangle className="h-4 w-4" />
                   )}
                   <AlertDescription>
-                    Total de classificados:{" "}
+                    Total de {isDuplas ? "duplas classificadas" : "classificados"}:{" "}
                     <strong>{previewTotal}</strong>{" "}
                     {isPow2(previewTotal)
                       ? "— fecha exatamente num bracket de mata-mata."

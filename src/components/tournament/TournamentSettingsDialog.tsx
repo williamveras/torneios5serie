@@ -291,7 +291,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                 </div>
                 {repescagemEnabled && (
                   <div className="space-y-1.5 sm:col-span-2">
-                    <Label>Quantos melhores entram na repescagem</Label>
+                    <Label>{isDuplas ? "Quantas melhores duplas entram na repescagem" : "Quantos melhores entram na repescagem"}</Label>
                     <Input
                       type="number"
                       min={0}

@@ -92,9 +92,25 @@ export default function PublicSchedule({ schedules, players, matchups, results =
       const map = fase === SIDE_FASE_3RD ? mesaMap3rd : mesaMap;
       for (const mu of phaseMatchups) {
         const mesa = map.get(pairKey(mu.player1_id, mu.player2_id)) ?? 9999;
-        const sched = schedules.find(s =>
-          pairKey(s.player1_id, s.player2_id) === pairKey(mu.player1_id, mu.player2_id)
-        ) || null;
+        const matchupPairKey = pairKey(mu.player1_id, mu.player2_id);
+        const sched = schedules
+          .filter(s => pairKey(s.player1_id, s.player2_id) === matchupPairKey)
+          .slice()
+          .sort((a, b) => {
+            const priority = (s: Schedule) => {
+              if (s.grupo === fase) return 0;
+              if (s.grupo === mu.grupo) return 1;
+              // Compatibilidade com agendamentos de disputa de 3º lugar que
+              // foram salvos como "Final" antes da fase lateral existir.
+              if (fase === SIDE_FASE_3RD && activeFase === "Final" && s.grupo === activeFase) return 2;
+              if (!/^\d+$/.test(s.grupo)) return 3;
+              return 4;
+            };
+            const pa = priority(a);
+            const pb = priority(b);
+            if (pa !== pb) return pa - pb;
+            return (b.created_at || "").localeCompare(a.created_at || "");
+          })[0] || null;
         items.push({ mesa, fase, player1_id: mu.player1_id, player2_id: mu.player2_id, schedule: sched });
       }
     }

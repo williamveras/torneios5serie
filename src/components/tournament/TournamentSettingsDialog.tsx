@@ -67,9 +67,16 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
     });
   }, [open, tournamentId]);
 
+  // Termos adaptados conforme modalidade (individual vs duplas).
+  // Em torneios de duplas, cada "competidor" é uma dupla — uma dupla joga uma partida.
+  const isDuplas = modalidade === "duplas";
+  const termSing = isDuplas ? "dupla" : "jogador";
+  const termPlur = isDuplas ? "duplas" : "jogadores";
+  const termPlurCap = isDuplas ? "Duplas" : "Jogadores";
+
   // Para sugestões: se ainda não há inscritos, usa o limite planejado (max_participants)
   // e deriva o número de grupos a partir das rodadas configuradas
-  // (numero_rodadas + 1 = jogadores por grupo, num round-robin).
+  // (numero_rodadas + 1 = competidores por grupo, num round-robin).
   const effectiveTotal = useMemo(() => {
     if (totalInscritos > 0) return totalInscritos;
     const mx = parseInt(maxParticipants, 10);
@@ -83,8 +90,8 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
     return Math.max(1, Math.floor(effectiveTotal / perGroup));
   }, [numGrupos, numeroRodadas, effectiveTotal]);
   const suggestions = useMemo(
-    () => suggestQualificationRules(effectiveTotal, effectiveGrupos),
-    [effectiveTotal, effectiveGrupos],
+    () => suggestQualificationRules(effectiveTotal, effectiveGrupos, { unitSingular: termSing, unitPlural: termPlur }),
+    [effectiveTotal, effectiveGrupos, termSing, termPlur],
   );
 
   const previewTotal = useMemo(() => {
@@ -193,16 +200,18 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                 )}
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label>Limite de participantes (opcional)</Label>
+                <Label>Limite de {termPlur} participantes (opcional)</Label>
                 <Input
                   type="number"
                   min={2}
                   value={maxParticipants}
                   onChange={e => setMaxParticipants(e.target.value)}
-                  placeholder="Ex: 128"
+                  placeholder={isDuplas ? "Ex: 64" : "Ex: 128"}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Se definido, novas inscrições serão bloqueadas ao atingir esse número. Atualmente cadastrados: <strong>{totalInscritos}</strong>.
+                  {isDuplas
+                    ? <>Em torneios de duplas, cada dupla conta como <strong>1 participante</strong> (joga 1 partida por rodada). Se definido, novas inscrições serão bloqueadas ao atingir esse número. Atualmente cadastradas: <strong>{totalInscritos}</strong> {totalInscritos === 1 ? "dupla" : "duplas"}.</>
+                    : <>Se definido, novas inscrições serão bloqueadas ao atingir esse número. Atualmente cadastrados: <strong>{totalInscritos}</strong>.</>}
                 </p>
               </div>
             </div>
@@ -211,26 +220,27 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
               <div>
                 <h3 className="font-semibold text-sm">Regra de classificação</h3>
                 <p className="text-xs text-muted-foreground">
-                  Define quem passa da Fase de Grupos para o mata-mata.
+                  Define quais {termPlur} passam da Fase de Grupos para o mata-mata.
                 </p>
               </div>
 
               <div className="text-xs text-muted-foreground bg-muted/50 rounded-md p-2">
-                Inscritos no momento: <strong>{totalInscritos}</strong> · Grupos:{" "}
+                {termPlurCap} inscrit{isDuplas ? "as" : "os"} no momento: <strong>{totalInscritos}</strong> · Grupos:{" "}
                 <strong>{numGrupos || "—"}</strong>
                 {numGrupos === 0 && effectiveGrupos === 0 && effectiveTotal >= 2 && (
                   <span className="block mt-1 text-amber-700 dark:text-amber-300">
                     Preencha <strong>Rodadas da Fase de Grupos</strong> acima para gerar sugestões automáticas
-                    (cada grupo terá <em>rodadas + 1</em> competidores).
+                    (cada grupo terá <em>rodadas + 1</em> {termPlur}).
                   </span>
                 )}
                 {numGrupos === 0 && effectiveGrupos > 0 && (
                   <span className="block mt-1">
-                    Sugestões baseadas no planejamento: <strong>{effectiveTotal}</strong> participantes
-                    · <strong>{effectiveGrupos}</strong> grupos estimados ({(parseInt(numeroRodadas, 10) || 0) + 1} por grupo).
+                    Sugestões baseadas no planejamento: <strong>{effectiveTotal}</strong> {termPlur}
+                    · <strong>{effectiveGrupos}</strong> grupos estimados ({(parseInt(numeroRodadas, 10) || 0) + 1} {termPlur} por grupo).
                   </span>
                 )}
               </div>
+
 
               {suggestions.length > 0 && (
                 <div className="space-y-2">
@@ -258,7 +268,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>Classificados direto por grupo</Label>
+                  <Label>{isDuplas ? "Duplas classificadas direto por grupo" : "Classificados direto por grupo"}</Label>
                   <Input
                     type="number"
                     min={1}
@@ -281,7 +291,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                 </div>
                 {repescagemEnabled && (
                   <div className="space-y-1.5 sm:col-span-2">
-                    <Label>Quantos melhores entram na repescagem</Label>
+                    <Label>{isDuplas ? "Quantas melhores duplas entram na repescagem" : "Quantos melhores entram na repescagem"}</Label>
                     <Input
                       type="number"
                       min={0}
@@ -301,7 +311,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                     <AlertTriangle className="h-4 w-4" />
                   )}
                   <AlertDescription>
-                    Total de classificados:{" "}
+                    Total de {isDuplas ? "duplas classificadas" : "classificados"}:{" "}
                     <strong>{previewTotal}</strong>{" "}
                     {isPow2(previewTotal)
                       ? "— fecha exatamente num bracket de mata-mata."

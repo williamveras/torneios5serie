@@ -29,7 +29,10 @@ const prevPow2 = (n: number) => {
 export function suggestQualificationRules(
   totalInscritos: number,
   numGrupos: number,
+  opts?: { unitSingular?: string; unitPlural?: string },
 ): QualificationSuggestion[] {
+  const _unitS = opts?.unitSingular ?? "jogador";
+  const _unitP = opts?.unitPlural ?? "jogadores";
   if (!Number.isFinite(totalInscritos) || !Number.isFinite(numGrupos)) return [];
   if (totalInscritos < 2 || numGrupos < 1) return [];
 
@@ -55,7 +58,7 @@ export function suggestQualificationRules(
         repescagemTotal: 0,
         totalClassificados: total,
         fitsBracket: true,
-        note: `${k} por grupo × ${numGrupos} grupos = ${total} (fecha em ${total})`,
+        note: `${k} ${k === 1 ? _unitS : _unitP} por grupo × ${numGrupos} grupos = ${total} ${_unitP} (fecha em ${total})`,
       });
     }
   }
@@ -72,7 +75,7 @@ export function suggestQualificationRules(
         repescagemTotal: r,
         totalClassificados: target,
         fitsBracket: true,
-        note: `${k} por grupo + ${r} melhores ${k + 1}º = ${target} (fecha em ${target})`,
+        note: `${k} ${k === 1 ? _unitS : _unitP} por grupo + ${r} melhores ${k + 1}º colocados = ${target} ${_unitP} (fecha em ${target})`,
       });
     }
   }
@@ -87,7 +90,7 @@ export function suggestQualificationRules(
       repescagemTotal: Math.min(18, numGrupos),
       totalClassificados: total,
       fitsBracket: isPow2(total),
-      note: `Regra padrão: 5 por grupo + repescagem dos 6º (total ${total})`,
+      note: `Regra padrão: 5 ${_unitP} por grupo + repescagem dos 6º colocados (total ${total} ${_unitP})`,
     });
   }
 

@@ -240,7 +240,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
     }
     const finalGrupo = inGroupPhase
       ? (grupo || players.find(p => p.id === player1)?.grupo || "")
-      : activePhase;
+      : (grupo || activePhase);
     if (!finalGrupo) {
       toast.error("Selecione o grupo ou defina os grupos dos jogadores.");
       return;
@@ -392,7 +392,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
       if (currentRound != null && s.rodada !== currentRound) return false;
       return true;
     }
-    return s.grupo === activePhase;
+    return s.grupo === activePhase || (activePhase === "Final" && s.grupo === "Disputa de 3º Lugar");
   });
 
   // Group schedules by round → date → grupo.

@@ -605,7 +605,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
                             variant="outline"
                             size="sm"
                             className="h-7"
-                            onClick={() => onScheduleMatchup(m.player1_id, m.player2_id, m.grupo)}
+                            onClick={() => onScheduleMatchup(m.player1_id, m.player2_id, m.fase || f)}
                           >
                             <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Agendar partida
                           </Button>

@@ -54,20 +54,22 @@ export default function PublicTournament() {
   useEffect(() => {
     if (!tournamentId) return;
     let cancelled = false;
-    setLoading(true);
 
-    Promise.all([
-      supabase.from("tournaments").select("*").eq("id", tournamentId).maybeSingle(),
-      (supabase as any).rpc("get_players_public", { _tournament_id: tournamentId }),
-      fetchAllMatchResults(tournamentId).then(data => ({ data })),
-      supabase.from("match_schedule").select("*").eq("tournament_id", tournamentId),
-      supabase.from("phase_status").select("*").eq("tournament_id", tournamentId),
-      (supabase as any).rpc("get_moderators_public", { _tournament_id: tournamentId }),
-      supabase.from("matchups").select("*").eq("tournament_id", tournamentId),
-      supabase.from("scheduled_draws").select("*").eq("tournament_id", tournamentId),
-    ]).then(([t, p, r, s, ps, m, mu, sd]) => {
+    const loadData = async (showLoading = false) => {
+      if (showLoading) setLoading(true);
+      const [t, p, r, s, ps, m, mu, sd] = await Promise.all([
+        supabase.from("tournaments").select("*").eq("id", tournamentId).maybeSingle(),
+        (supabase as any).rpc("get_players_public", { _tournament_id: tournamentId }),
+        fetchAllMatchResults(tournamentId).then(data => ({ data })),
+        supabase.from("match_schedule").select("*").eq("tournament_id", tournamentId),
+        supabase.from("phase_status").select("*").eq("tournament_id", tournamentId),
+        (supabase as any).rpc("get_moderators_public", { _tournament_id: tournamentId }),
+        supabase.from("matchups").select("*").eq("tournament_id", tournamentId),
+        supabase.from("scheduled_draws").select("*").eq("tournament_id", tournamentId),
+      ]);
       if (cancelled) return;
       if (!t.data) { setNotFound(true); setLoading(false); return; }
+      setNotFound(false);
       setTournament(t.data);
       setPlayers(((p.data as unknown) as PlayerLite[]) || []);
       setResults(r.data || []);
@@ -77,9 +79,23 @@ export default function PublicTournament() {
       setMatchups(mu.data || []);
       setScheduledDraws(sd.data || []);
       setLoading(false);
-    });
+    };
 
-    return () => { cancelled = true; };
+    loadData(true);
+
+    const refresh = () => loadData(false);
+    const channel = supabase
+      .channel(`public_tournament_${tournamentId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "match_schedule", filter: `tournament_id=eq.${tournamentId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "matchups", filter: `tournament_id=eq.${tournamentId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "phase_status", filter: `tournament_id=eq.${tournamentId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "match_results", filter: `tournament_id=eq.${tournamentId}` }, refresh)
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
   }, [tournamentId]);
 
   useEffect(() => {

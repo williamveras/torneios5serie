@@ -218,6 +218,12 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
               <div className="text-xs text-muted-foreground bg-muted/50 rounded-md p-2">
                 Inscritos no momento: <strong>{totalInscritos}</strong> · Grupos:{" "}
                 <strong>{numGrupos || "—"}</strong>
+                {totalInscritos === 0 && effectiveTotal > 0 && (
+                  <span className="block mt-1">
+                    Sugestões baseadas no planejamento: <strong>{effectiveTotal}</strong> participantes
+                    {effectiveGrupos > 0 && <> · <strong>{effectiveGrupos}</strong> grupos estimados</>}.
+                  </span>
+                )}
               </div>
 
               {suggestions.length > 0 && (

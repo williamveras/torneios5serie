@@ -217,6 +217,22 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                     : <>Se definido, novas inscrições serão bloqueadas ao atingir esse número. Atualmente cadastrados: <strong>{totalInscritos}</strong>.</>}
                 </p>
               </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>Regra de pontuação de mesa</Label>
+                <Select
+                  value={lowerScoreWins ? "lower" : "higher"}
+                  onValueChange={(v) => setLowerScoreWins(v === "lower")}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="higher">Maior pontuação vence (padrão)</SelectItem>
+                    <SelectItem value="lower">Menor pontuação vence</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Define como interpretar os pontos de mesa para determinar o vencedor e o desempate. Quando "menor vence", o importador de resultados também passa a marcar como vencedor o de menor pontuação.
+                </p>
+              </div>
             </div>
 
             <div className="border-t pt-4 space-y-3">

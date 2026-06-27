@@ -420,8 +420,10 @@ export default function StandingsTab({ tournamentId }: Props) {
         let winner: string | null = null;
         if (r1.pontos_jogo > r2.pontos_jogo) winner = m.player1_id;
         else if (r2.pontos_jogo > r1.pontos_jogo) winner = m.player2_id;
-        else if (r1.pontos_mesa > r2.pontos_mesa) winner = m.player1_id;
-        else if (r2.pontos_mesa > r1.pontos_mesa) winner = m.player2_id;
+        else if (r1.pontos_mesa !== r2.pontos_mesa) {
+          if (lowerWins) winner = r1.pontos_mesa < r2.pontos_mesa ? m.player1_id : m.player2_id;
+          else winner = r1.pontos_mesa > r2.pontos_mesa ? m.player1_id : m.player2_id;
+        }
         if (winner) winners.push(winner);
       }
       for (let i = 0; i + 1 < winners.length; i += 2) {

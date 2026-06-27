@@ -25,7 +25,9 @@ interface PlayerLite {
   nome_completo: string;
   nick_playroom: string | null;
   grupo?: string | null;
+  is_team?: boolean | null;
 }
+
 
 // Normaliza removendo qualquer caractere não alfanumérico (espaços, pontuação,
 // caracteres invisíveis como ZWSP/NBSP, vírgulas grudadas em nicks, etc.) +
@@ -44,7 +46,10 @@ function candidatesFor(name: string, pool: PlayerLite[]): PlayerLite[] {
   const n = norm(name);
   if (!n) return [];
 
-  const exactNick = pool.filter((p) => norm(p.nick_playroom || "") === n);
+  // Para duplas, ignoramos o nick composto ("nick1 / nick2") e comparamos só pelo nome da equipe.
+  const nickOf = (p: PlayerLite) => (p.is_team ? "" : norm(p.nick_playroom || ""));
+
+  const exactNick = pool.filter((p) => !p.is_team && nickOf(p) === n);
   if (exactNick.length > 0) return exactNick;
 
   const exactName = pool.filter((p) => norm(p.nome_completo) === n);
@@ -53,7 +58,7 @@ function candidatesFor(name: string, pool: PlayerLite[]): PlayerLite[] {
   if (n.length < 3) return [];
 
   const partial = pool.filter((p) => {
-    const nick = norm(p.nick_playroom || "");
+    const nick = nickOf(p);
     const nome = norm(p.nome_completo);
     return (
       (nick.length > 0 && (nick.includes(n) || n.includes(nick))) ||
@@ -62,6 +67,7 @@ function candidatesFor(name: string, pool: PlayerLite[]): PlayerLite[] {
   });
   return partial;
 }
+
 
 function parseScoreLine(line: string): { name: string; score: number } | null {
   const m = line.match(/^\s*(.+?)\s*[:\-–]\s*(-?\d+)\s*\.?\s*$/);
@@ -194,7 +200,7 @@ export function parseResultsText(text: string, players: PlayerLite[]): ParsedRes
       players: resolved.map((r, i) => ({
         rawName: r.raw,
         playerId: r.player?.id,
-        playerName: r.player ? (r.player.nick_playroom || r.player.nome_completo) : r.raw,
+        playerName: r.player ? (r.player.is_team ? r.player.nome_completo : (r.player.nick_playroom || r.player.nome_completo)) : r.raw,
         pontosMesa: r.score,
         pontosJogo: winnerIdx === i ? 3 : 0,
       })),

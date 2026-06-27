@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "sonner";
 import { FASES } from "@/lib/constants";
 import { isGroupPhase, buildMesaMap, pairKey, type MatchupLite } from "@/lib/phase";
-import { parseResultsText, type ParsedResult } from "@/lib/resultsParser";
+import { parseResultsText, type ParsedResult, type TeamMemberLite } from "@/lib/resultsParser";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Player = Tables<"players">;

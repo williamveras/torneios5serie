@@ -1,0 +1,1 @@
+ALTER TABLE public.tournaments ADD COLUMN IF NOT EXISTS lower_score_wins boolean NOT NULL DEFAULT false;

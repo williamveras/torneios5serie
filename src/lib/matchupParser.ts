@@ -44,12 +44,16 @@ function findPlayerInGroup(name: string, pool: PlayerLite[]): FindResult {
   const n = norm(name);
   if (!n) return {};
 
-  // 1) Igualdade exata por nick
-  const exactNick = pool.filter((p) => norm(p.nick_playroom || "") === n);
+  // Para duplas, o "nick" cadastrado é composto ("nick1 / nick2") e não deve
+  // ser comparado diretamente — usamos somente o nome da equipe (nome_completo).
+  const nickOf = (p: PlayerLite) => (p.is_team ? "" : norm(p.nick_playroom || ""));
+
+  // 1) Igualdade exata por nick (apenas individuais)
+  const exactNick = pool.filter((p) => !p.is_team && nickOf(p) === n);
   if (exactNick.length === 1) return { player: exactNick[0] };
   if (exactNick.length > 1) return { error: `Vários jogadores com nick "${name}" no grupo` };
 
-  // 2) Igualdade exata por nome completo
+  // 2) Igualdade exata por nome completo (ou nome da equipe, para duplas)
   const exactName = pool.filter((p) => norm(p.nome_completo) === n);
   if (exactName.length === 1) return { player: exactName[0] };
   if (exactName.length > 1) return { error: `Vários jogadores com nome "${name}" no grupo` };
@@ -58,7 +62,7 @@ function findPlayerInGroup(name: string, pool: PlayerLite[]): FindResult {
   if (n.length < 3) return {};
 
   const partial = pool.filter((p) => {
-    const nick = norm(p.nick_playroom || "");
+    const nick = nickOf(p);
     const nome = norm(p.nome_completo);
     return (
       (nick.length > 0 && (nick.includes(n) || n.includes(nick))) ||
@@ -71,6 +75,7 @@ function findPlayerInGroup(name: string, pool: PlayerLite[]): FindResult {
   }
   return {};
 }
+
 
 function findPlayer(name: string, players: PlayerLite[], currentGrupo: string): FindResult {
   if (currentGrupo) {

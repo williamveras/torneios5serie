@@ -20,6 +20,7 @@ import { projectPhases, findPhaseInProjection } from "@/lib/phaseProjection";
 import PhaseRoadmap from "@/components/PhaseRoadmap";
 import BracketView from "@/components/BracketView";
 import { pairKey } from "@/lib/phase";
+import { getPlayerDisplayName, getPlayerNickForStandings } from "@/lib/playerDisplay";
 import type { Tables } from "@/integrations/supabase/types";
 
 
@@ -197,7 +198,7 @@ export default function StandingsTab({ tournamentId }: Props) {
         if (error) return;
         setCampeaoId(winner);
         const p = players.find(pp => pp.id === winner);
-        toast.success(`🏆 Campeão definido: ${p?.nick_playroom || p?.nome_completo || "vencedor"}!`);
+        toast.success(`🏆 Campeão definido: ${getPlayerDisplayName(p, "vencedor")}!`);
       });
   }, [matchups, results, campeaoId, tournamentId, players]);
 
@@ -223,8 +224,11 @@ export default function StandingsTab({ tournamentId }: Props) {
     loadPhaseStatuses();
   };
 
-  const getPlayerNick = (id: string) => players.find(p => p.id === id)?.nick_playroom || "";
-  const getPlayerName = (id: string) => players.find(p => p.id === id)?.nome_completo || "Desconhecido";
+  const getPlayerNick = (id: string) => getPlayerNickForStandings(players.find(p => p.id === id));
+  const getPlayerName = (id: string) => {
+    const p = players.find(pp => pp.id === id);
+    return (p?.nome_completo || "").trim() || "Desconhecido";
+  };
 
   const availableFases = useMemo(() => {
     const fases = [...new Set(results.map(r => r.fase || "Fase de Grupos"))];
@@ -502,7 +506,7 @@ export default function StandingsTab({ tournamentId }: Props) {
         <Alert role="status" className="border-amber-500/50 bg-amber-500/10">
           <Info className="h-4 w-4 text-amber-600" />
           <AlertDescription>
-            🏆 <strong>Campeão do torneio:</strong> {campeao.nick_playroom || campeao.nome_completo}
+            🏆 <strong>Campeão do torneio:</strong> {getPlayerDisplayName(campeao)}
           </AlertDescription>
         </Alert>
       )}
@@ -681,10 +685,10 @@ export default function StandingsTab({ tournamentId }: Props) {
         }
         if (!activeElim) return null;
         const playerLites = players.map(p => ({
-          id: p.id, nome_completo: p.nome_completo, nick_playroom: p.nick_playroom,
+          id: p.id, nome_completo: p.nome_completo, nick_playroom: p.nick_playroom, is_team: (p as any).is_team ?? false,
         }));
         const champion = campeao
-          ? { id: campeao.id, nome_completo: campeao.nome_completo, nick_playroom: campeao.nick_playroom }
+          ? { id: campeao.id, nome_completo: campeao.nome_completo, nick_playroom: campeao.nick_playroom, is_team: (campeao as any).is_team ?? false }
           : null;
         return (
           <div className="pt-4">

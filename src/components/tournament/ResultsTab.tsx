@@ -269,7 +269,7 @@ export default function ResultsTab({ tournamentId }: Props) {
         <div className="flex gap-3">
           {results.length < 2 && (
             <Button variant="outline" type="button" onClick={addSecondPlayer}>
-              <Plus className="h-4 w-4 mr-1" /> Adicionar outro jogador
+              <Plus className="h-4 w-4 mr-1" /> {isDuplas ? "Adicionar dupla 2" : "Adicionar outro jogador"}
             </Button>
           )}
           <Button onClick={handleSave} disabled={loading} className="ml-auto">

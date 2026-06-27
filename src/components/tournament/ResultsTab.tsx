@@ -210,7 +210,7 @@ export default function ResultsTab({ tournamentId }: Props) {
                 <SelectContent>
                   {players.map(p => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.nick_playroom || p.nome_completo}
+                      {getPlayerDisplayName(p as any)}
                       {p.grupo ? ` (Grupo ${p.grupo})` : ""}
                     </SelectItem>
                   ))}

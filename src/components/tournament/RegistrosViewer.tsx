@@ -112,11 +112,7 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
   const activeFase = useMemo(() => getActivePublicPhase(phaseStatuses), [phaseStatuses]);
   useEffect(() => { setSelectedFase(activeFase); }, [activeFase]);
 
-  const playerName = (id: string) => {
-    const p = players[id];
-    if (!p) return "Jogador desconhecido";
-    return p.nick_playroom || p.nome_completo;
-  };
+  const playerName = (id: string) => getPlayerDisplayName(players[id] as any, "Jogador desconhecido");
   const registeredByName = (uid: string | null) => {
     if (!uid) return "Não informado";
     return profiles[uid]?.nome || "Usuário desconhecido";

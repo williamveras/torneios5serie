@@ -191,8 +191,8 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
   }
 
   function getPlayerName(id: string) {
-    const p = players.find((p) => p.id === id);
-    return p?.nick_playroom || p?.nome_completo || "—";
+    const p = players.find((p) => p.id === id) as any;
+    return getPlayerDisplayName(p, "—");
   }
 
   const hasGroups = players.some((p) => p.grupo);

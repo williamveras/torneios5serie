@@ -188,8 +188,8 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
   }
 
   function getPlayerName(id: string) {
-    const p = players.find((p) => p.id === id);
-    return p?.nick_playroom || p?.nome_completo || "—";
+    const p = players.find((p) => p.id === id) as any;
+    return getPlayerDisplayName(p, "—");
   }
 
   // Active phase (used to scope form defaults, import dialog, and listing)

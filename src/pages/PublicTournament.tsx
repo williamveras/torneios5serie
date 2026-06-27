@@ -15,6 +15,7 @@ import PublicDraw from "@/components/public/PublicDraw";
 
 import { FASES, isSideFase } from "@/lib/constants";
 import { nextPhaseName } from "@/lib/qualifiers";
+import { getActivePublicPhase } from "@/lib/phase";
 import ViewModeToggle, { type ViewMode } from "@/components/public/ViewModeToggle";
 
 type Tournament = Tables<"tournaments">;

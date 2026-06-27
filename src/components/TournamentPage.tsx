@@ -29,11 +29,13 @@ export default function TournamentPage({ tournament, onBack }: Props) {
   const [prefillPlayerId, setPrefillPlayerId] = useState<string | null>(null);
   const [prefillPlayer2Id, setPrefillPlayer2Id] = useState<string | null>(null);
   const [prefillGrupo, setPrefillGrupo] = useState<string | null>(null);
+  const [prefillEditScheduleId, setPrefillEditScheduleId] = useState<string | null>(null);
 
   const handleScheduleForPlayer = (playerId: string) => {
     setPrefillPlayerId(playerId);
     setPrefillPlayer2Id(null);
     setPrefillGrupo(null);
+    setPrefillEditScheduleId(null);
     setActiveTab("schedule");
   };
 
@@ -41,6 +43,15 @@ export default function TournamentPage({ tournament, onBack }: Props) {
     setPrefillPlayerId(player1Id);
     setPrefillPlayer2Id(player2Id);
     setPrefillGrupo(grupo);
+    setPrefillEditScheduleId(null);
+    setActiveTab("schedule");
+  };
+
+  const handleReallocateSchedule = (scheduleId: string) => {
+    setPrefillPlayerId(null);
+    setPrefillPlayer2Id(null);
+    setPrefillGrupo(null);
+    setPrefillEditScheduleId(scheduleId);
     setActiveTab("schedule");
   };
 
@@ -48,6 +59,7 @@ export default function TournamentPage({ tournament, onBack }: Props) {
     setPrefillPlayerId(null);
     setPrefillPlayer2Id(null);
     setPrefillGrupo(null);
+    setPrefillEditScheduleId(null);
   };
 
   const handleSharePublicLink = async () => {

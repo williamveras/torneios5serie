@@ -49,6 +49,7 @@ export default function ResultsTab({ tournamentId }: Props) {
   const [activeFase, setActiveFase] = useState<string>("Fase de Grupos");
 
   const isFaseDeGrupos = isGroupPhase(fase);
+  const isDuplas = players.some(p => p.is_team);
 
   useEffect(() => {
     supabase.from("players").select("*").eq("tournament_id", tournamentId).order("nome_completo")
@@ -235,7 +236,7 @@ export default function ResultsTab({ tournamentId }: Props) {
             <div className="space-y-2">
               <Label htmlFor={`penalidade-${idx}`}>Penalidades <span className="text-muted-foreground font-normal">(opcional)</span></Label>
               <Select value={r.penalidade_tipo} onValueChange={v => updateResult(idx, "penalidade_tipo", v)}>
-                <SelectTrigger id={`penalidade-${idx}`} aria-label={`Penalidade do jogador ${idx + 1}`}><SelectValue /></SelectTrigger>
+                <SelectTrigger id={`penalidade-${idx}`} aria-label={`Penalidade ${isDuplas ? "da dupla" : "do jogador"} ${idx + 1}`}><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {PENALIDADE_OPCOES.map(op => <SelectItem key={op} value={op}>{op}</SelectItem>)}
                 </SelectContent>
@@ -268,7 +269,7 @@ export default function ResultsTab({ tournamentId }: Props) {
         <div className="flex gap-3">
           {results.length < 2 && (
             <Button variant="outline" type="button" onClick={addSecondPlayer}>
-              <Plus className="h-4 w-4 mr-1" /> Adicionar outro jogador
+              <Plus className="h-4 w-4 mr-1" /> {isDuplas ? "Adicionar dupla 2" : "Adicionar outro jogador"}
             </Button>
           )}
           <Button onClick={handleSave} disabled={loading} className="ml-auto">

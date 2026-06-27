@@ -32,6 +32,7 @@ interface DraftMatch {
 interface Props {
   tournamentId: string;
   onScheduleMatchup: (player1Id: string, player2Id: string, grupo: string) => void;
+  onReallocateSchedule?: (scheduleId: string) => void;
 }
 
 function shuffle<T>(arr: T[]): T[] {

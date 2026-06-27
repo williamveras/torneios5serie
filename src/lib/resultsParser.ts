@@ -25,7 +25,9 @@ interface PlayerLite {
   nome_completo: string;
   nick_playroom: string | null;
   grupo?: string | null;
+  is_team?: boolean | null;
 }
+
 
 // Normaliza removendo qualquer caractere não alfanumérico (espaços, pontuação,
 // caracteres invisíveis como ZWSP/NBSP, vírgulas grudadas em nicks, etc.) +

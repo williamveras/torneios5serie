@@ -96,9 +96,11 @@ function findPlayer(name: string, players: PlayerLite[], currentGrupo: string): 
 }
 
 function parseGroupHeader(line: string): string | null {
-  const m = line.match(/^\s*grupo\s+(\d+)\s*:?\s*$/i);
+  // Aceita "Grupo N" e também "Mesa N" como cabeçalho equivalente
+  const m = line.match(/^\s*(?:grupo|mesa)\s+(\d+)\s*:?\s*$/i);
   return m ? m[1] : null;
 }
+
 
 function parseMatchLine(line: string): { p1: string; p2: string } | null {
   const m = line.match(/^\s*(.+?)\s+(?:x|vs|×|✕)\s+(.+?)\s*$/i);

@@ -12,6 +12,7 @@ import PublicResults from "@/components/public/PublicResults";
 import PublicStandings from "@/components/public/PublicStandings";
 import PublicRegulamento from "@/components/public/PublicRegulamento";
 import PublicDraw from "@/components/public/PublicDraw";
+import PublicGroups from "@/components/public/PublicGroups";
 
 import { FASES, isSideFase } from "@/lib/constants";
 import { nextPhaseName } from "@/lib/qualifiers";

@@ -255,7 +255,8 @@ export default function ResultsTab({ tournamentId }: Props) {
               )}
             </div>
           </div>
-        ))}
+        );})}
+
 
         {isFaseDeGrupos && (
           <div className="space-y-2">

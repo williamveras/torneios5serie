@@ -112,7 +112,11 @@ export default function TournamentPage({ tournament, onBack }: Props) {
             <PlayersTab tournamentId={tournament.id} onScheduleMatch={handleScheduleForPlayer} />
           </TabsContent>
           <TabsContent value="matchups">
-            <MatchupsTab tournamentId={tournament.id} onScheduleMatchup={handleScheduleMatchup} />
+            <MatchupsTab
+              tournamentId={tournament.id}
+              onScheduleMatchup={handleScheduleMatchup}
+              onReallocateSchedule={handleReallocateSchedule}
+            />
           </TabsContent>
           <TabsContent value="results">
             <ResultsTab tournamentId={tournament.id} />
@@ -123,6 +127,7 @@ export default function TournamentPage({ tournament, onBack }: Props) {
               prefillPlayerId={prefillPlayerId}
               prefillPlayer2Id={prefillPlayer2Id}
               prefillGrupo={prefillGrupo}
+              prefillEditScheduleId={prefillEditScheduleId}
               onPrefillConsumed={consumePrefill}
             />
           </TabsContent>

@@ -46,6 +46,7 @@ export default function StandingsTab({ tournamentId }: Props) {
   const [numeroRodadas, setNumeroRodadas] = useState<number | null>(null);
   const [campeaoId, setCampeaoId] = useState<string | null>(null);
   const [qualifierOpts, setQualifierOpts] = useState<{ directPerGroup?: number; repescagemTotal?: number }>({});
+  const [lowerWins, setLowerWins] = useState<boolean>(false);
 
   const loadPhaseStatuses = () => {
     supabase.from("phase_status").select("*").eq("tournament_id", tournamentId).then(({ data }) => {
@@ -67,6 +68,7 @@ export default function StandingsTab({ tournamentId }: Props) {
         const td = t.data as any;
         setNumeroRodadas(td.numero_rodadas ?? null);
         setCampeaoId(td.campeao_id ?? null);
+        setLowerWins(td.lower_score_wins === true);
         const opts: { directPerGroup?: number; repescagemTotal?: number } = {};
         if (td.direct_per_group != null) opts.directPerGroup = td.direct_per_group;
         if (td.repescagem_enabled === false) opts.repescagemTotal = 0;
@@ -155,8 +157,10 @@ export default function StandingsTab({ tournamentId }: Props) {
         let loser: string | null = null;
         if (r1.pontos_jogo > r2.pontos_jogo) loser = m.player2_id;
         else if (r2.pontos_jogo > r1.pontos_jogo) loser = m.player1_id;
-        else if (r1.pontos_mesa > r2.pontos_mesa) loser = m.player2_id;
-        else if (r2.pontos_mesa > r1.pontos_mesa) loser = m.player1_id;
+        else if (r1.pontos_mesa !== r2.pontos_mesa) {
+          if (lowerWins) loser = r1.pontos_mesa < r2.pontos_mesa ? m.player2_id : m.player1_id;
+          else loser = r1.pontos_mesa > r2.pontos_mesa ? m.player2_id : m.player1_id;
+        }
         if (!loser) continue;
         const p = players.find(pp => pp.id === loser);
         if (p && !p.eliminado) toEliminate.add(loser);
@@ -188,8 +192,10 @@ export default function StandingsTab({ tournamentId }: Props) {
     let winner: string | null = null;
     if (r1.pontos_jogo > r2.pontos_jogo) winner = finalMatchup.player1_id;
     else if (r2.pontos_jogo > r1.pontos_jogo) winner = finalMatchup.player2_id;
-    else if (r1.pontos_mesa > r2.pontos_mesa) winner = finalMatchup.player1_id;
-    else if (r2.pontos_mesa > r1.pontos_mesa) winner = finalMatchup.player2_id;
+    else if (r1.pontos_mesa !== r2.pontos_mesa) {
+      if (lowerWins) winner = r1.pontos_mesa < r2.pontos_mesa ? finalMatchup.player1_id : finalMatchup.player2_id;
+      else winner = r1.pontos_mesa > r2.pontos_mesa ? finalMatchup.player1_id : finalMatchup.player2_id;
+    }
     if (!winner) return;
     (supabase.from("tournaments") as any)
       .update({ campeao_id: winner })

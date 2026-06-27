@@ -18,7 +18,9 @@ interface PlayerLite {
   nome_completo: string;
   nick_playroom: string | null;
   grupo?: string | null;
+  is_team?: boolean | null;
 }
+
 
 const OBS_KEYWORDS = /\b(a\s+definir|w\.?\s*o|wo|bye|adiad[oa]|cancelad[oa])\b/i;
 

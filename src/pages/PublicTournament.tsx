@@ -240,6 +240,11 @@ export default function PublicTournament() {
                 </div>
                 <PublicSchedule schedules={schedules} players={players} matchups={matchups} results={results} phaseStatuses={phaseStatuses} numeroRodadas={(tournament as any).numero_rodadas ?? null} viewMode={scheduleView} />
               </TabsContent>
+              {showGroupsTab && (
+                <TabsContent value="groups">
+                  <PublicGroups players={players} scheduledDraws={scheduledDraws as any} />
+                </TabsContent>
+              )}
               {showDrawTab && drawFase && (
                 <TabsContent value="draw">
                   <div className="flex justify-end mb-3">

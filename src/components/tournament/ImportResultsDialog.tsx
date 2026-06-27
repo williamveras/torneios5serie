@@ -181,6 +181,11 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
         </DialogHeader>
 
         <div className="space-y-4">
+          {lowerWins && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs">
+              Este torneio usa <strong>menor pontuação vence</strong>: quando não houver linha "X ganhou!", o vencedor será o de menor pontuação.
+            </div>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="import-res-fase">Fase</Label>

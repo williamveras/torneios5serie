@@ -208,8 +208,8 @@ export default function PublicStandings({ results, players, phaseStatuses, match
       .filter(r => qualifiedIds.has(r.player_id))
       // Compute as a flat list, ignoring any synthetic `grupo` on elimination results.
       .map(r => ({ ...r, grupo: "" })) as MatchResult[];
-    return computeQualifiers(winnersResults, getPlayerName, getPlayerNick);
-  }, [matchups, filteredByFase, selectedFase, isGroupsPhase, players]);
+    return computeQualifiers(winnersResults, getPlayerName, getPlayerNick, { lowerWins });
+  }, [matchups, filteredByFase, selectedFase, isGroupsPhase, players, lowerWins]);
 
   const showQualifiers = isConcluded && !!nextFase && totalRows > 0 && (
     isGroupsPhase
@@ -224,8 +224,8 @@ export default function PublicStandings({ results, players, phaseStatuses, match
     [results],
   );
   const grupoQualifiers = useMemo(
-    () => computeQualifiers(grupoResults, getPlayerName, getPlayerNick, qualifierOpts),
-    [grupoResults, players, qualifierOpts],
+    () => computeQualifiers(grupoResults, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins }),
+    [grupoResults, players, qualifierOpts, lowerWins],
   );
   const classifiedCount = grupoQualifiers.hasGroups
     ? grupoQualifiers.direct.length + grupoQualifiers.repescagem.length

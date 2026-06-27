@@ -156,6 +156,14 @@ export default function PublicTournament() {
   const showDrawTab = hasMatchupsForDrawFase || hasPendingDraw;
   const drawTabLabel = `Sorteio dos confrontos - ${drawFase}`;
 
+  // Disposição dos grupos: aparece se já houver grupos definidos
+  // ou um sorteio de grupos agendado.
+  const hasGroupsDefined = players.some((p) => p.grupo);
+  const hasPendingGroupDraw = scheduledDraws.some(
+    (s) => s.status === "pending" && ((s as any).kind === "grupos" || s.fase === "Fase de Grupos"),
+  );
+  const showGroupsTab = hasGroupsDefined || hasPendingGroupDraw;
+
   const campeaoId = (tournament as any).campeao_id as string | null | undefined;
   const campeao = campeaoId ? players.find(p => p.id === campeaoId) : null;
 

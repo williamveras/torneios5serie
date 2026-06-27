@@ -90,7 +90,7 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
       toast.error("Cole o texto dos resultados.");
       return;
     }
-    const parsed = parseResultsText(text, players, { lowerWins: !!lowerWins });
+    const parsed = parseResultsText(text, players, { lowerWins: !!lowerWins, teamMembers });
     if (parsed.length === 0) {
       toast.error("Nenhum resultado detectado no texto.");
       return;

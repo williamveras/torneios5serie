@@ -32,10 +32,11 @@ interface Props {
   tournamentId: string;
   players: Player[];
   activeFase?: string;
+  lowerWins?: boolean;
   onImported: () => void;
 }
 
-export default function ImportResultsDialog({ open, onOpenChange, tournamentId, players, activeFase, onImported }: Props) {
+export default function ImportResultsDialog({ open, onOpenChange, tournamentId, players, activeFase, lowerWins, onImported }: Props) {
   const { user } = useAuth();
   const [fase, setFase] = useState<string>(activeFase || "Fase de Grupos");
   const [rodada, setRodada] = useState<string>("");
@@ -77,7 +78,7 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
       toast.error("Cole o texto dos resultados.");
       return;
     }
-    const parsed = parseResultsText(text, players);
+    const parsed = parseResultsText(text, players, { lowerWins: !!lowerWins });
     if (parsed.length === 0) {
       toast.error("Nenhum resultado detectado no texto.");
       return;
@@ -180,6 +181,11 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
         </DialogHeader>
 
         <div className="space-y-4">
+          {lowerWins && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs">
+              Este torneio usa <strong>menor pontuação vence</strong>: quando não houver linha "X ganhou!", o vencedor será o de menor pontuação.
+            </div>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="import-res-fase">Fase</Label>

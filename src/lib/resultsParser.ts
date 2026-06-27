@@ -80,7 +80,8 @@ function parseWinnerLine(line: string): string | null {
   return m ? m[1].trim() : null;
 }
 
-export function parseResultsText(text: string, players: PlayerLite[]): ParsedResult[] {
+export function parseResultsText(text: string, players: PlayerLite[], opts: { lowerWins?: boolean } = {}): ParsedResult[] {
+  const lowerWins = !!opts.lowerWins;
   // Normaliza: quebra também em ". " (ponto seguido de espaço) para suportar
   // textos colados em uma única linha. Scores são inteiros, então é seguro.
   const normalized = text.replace(/\.\s+/g, ".\n");
@@ -188,7 +189,13 @@ export function parseResultsText(text: string, players: PlayerLite[]): ParsedRes
       if (winnerIdx < 0) errors.push(`Vencedor "${winnerLine}" não corresponde aos jogadores do bloco.`);
     } else if (resolved.length === 2) {
       if (resolved[0].score !== resolved[1].score) {
-        winnerIdx = resolved[0].score > resolved[1].score ? 0 : 1;
+        // Quando "menor pontuação vence" (ex.: dominó), o vencedor automático
+        // é o de menor pontuação. Caso contrário, é o de maior.
+        if (lowerWins) {
+          winnerIdx = resolved[0].score < resolved[1].score ? 0 : 1;
+        } else {
+          winnerIdx = resolved[0].score > resolved[1].score ? 0 : 1;
+        }
       } else {
         errors.push("Vencedor não informado e pontuações empatadas.");
       }

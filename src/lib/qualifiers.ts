@@ -26,14 +26,15 @@ export function computeQualifiers(
   results: MatchResult[],
   getPlayerName: (id: string) => string,
   getPlayerNick: (id: string) => string,
-  opts: { directPerGroup?: number; repescagemTotal?: number } = {},
+  opts: { directPerGroup?: number; repescagemTotal?: number; lowerWins?: boolean } = {},
 ): QualifiersResult {
   const directPerGroup = opts.directPerGroup ?? 5;
   const repescagemTotal = opts.repescagemTotal ?? 18;
+  const lowerWins = !!opts.lowerWins;
 
   const hasGroups = results.some(r => !!r.grupo && r.grupo.trim() !== "");
   if (!hasGroups) {
-    const rows = computeStandings(results, getPlayerName, getPlayerNick);
+    const rows = computeStandings(results, getPlayerName, getPlayerNick, { lowerWins });
     return {
       direct: rows.map(r => ({ ...r, grupo: "", groupPosition: r.position })),
       repescagem: [],
@@ -53,6 +54,7 @@ export function computeQualifiers(
       results.filter(r => r.grupo === g),
       getPlayerName,
       getPlayerNick,
+      { lowerWins },
     );
     rows.forEach(r => {
       const q: QualifierRow = { ...r, grupo: g, groupPosition: r.position };
@@ -65,7 +67,9 @@ export function computeQualifiers(
   // Sort 6ths cross-group by same tie-break (minus head-to-head, which is intra-group only)
   sixths.sort((a, b) => {
     if (a.pontosJogo !== b.pontosJogo) return b.pontosJogo - a.pontosJogo;
-    if (a.pontosMesa !== b.pontosMesa) return b.pontosMesa - a.pontosMesa;
+    if (a.pontosMesa !== b.pontosMesa) {
+      return lowerWins ? a.pontosMesa - b.pontosMesa : b.pontosMesa - a.pontosMesa;
+    }
     if (a.hasPenalty !== b.hasPenalty) return a.hasPenalty ? 1 : -1;
     return 0;
   });

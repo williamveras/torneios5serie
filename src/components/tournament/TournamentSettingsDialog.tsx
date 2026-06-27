@@ -35,6 +35,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
   const [repescagemTotal, setRepescagemTotal] = useState<string>("");
   const [modalidade, setModalidade] = useState<"individual" | "duplas">("individual");
   const [maxParticipants, setMaxParticipants] = useState<string>("");
+  const [lowerScoreWins, setLowerScoreWins] = useState<boolean>(false);
 
   const [totalInscritos, setTotalInscritos] = useState(0);
   const [numGrupos, setNumGrupos] = useState(0);
@@ -58,6 +59,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
         setRepescagemTotal(anyT.repescagem_total?.toString() ?? "");
         setModalidade((anyT.modalidade as "individual" | "duplas") ?? "individual");
         setMaxParticipants(anyT.max_participants?.toString() ?? "");
+        setLowerScoreWins(anyT.lower_score_wins === true);
       }
       const players = (pr.data as { grupo: string | null }[] | null) ?? [];
       setTotalInscritos(players.length);
@@ -138,6 +140,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
         repescagem_total: rt,
         modalidade,
         max_participants: mx,
+        lower_score_wins: lowerScoreWins,
       })
       .eq("id", tournamentId);
     setSaving(false);
@@ -212,6 +215,22 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                   {isDuplas
                     ? <>Em torneios de duplas, cada dupla conta como <strong>1 participante</strong> (joga 1 partida por rodada). Se definido, novas inscrições serão bloqueadas ao atingir esse número. Atualmente cadastradas: <strong>{totalInscritos}</strong> {totalInscritos === 1 ? "dupla" : "duplas"}.</>
                     : <>Se definido, novas inscrições serão bloqueadas ao atingir esse número. Atualmente cadastrados: <strong>{totalInscritos}</strong>.</>}
+                </p>
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>Regra de pontuação de mesa</Label>
+                <Select
+                  value={lowerScoreWins ? "lower" : "higher"}
+                  onValueChange={(v) => setLowerScoreWins(v === "lower")}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="higher">Maior pontuação vence (padrão)</SelectItem>
+                    <SelectItem value="lower">Menor pontuação vence</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Define como interpretar os pontos de mesa para determinar o vencedor e o desempate. Quando "menor vence", o importador de resultados também passa a marcar como vencedor o de menor pontuação.
                 </p>
               </div>
             </div>

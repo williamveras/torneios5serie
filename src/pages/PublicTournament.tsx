@@ -200,6 +200,7 @@ export default function PublicTournament() {
                   matchups={matchups}
                   phaseStatuses={phaseStatuses}
                   viewMode={standingsView}
+                  lowerWins={(tournament as any)?.lower_score_wins === true}
                   qualifierOpts={(() => {
                     const td = tournament as any;
                     const opts: { directPerGroup?: number; repescagemTotal?: number } = {};

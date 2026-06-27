@@ -46,6 +46,7 @@ export default function StandingsTab({ tournamentId }: Props) {
   const [numeroRodadas, setNumeroRodadas] = useState<number | null>(null);
   const [campeaoId, setCampeaoId] = useState<string | null>(null);
   const [qualifierOpts, setQualifierOpts] = useState<{ directPerGroup?: number; repescagemTotal?: number }>({});
+  const [lowerWins, setLowerWins] = useState<boolean>(false);
 
   const loadPhaseStatuses = () => {
     supabase.from("phase_status").select("*").eq("tournament_id", tournamentId).then(({ data }) => {
@@ -67,6 +68,7 @@ export default function StandingsTab({ tournamentId }: Props) {
         const td = t.data as any;
         setNumeroRodadas(td.numero_rodadas ?? null);
         setCampeaoId(td.campeao_id ?? null);
+        setLowerWins(td.lower_score_wins === true);
         const opts: { directPerGroup?: number; repescagemTotal?: number } = {};
         if (td.direct_per_group != null) opts.directPerGroup = td.direct_per_group;
         if (td.repescagem_enabled === false) opts.repescagemTotal = 0;
@@ -155,8 +157,10 @@ export default function StandingsTab({ tournamentId }: Props) {
         let loser: string | null = null;
         if (r1.pontos_jogo > r2.pontos_jogo) loser = m.player2_id;
         else if (r2.pontos_jogo > r1.pontos_jogo) loser = m.player1_id;
-        else if (r1.pontos_mesa > r2.pontos_mesa) loser = m.player2_id;
-        else if (r2.pontos_mesa > r1.pontos_mesa) loser = m.player1_id;
+        else if (r1.pontos_mesa !== r2.pontos_mesa) {
+          if (lowerWins) loser = r1.pontos_mesa < r2.pontos_mesa ? m.player2_id : m.player1_id;
+          else loser = r1.pontos_mesa > r2.pontos_mesa ? m.player2_id : m.player1_id;
+        }
         if (!loser) continue;
         const p = players.find(pp => pp.id === loser);
         if (p && !p.eliminado) toEliminate.add(loser);
@@ -188,8 +192,10 @@ export default function StandingsTab({ tournamentId }: Props) {
     let winner: string | null = null;
     if (r1.pontos_jogo > r2.pontos_jogo) winner = finalMatchup.player1_id;
     else if (r2.pontos_jogo > r1.pontos_jogo) winner = finalMatchup.player2_id;
-    else if (r1.pontos_mesa > r2.pontos_mesa) winner = finalMatchup.player1_id;
-    else if (r2.pontos_mesa > r1.pontos_mesa) winner = finalMatchup.player2_id;
+    else if (r1.pontos_mesa !== r2.pontos_mesa) {
+      if (lowerWins) winner = r1.pontos_mesa < r2.pontos_mesa ? finalMatchup.player1_id : finalMatchup.player2_id;
+      else winner = r1.pontos_mesa > r2.pontos_mesa ? finalMatchup.player1_id : finalMatchup.player2_id;
+    }
     if (!winner) return;
     (supabase.from("tournaments") as any)
       .update({ campeao_id: winner })
@@ -253,7 +259,7 @@ export default function StandingsTab({ tournamentId }: Props) {
     if (!hasAnyGroup) {
       return [{
         grupo: "",
-        rows: computeStandings(filteredByFase, getPlayerName, getPlayerNick),
+        rows: computeStandings(filteredByFase, getPlayerName, getPlayerNick, { lowerWins }),
       }];
     }
     return groups.map(g => ({
@@ -262,15 +268,16 @@ export default function StandingsTab({ tournamentId }: Props) {
         filteredByFase.filter(r => r.grupo === g),
         getPlayerName,
         getPlayerNick,
+        { lowerWins },
       ),
     }));
-  }, [filteredByFase, groups, hasAnyGroup, players]);
+  }, [filteredByFase, groups, hasAnyGroup, players, lowerWins]);
 
   const totalRows = sections.reduce((acc, s) => acc + s.rows.length, 0);
 
   const qualifiers = useMemo(
-    () => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick, qualifierOpts),
-    [filteredByFase, players, qualifierOpts],
+    () => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins }),
+    [filteredByFase, players, qualifierOpts, lowerWins],
   );
   const nextFase = nextPhaseName(selectedFase);
   const isGroupsPhase = selectedFase === "Fase de Grupos";
@@ -291,8 +298,10 @@ export default function StandingsTab({ tournamentId }: Props) {
       let w: string | null = null;
       if (r1.pontos_jogo > r2.pontos_jogo) w = m.player1_id;
       else if (r2.pontos_jogo > r1.pontos_jogo) w = m.player2_id;
-      else if (r1.pontos_mesa > r2.pontos_mesa) w = m.player1_id;
-      else if (r2.pontos_mesa > r1.pontos_mesa) w = m.player2_id;
+      else if (r1.pontos_mesa !== r2.pontos_mesa) {
+        if (lowerWins) w = r1.pontos_mesa < r2.pontos_mesa ? m.player1_id : m.player2_id;
+        else w = r1.pontos_mesa > r2.pontos_mesa ? m.player1_id : m.player2_id;
+      }
       if (w) qualifiedIds.add(w);
     }
     // Inclui também os participantes da "Disputa de 3º Lugar" quando cadastrada.
@@ -305,8 +314,8 @@ export default function StandingsTab({ tournamentId }: Props) {
     const winnersResults = filteredByFase
       .filter(r => qualifiedIds.has(r.player_id))
       .map(r => ({ ...r, grupo: "" })) as MatchResult[];
-    return computeQualifiers(winnersResults, getPlayerName, getPlayerNick);
-  }, [matchups, filteredByFase, selectedFase, isGroupsPhase, players]);
+    return computeQualifiers(winnersResults, getPlayerName, getPlayerNick, { lowerWins });
+  }, [matchups, filteredByFase, selectedFase, isGroupsPhase, players, lowerWins]);
 
   const showQualifiers = isConcluded && !!nextFase && totalRows > 0 && (
     isGroupsPhase
@@ -323,8 +332,8 @@ export default function StandingsTab({ tournamentId }: Props) {
     [results],
   );
   const grupoQualifiers = useMemo(
-    () => computeQualifiers(grupoResults, getPlayerName, getPlayerNick, qualifierOpts),
-    [grupoResults, players, qualifierOpts],
+    () => computeQualifiers(grupoResults, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins }),
+    [grupoResults, players, qualifierOpts, lowerWins],
   );
   const classifiedCount = grupoQualifiers.hasGroups
     ? grupoQualifiers.direct.length + grupoQualifiers.repescagem.length
@@ -411,8 +420,10 @@ export default function StandingsTab({ tournamentId }: Props) {
         let winner: string | null = null;
         if (r1.pontos_jogo > r2.pontos_jogo) winner = m.player1_id;
         else if (r2.pontos_jogo > r1.pontos_jogo) winner = m.player2_id;
-        else if (r1.pontos_mesa > r2.pontos_mesa) winner = m.player1_id;
-        else if (r2.pontos_mesa > r1.pontos_mesa) winner = m.player2_id;
+        else if (r1.pontos_mesa !== r2.pontos_mesa) {
+          if (lowerWins) winner = r1.pontos_mesa < r2.pontos_mesa ? m.player1_id : m.player2_id;
+          else winner = r1.pontos_mesa > r2.pontos_mesa ? m.player1_id : m.player2_id;
+        }
         if (winner) winners.push(winner);
       }
       for (let i = 0; i + 1 < winners.length; i += 2) {

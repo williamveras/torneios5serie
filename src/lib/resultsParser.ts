@@ -46,7 +46,10 @@ function candidatesFor(name: string, pool: PlayerLite[]): PlayerLite[] {
   const n = norm(name);
   if (!n) return [];
 
-  const exactNick = pool.filter((p) => norm(p.nick_playroom || "") === n);
+  // Para duplas, ignoramos o nick composto ("nick1 / nick2") e comparamos só pelo nome da equipe.
+  const nickOf = (p: PlayerLite) => (p.is_team ? "" : norm(p.nick_playroom || ""));
+
+  const exactNick = pool.filter((p) => !p.is_team && nickOf(p) === n);
   if (exactNick.length > 0) return exactNick;
 
   const exactName = pool.filter((p) => norm(p.nome_completo) === n);
@@ -55,7 +58,7 @@ function candidatesFor(name: string, pool: PlayerLite[]): PlayerLite[] {
   if (n.length < 3) return [];
 
   const partial = pool.filter((p) => {
-    const nick = norm(p.nick_playroom || "");
+    const nick = nickOf(p);
     const nome = norm(p.nome_completo);
     return (
       (nick.length > 0 && (nick.includes(n) || n.includes(nick))) ||
@@ -64,6 +67,7 @@ function candidatesFor(name: string, pool: PlayerLite[]): PlayerLite[] {
   });
   return partial;
 }
+
 
 function parseScoreLine(line: string): { name: string; score: number } | null {
   const m = line.match(/^\s*(.+?)\s*[:\-–]\s*(-?\d+)\s*\.?\s*$/);

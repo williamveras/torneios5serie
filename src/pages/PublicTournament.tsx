@@ -27,6 +27,7 @@ interface PlayerLite {
   id: string;
   nome_completo: string;
   nick_playroom: string | null;
+  is_team?: boolean | null;
 }
 
 interface ModeratorLite {

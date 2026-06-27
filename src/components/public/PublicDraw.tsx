@@ -12,6 +12,7 @@ interface PlayerLite {
   id: string;
   nome_completo: string;
   nick_playroom: string | null;
+  is_team?: boolean | null;
 }
 
 interface ScheduledDrawLite {
@@ -29,11 +30,8 @@ interface Props {
   viewMode?: ViewMode;
 }
 
-const displayName = (p?: PlayerLite) => {
-  if (!p) return "Jogador desconhecido";
-  const nick = p.nick_playroom?.trim();
-  return nick || p.nome_completo;
-};
+import { getPlayerDisplayName } from "@/lib/playerDisplay";
+const displayName = (p?: PlayerLite) => getPlayerDisplayName(p, "Jogador desconhecido");
 
 const formatGroupLabel = (grupo: string) => {
   if (/^\d+$/.test(grupo)) return `Grupo ${grupo}`;

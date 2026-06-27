@@ -69,12 +69,13 @@ interface Props {
   prefillPlayerId?: string | null;
   prefillPlayer2Id?: string | null;
   prefillGrupo?: string | null;
+  prefillEditScheduleId?: string | null;
   onPrefillConsumed?: () => void;
 }
 
 const GRUPOS = Array.from({ length: 30 }, (_, i) => String(i + 1));
 
-export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlayer2Id, prefillGrupo, onPrefillConsumed }: Props) {
+export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlayer2Id, prefillGrupo, prefillEditScheduleId, onPrefillConsumed }: Props) {
   const [players, setPlayers] = useState<Player[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [matchups, setMatchups] = useState<{ player1_id: string; player2_id: string; rodada: number | null; fase: string | null; created_at: string }[]>([]);
@@ -168,6 +169,19 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }, [prefillPlayerId, prefillPlayer2Id, prefillGrupo, players, onPrefillConsumed]);
+
+  // Pre-fill: open edit dialog for an existing schedule (Realocar)
+  useEffect(() => {
+    if (prefillEditScheduleId && schedules.length > 0) {
+      const s = schedules.find((x) => x.id === prefillEditScheduleId);
+      if (s) {
+        openEdit(s);
+        onPrefillConsumed?.();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefillEditScheduleId, schedules]);
 
   async function fetchPlayers() {
     const { data } = await supabase
@@ -665,6 +679,62 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
           });
         })()
       )}
+
+      {/* Copy schedule button */}
+      {filteredSchedules.length > 0 && (
+        <div className="flex justify-end pt-2">
+          <Button
+            variant="outline"
+            onClick={async () => {
+              const lines: string[] = [];
+              const currentKey = currentRound != null ? String(currentRound) : null;
+              const orderedKeys = [
+                ...(currentKey && sortedRoundKeys.includes(currentKey) ? [currentKey] : []),
+                ...sortedRoundKeys.filter((k) => k !== currentKey),
+              ];
+              for (const rk of orderedKeys) {
+                const roundLabel = rk === NO_ROUND_KEY ? "Sem rodada definida" : `Rodada ${rk}`;
+                lines.push(`*${roundLabel}*`);
+                const byDate = groupedByRound[rk];
+                const sortedDates = Object.keys(byDate).sort((a, b) => {
+                  if (a === NO_DATE_KEY) return 1;
+                  if (b === NO_DATE_KEY) return -1;
+                  return a.localeCompare(b);
+                });
+                for (const dk of sortedDates) {
+                  lines.push(formatDateTitle(dk));
+                  const grupos = Object.keys(byDate[dk]).sort((a, b) => {
+                    const an = parseInt(a, 10), bn = parseInt(b, 10);
+                    if (!isNaN(an) && !isNaN(bn)) return an - bn;
+                    return a.localeCompare(b);
+                  });
+                  for (const g of grupos) {
+                    const isGroupG = /^\d+$/.test(g);
+                    if (isGroupG) lines.push(`Grupo ${g}`);
+                    for (const s of byDate[dk][g]) {
+                      const mesa = !isGroupG ? getMesa(g, s.player1_id, s.player2_id) : null;
+                      const prefix = mesa != null ? `Mesa ${mesa}: ` : "";
+                      const when = s.horario ? s.horario.slice(0, 5) : (s.observacao || "—");
+                      lines.push(`  ${prefix}${getPlayerName(s.player1_id)} x ${getPlayerName(s.player2_id)} — ${when}`);
+                    }
+                  }
+                  lines.push("");
+                }
+              }
+              const text = lines.join("\n").trim();
+              try {
+                await navigator.clipboard.writeText(text);
+                toast.success("Confrontos copiados para a área de transferência!");
+              } catch {
+                toast.error("Não foi possível copiar.");
+              }
+            }}
+          >
+            <FileText className="h-4 w-4 mr-1" /> Copiar confrontos
+          </Button>
+        </div>
+      )}
+
 
 
 

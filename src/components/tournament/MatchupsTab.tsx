@@ -32,6 +32,7 @@ interface DraftMatch {
 interface Props {
   tournamentId: string;
   onScheduleMatchup: (player1Id: string, player2Id: string, grupo: string) => void;
+  onReallocateSchedule?: (scheduleId: string) => void;
 }
 
 function shuffle<T>(arr: T[]): T[] {
@@ -68,7 +69,7 @@ function roundRobin(playerIds: string[]): Array<Array<[string, string | null]>> 
   return rounds;
 }
 
-export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) {
+export default function MatchupsTab({ tournamentId, onScheduleMatchup, onReallocateSchedule }: Props) {
   const { user } = useAuth();
   const [players, setPlayers] = useState<Player[]>([]);
   const [matchups, setMatchups] = useState<Matchup[]>([]);
@@ -85,12 +86,14 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
   const [drawDate, setDrawDate] = useState("");
   const [drawTime, setDrawTime] = useState("");
   const [schedulingDraw, setSchedulingDraw] = useState(false);
+  const [schedules, setSchedules] = useState<Array<{ id: string; player1_id: string; player2_id: string; grupo: string; data_partida: string | null; horario: string | null; observacao: string | null }>>([]);
 
   useEffect(() => {
     fetchPlayers();
     fetchMatchups();
     fetchScheduledDraws();
     fetchPhaseStatuses();
+    fetchSchedules();
   }, [tournamentId]);
 
   useEffect(() => {
@@ -137,6 +140,34 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
       .select("fase,status")
       .eq("tournament_id", tournamentId);
     if (data) setPhaseStatuses(data);
+  }
+
+  async function fetchSchedules() {
+    const { data } = await supabase
+      .from("match_schedule")
+      .select("id,player1_id,player2_id,grupo,data_partida,horario,observacao")
+      .eq("tournament_id", tournamentId);
+    if (data) setSchedules(data as any);
+  }
+
+  // Lookup schedule by matchup (same pair + same grupo/fase)
+  function findSchedule(p1: string, p2: string, grupo: string) {
+    const pair = [p1, p2].sort().join("|");
+    return schedules.find((s) => {
+      const sp = [s.player1_id, s.player2_id].sort().join("|");
+      return sp === pair && s.grupo === grupo;
+    });
+  }
+
+  function formatScheduleWhen(s: { data_partida: string | null; horario: string | null; observacao: string | null }) {
+    const parts: string[] = [];
+    if (s.data_partida) {
+      const [y, m, d] = s.data_partida.split("-");
+      parts.push(`${d}/${m}`);
+    }
+    if (s.horario) parts.push(s.horario.slice(0, 5));
+    if (!parts.length && s.observacao) return s.observacao;
+    return parts.join(" às ") || "—";
   }
 
   async function scheduleDraw() {
@@ -595,21 +626,37 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
               <CardContent className="space-y-4">
                 {!isGroupFase ? (
                   <div className="space-y-1">
-                    {eliminationList.map((m, i) => (
+                    {eliminationList.map((m, i) => {
+                      const sch = findSchedule(m.player1_id, m.player2_id, m.grupo);
+                      return (
                       <div key={m.id} className="flex items-center justify-between py-1.5 px-3 rounded-md bg-muted/50">
                         <span className="text-sm">
                           <span className="text-muted-foreground mr-2">Mesa {i + 1}:</span>
                           {getPlayerName(m.player1_id)} <span className="text-muted-foreground">vs</span> {getPlayerName(m.player2_id)}
+                          {sch && (
+                            <strong className="ml-2 text-foreground">— {formatScheduleWhen(sch)}</strong>
+                          )}
                         </span>
                         <div className="flex gap-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7"
-                            onClick={() => onScheduleMatchup(m.player1_id, m.player2_id, m.fase || f)}
-                          >
-                            <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Agendar partida
-                          </Button>
+                          {sch ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7"
+                              onClick={() => onReallocateSchedule?.(sch.id)}
+                            >
+                              <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Realocar
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7"
+                              onClick={() => onScheduleMatchup(m.player1_id, m.player2_id, m.fase || f)}
+                            >
+                              <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Agendar partida
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="icon"
@@ -621,7 +668,8 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
                           </Button>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   groups.map((g) => {
@@ -647,20 +695,36 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
                             <p className="text-xs text-muted-foreground mb-1">Rodada {k}</p>
                           )}
                           <div className="space-y-1">
-                            {byRound.get(k)!.map((m) => (
+                            {byRound.get(k)!.map((m) => {
+                              const sch = findSchedule(m.player1_id, m.player2_id, m.grupo);
+                              return (
                               <div key={m.id} className="flex items-center justify-between py-1.5 px-3 rounded-md bg-muted/50">
                                 <span className="text-sm">
                                   {getPlayerName(m.player1_id)} <span className="text-muted-foreground">vs</span> {getPlayerName(m.player2_id)}
+                                  {sch && (
+                                    <strong className="ml-2 text-foreground">— {formatScheduleWhen(sch)}</strong>
+                                  )}
                                 </span>
                                 <div className="flex gap-1">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-7"
-                                    onClick={() => onScheduleMatchup(m.player1_id, m.player2_id, m.grupo)}
-                                  >
-                                    <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Agendar partida
-                                  </Button>
+                                  {sch ? (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-7"
+                                      onClick={() => onReallocateSchedule?.(sch.id)}
+                                    >
+                                      <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Realocar
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-7"
+                                      onClick={() => onScheduleMatchup(m.player1_id, m.player2_id, m.grupo)}
+                                    >
+                                      <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Agendar partida
+                                    </Button>
+                                  )}
                                   <Button
                                     variant="ghost"
                                     size="icon"
@@ -672,7 +736,8 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
                                   </Button>
                                 </div>
                               </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       ))}

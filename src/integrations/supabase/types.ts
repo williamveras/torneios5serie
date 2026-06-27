@@ -405,7 +405,9 @@ export type Database = {
           executed_at: string | null
           fase: string
           id: string
+          kind: string
           mode: string
+          per_group: number | null
           scheduled_at: string
           status: string
           tournament_id: string
@@ -418,7 +420,9 @@ export type Database = {
           executed_at?: string | null
           fase: string
           id?: string
+          kind?: string
           mode: string
+          per_group?: number | null
           scheduled_at: string
           status?: string
           tournament_id: string
@@ -431,7 +435,9 @@ export type Database = {
           executed_at?: string | null
           fase?: string
           id?: string
+          kind?: string
           mode?: string
+          per_group?: number | null
           scheduled_at?: string
           status?: string
           tournament_id?: string

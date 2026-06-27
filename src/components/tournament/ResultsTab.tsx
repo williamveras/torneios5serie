@@ -201,13 +201,16 @@ export default function ResultsTab({ tournamentId }: Props) {
           </div>
         </div>
 
-        {results.map((r, idx) => (
+        {results.map((r, idx) => {
+          const isDuplas = players.some(p => p.is_team);
+          const entityLabel = isDuplas ? "Equipe" : "Jogador";
+          return (
           <div key={idx} className="p-4 border rounded-lg space-y-4 bg-muted/30">
-            <p className="text-sm font-medium text-muted-foreground">Jogador {idx + 1}</p>
+            <p className="text-sm font-medium text-muted-foreground">{entityLabel} {idx + 1}</p>
             <div className="space-y-2">
-              <Label htmlFor={`jogador-${idx}`}>Jogador</Label>
+              <Label htmlFor={`jogador-${idx}`}>{entityLabel}</Label>
               <Select value={r.player_id} onValueChange={v => updateResult(idx, "player_id", v)}>
-                <SelectTrigger id={`jogador-${idx}`} aria-label={`Jogador ${idx + 1}`}><SelectValue placeholder="Selecione o jogador" /></SelectTrigger>
+                <SelectTrigger id={`jogador-${idx}`} aria-label={`${entityLabel} ${idx + 1}`}><SelectValue placeholder={`Selecione a ${entityLabel.toLowerCase()}`} /></SelectTrigger>
                 <SelectContent>
                   {players.map(p => (
                     <SelectItem key={p.id} value={p.id}>
@@ -218,6 +221,7 @@ export default function ResultsTab({ tournamentId }: Props) {
                 </SelectContent>
               </Select>
             </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor={`pontos-vitoria-${idx}`}>Pontos de Vitória</Label>

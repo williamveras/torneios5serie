@@ -49,6 +49,7 @@ export default function ResultsTab({ tournamentId }: Props) {
   const [activeFase, setActiveFase] = useState<string>("Fase de Grupos");
 
   const isFaseDeGrupos = isGroupPhase(fase);
+  const isDuplas = players.some(p => p.is_team);
 
   useEffect(() => {
     supabase.from("players").select("*").eq("tournament_id", tournamentId).order("nome_completo")

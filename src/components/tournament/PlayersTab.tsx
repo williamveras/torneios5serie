@@ -8,7 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, Trash2, Users, Shuffle, Lightbulb, MoreHorizontal, Pencil, CalendarPlus, Ban, RotateCcw, Plus, Crown } from "lucide-react";
+import { Upload, Trash2, Users, Shuffle, Lightbulb, MoreHorizontal, Pencil, CalendarPlus, Ban, RotateCcw, Plus, Crown, Clock, X } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -49,12 +50,19 @@ function distributeIntoGroups(players: Player[], perGroup: number): Map<string, 
 }
 
 export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
+  const { user } = useAuth();
   const [players, setPlayers] = useState<Player[]>([]);
   const [modalidade, setModalidade] = useState<"individual" | "duplas">("individual");
   const [teamMembersMap, setTeamMembersMap] = useState<Record<string, TeamMember[]>>({});
   const [perGroup, setPerGroup] = useState<string>("4");
   const [sorting, setSorting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Scheduled group draw
+  const [groupDrawDate, setGroupDrawDate] = useState("");
+  const [groupDrawTime, setGroupDrawTime] = useState("");
+  const [schedulingGroupDraw, setSchedulingGroupDraw] = useState(false);
+  const [pendingGroupDraws, setPendingGroupDraws] = useState<Array<{ id: string; scheduled_at: string; per_group: number | null }>>([]);
 
   // Edit dialog state
   const [editPlayer, setEditPlayer] = useState<Player | null>(null);
@@ -102,7 +110,50 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
     }
   };
 
-  useEffect(() => { fetchPlayers(); }, [tournamentId]);
+  useEffect(() => { fetchPlayers(); fetchPendingGroupDraws(); }, [tournamentId]);
+
+  async function fetchPendingGroupDraws() {
+    const { data } = await (supabase.from("scheduled_draws") as any)
+      .select("id,scheduled_at,per_group,status,kind")
+      .eq("tournament_id", tournamentId)
+      .eq("kind", "grupos")
+      .eq("status", "pending")
+      .order("scheduled_at", { ascending: true });
+    setPendingGroupDraws((data || []) as any);
+  }
+
+  async function scheduleGroupDraw() {
+    const size = parseInt(perGroup);
+    if (!size || size < 2) { toast.error("Informe pelo menos 2 jogadores por grupo"); return; }
+    if (!groupDrawDate || !groupDrawTime) { toast.error("Informe data e horário para o sorteio."); return; }
+    const [y, m, d] = groupDrawDate.split("-").map(Number);
+    const [hh, mm] = groupDrawTime.split(":").map(Number);
+    const when = new Date(y, (m || 1) - 1, d || 1, hh || 0, mm || 0, 0, 0);
+    if (isNaN(when.getTime())) { toast.error("Data ou horário inválido."); return; }
+    if (when.getTime() <= Date.now()) { toast.error("O horário deve ser no futuro."); return; }
+    setSchedulingGroupDraw(true);
+    const { error } = await (supabase.from("scheduled_draws") as any).insert({
+      tournament_id: tournamentId,
+      fase: "Fase de Grupos",
+      mode: "por_grupo",
+      kind: "grupos",
+      per_group: size,
+      scheduled_at: when.toISOString(),
+      created_by: user?.id ?? null,
+    });
+    setSchedulingGroupDraw(false);
+    if (error) { toast.error("Erro ao agendar: " + error.message); return; }
+    toast.success("Sorteio dos grupos agendado!");
+    setGroupDrawDate(""); setGroupDrawTime("");
+    fetchPendingGroupDraws();
+  }
+
+  async function cancelGroupDraw(id: string) {
+    const { error } = await (supabase.from("scheduled_draws") as any)
+      .update({ status: "cancelled" }).eq("id", id);
+    if (error) toast.error("Erro ao cancelar: " + error.message);
+    else { toast.success("Sorteio cancelado."); fetchPendingGroupDraws(); }
+  }
 
   const hasGroups = players.some(p => p.grupo);
 
@@ -392,6 +443,49 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
                 Os grupos já foram definidos. Clique em "Sortear Grupos" para refazer o sorteio.
               </p>
             )}
+
+            {/* Agendar sorteio automático dos grupos */}
+            <div className="pt-3 border-t space-y-2">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm font-medium">Agendar sorteio automático dos grupos</p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                O sistema distribuirá os participantes não eliminados em grupos automaticamente na data e horário informados, usando a quantidade definida em "Jogadores por grupo".
+              </p>
+              <div className="flex flex-wrap gap-2 items-end">
+                <div>
+                  <Label htmlFor="group-draw-date" className="text-xs">Data</Label>
+                  <Input id="group-draw-date" type="date" value={groupDrawDate} onChange={(e) => setGroupDrawDate(e.target.value)} className="w-40" />
+                </div>
+                <div>
+                  <Label htmlFor="group-draw-time" className="text-xs">Horário</Label>
+                  <Input id="group-draw-time" type="time" value={groupDrawTime} onChange={(e) => setGroupDrawTime(e.target.value)} className="w-32" />
+                </div>
+                <Button variant="secondary" size="sm" onClick={scheduleGroupDraw} disabled={schedulingGroupDraw}>
+                  <Clock className="h-4 w-4 mr-1" /> {schedulingGroupDraw ? "Agendando..." : "Agendar sorteio"}
+                </Button>
+              </div>
+              {pendingGroupDraws.length > 0 && (
+                <div className="space-y-1 pt-2">
+                  <p className="text-xs font-medium">Sorteios agendados</p>
+                  {pendingGroupDraws.map((s) => {
+                    const dt = new Date(s.scheduled_at);
+                    return (
+                      <div key={s.id} className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2 text-sm">
+                        <span>
+                          {dt.toLocaleDateString("pt-BR")} às {dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                          {s.per_group ? ` · ${s.per_group} por grupo` : ""}
+                        </span>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => cancelGroupDraw(s.id)} aria-label="Cancelar">
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}

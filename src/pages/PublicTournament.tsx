@@ -15,6 +15,7 @@ import PublicDraw from "@/components/public/PublicDraw";
 
 import { FASES, isSideFase } from "@/lib/constants";
 import { nextPhaseName } from "@/lib/qualifiers";
+import { getActivePublicPhase } from "@/lib/phase";
 import ViewModeToggle, { type ViewMode } from "@/components/public/ViewModeToggle";
 
 type Tournament = Tables<"tournaments">;
@@ -141,10 +142,15 @@ export default function PublicTournament() {
   const nextFaseDisplay = nextFaseLabel === "Final" ? "grande final e disputa de terceiro" : nextFaseLabel;
   const standingsTabLabel = latestConcluded && nextFaseLabel ? `Classificados (${nextFaseDisplay})` : "Classificação";
 
-  // Sorteio tab temporariamente desabilitado.
-  const showDrawTab = false;
-  const drawFase: string | null = null;
-  const drawTabLabel = "";
+  // Sorteio tab: mostra a fase pública ativa quando houver confrontos sorteados
+  // ou um sorteio agendado pendente para ela.
+  const drawFase = getActivePublicPhase(phaseStatuses);
+  const hasMatchupsForDrawFase = matchups.some((m) => (m.fase || "Fase de Grupos") === drawFase);
+  const hasPendingDraw = scheduledDraws.some(
+    (s) => s.fase === drawFase && s.status === "pending",
+  );
+  const showDrawTab = hasMatchupsForDrawFase || hasPendingDraw;
+  const drawTabLabel = `Sorteio dos confrontos - ${drawFase}`;
 
   const campeaoId = (tournament as any).campeao_id as string | null | undefined;
   const campeao = campeaoId ? players.find(p => p.id === campeaoId) : null;

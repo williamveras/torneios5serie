@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { getPlayerDisplayName } from "@/lib/playerDisplay";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllMatchResults } from "@/lib/fetchAll";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";

@@ -680,6 +680,62 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
         })()
       )}
 
+      {/* Copy schedule button */}
+      {filteredSchedules.length > 0 && (
+        <div className="flex justify-end pt-2">
+          <Button
+            variant="outline"
+            onClick={async () => {
+              const lines: string[] = [];
+              const currentKey = currentRound != null ? String(currentRound) : null;
+              const orderedKeys = [
+                ...(currentKey && sortedRoundKeys.includes(currentKey) ? [currentKey] : []),
+                ...sortedRoundKeys.filter((k) => k !== currentKey),
+              ];
+              for (const rk of orderedKeys) {
+                const roundLabel = rk === NO_ROUND_KEY ? "Sem rodada definida" : `Rodada ${rk}`;
+                lines.push(`*${roundLabel}*`);
+                const byDate = groupedByRound[rk];
+                const sortedDates = Object.keys(byDate).sort((a, b) => {
+                  if (a === NO_DATE_KEY) return 1;
+                  if (b === NO_DATE_KEY) return -1;
+                  return a.localeCompare(b);
+                });
+                for (const dk of sortedDates) {
+                  lines.push(formatDateTitle(dk));
+                  const grupos = Object.keys(byDate[dk]).sort((a, b) => {
+                    const an = parseInt(a, 10), bn = parseInt(b, 10);
+                    if (!isNaN(an) && !isNaN(bn)) return an - bn;
+                    return a.localeCompare(b);
+                  });
+                  for (const g of grupos) {
+                    const isGroupG = /^\d+$/.test(g);
+                    if (isGroupG) lines.push(`Grupo ${g}`);
+                    for (const s of byDate[dk][g]) {
+                      const mesa = !isGroupG ? getMesa(g, s.player1_id, s.player2_id) : null;
+                      const prefix = mesa != null ? `Mesa ${mesa}: ` : "";
+                      const when = s.horario ? s.horario.slice(0, 5) : (s.observacao || "—");
+                      lines.push(`  ${prefix}${getPlayerName(s.player1_id)} x ${getPlayerName(s.player2_id)} — ${when}`);
+                    }
+                  }
+                  lines.push("");
+                }
+              }
+              const text = lines.join("\n").trim();
+              try {
+                await navigator.clipboard.writeText(text);
+                toast.success("Confrontos copiados para a área de transferência!");
+              } catch {
+                toast.error("Não foi possível copiar.");
+              }
+            }}
+          >
+            <FileText className="h-4 w-4 mr-1" /> Copiar confrontos
+          </Button>
+        </div>
+      )}
+
+
 
 
 

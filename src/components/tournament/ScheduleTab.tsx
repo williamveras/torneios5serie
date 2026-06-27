@@ -448,7 +448,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
                 <SelectContent>
                   {players.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.nick_playroom || p.nome_completo}{p.grupo ? ` (Grupo ${p.grupo})` : ""}
+                      {getPlayerDisplayName(p as any)}{p.grupo ? ` (Grupo ${p.grupo})` : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -461,7 +461,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
                 <SelectContent>
                   {players.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.nick_playroom || p.nome_completo}{p.grupo ? ` (Grupo ${p.grupo})` : ""}
+                      {getPlayerDisplayName(p as any)}{p.grupo ? ` (Grupo ${p.grupo})` : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -684,7 +684,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
                   <SelectContent>
                     {players.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
-                        {p.nick_playroom || p.nome_completo}{p.grupo ? ` (Grupo ${p.grupo})` : ""}
+                        {getPlayerDisplayName(p as any)}{p.grupo ? ` (Grupo ${p.grupo})` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -697,7 +697,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
                   <SelectContent>
                     {players.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
-                        {p.nick_playroom || p.nome_completo}{p.grupo ? ` (Grupo ${p.grupo})` : ""}
+                        {getPlayerDisplayName(p as any)}{p.grupo ? ` (Grupo ${p.grupo})` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>

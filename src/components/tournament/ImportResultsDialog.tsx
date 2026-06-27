@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "sonner";
 import { FASES } from "@/lib/constants";
 import { isGroupPhase, buildMesaMap, pairKey, type MatchupLite } from "@/lib/phase";
-import { parseResultsText, type ParsedResult } from "@/lib/resultsParser";
+import { parseResultsText, type ParsedResult, type TeamMemberLite } from "@/lib/resultsParser";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Player = Tables<"players">;
@@ -44,6 +44,7 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
   const [blocks, setBlocks] = useState<BlockState[] | null>(null);
   const [saving, setSaving] = useState(false);
   const [matchups, setMatchups] = useState<MatchupLite[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMemberLite[]>([]);
 
   const isFaseDeGrupos = isGroupPhase(fase);
 
@@ -59,7 +60,18 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
       .eq("tournament_id", tournamentId)
       .order("created_at", { ascending: true })
       .then(({ data }) => { if (data) setMatchups(data as any); });
-  }, [open, tournamentId]);
+
+    const teamIds = players.filter((p: any) => p.is_team).map((p) => p.id);
+    if (teamIds.length > 0) {
+      supabase
+        .from("team_members")
+        .select("team_id, member_nome, member_nick")
+        .in("team_id", teamIds)
+        .then(({ data }) => { if (data) setTeamMembers(data as any); });
+    } else {
+      setTeamMembers([]);
+    }
+  }, [open, tournamentId, players]);
 
   const mesaMap = !isFaseDeGrupos ? buildMesaMap(matchups, fase) : new Map<string, number>();
 
@@ -78,7 +90,7 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
       toast.error("Cole o texto dos resultados.");
       return;
     }
-    const parsed = parseResultsText(text, players, { lowerWins: !!lowerWins });
+    const parsed = parseResultsText(text, players, { lowerWins: !!lowerWins, teamMembers });
     if (parsed.length === 0) {
       toast.error("Nenhum resultado detectado no texto.");
       return;

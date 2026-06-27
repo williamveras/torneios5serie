@@ -28,6 +28,12 @@ interface PlayerLite {
   is_team?: boolean | null;
 }
 
+export interface TeamMemberLite {
+  team_id: string;
+  member_nome: string | null;
+  member_nick: string | null;
+}
+
 
 // Normaliza removendo qualquer caractere não alfanumérico (espaços, pontuação,
 // caracteres invisíveis como ZWSP/NBSP, vírgulas grudadas em nicks, etc.) +
@@ -41,8 +47,22 @@ function norm(s: string): string {
     .toLowerCase();
 }
 
+// Divide um rótulo do tipo "fulano e ciclano" / "fulano & ciclano" /
+// "fulano + ciclano" / "fulano / ciclano" em tokens individuais.
+function splitMembers(name: string): string[] {
+  const parts = name
+    .split(/\s+(?:e|and|&|\+|\/|,)\s+|\s*&\s*|\s*\+\s*|\s*\/\s*/i)
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0);
+  return parts.length > 0 ? parts : [name.trim()];
+}
+
 // Retorna todos os candidatos para um nome em uma pool dada, em ordem de prioridade.
-function candidatesFor(name: string, pool: PlayerLite[]): PlayerLite[] {
+function candidatesFor(
+  name: string,
+  pool: PlayerLite[],
+  teamTokens?: Map<string, Set<string>>,
+): PlayerLite[] {
   const n = norm(name);
   if (!n) return [];
 
@@ -54,6 +74,35 @@ function candidatesFor(name: string, pool: PlayerLite[]): PlayerLite[] {
 
   const exactName = pool.filter((p) => norm(p.nome_completo) === n);
   if (exactName.length > 0) return exactName;
+
+  // Em torneios de duplas, tentar resolver pelo(s) nome(s) dos membros.
+  if (teamTokens && teamTokens.size > 0) {
+    const parts = splitMembers(name).map(norm).filter((p) => p.length > 0);
+    if (parts.length > 0) {
+      const teams = pool.filter((p) => p.is_team);
+      // Match exato: equipes que contêm TODOS os tokens entre seus membros.
+      const exactMembers = teams.filter((t) => {
+        const tokens = teamTokens.get(t.id);
+        if (!tokens) return false;
+        return parts.every((part) => tokens.has(part));
+      });
+      if (exactMembers.length > 0) return exactMembers;
+
+      // Match parcial: equipes onde cada token bate parcialmente com algum membro.
+      const partialMembers = teams.filter((t) => {
+        const tokens = teamTokens.get(t.id);
+        if (!tokens) return false;
+        return parts.every((part) => {
+          if (part.length < 3) return false;
+          for (const tok of tokens) {
+            if (tok.includes(part) || part.includes(tok)) return true;
+          }
+          return false;
+        });
+      });
+      if (partialMembers.length > 0) return partialMembers;
+    }
+  }
 
   if (n.length < 3) return [];
 
@@ -76,12 +125,32 @@ function parseScoreLine(line: string): { name: string; score: number } | null {
 }
 
 function parseWinnerLine(line: string): string | null {
-  const m = line.match(/^\s*(.+?)\s+(?:ganhou|venceu|won)\b.*$/i);
+  const m = line.match(/^\s*(.+?)\s+(?:ganhou|ganharam|venceu|venceram|won)\b.*$/i);
   return m ? m[1].trim() : null;
 }
 
-export function parseResultsText(text: string, players: PlayerLite[], opts: { lowerWins?: boolean } = {}): ParsedResult[] {
+export function parseResultsText(
+  text: string,
+  players: PlayerLite[],
+  opts: { lowerWins?: boolean; teamMembers?: TeamMemberLite[] } = {},
+): ParsedResult[] {
   const lowerWins = !!opts.lowerWins;
+
+  // Constrói o índice de tokens por equipe (member_nome + member_nick normalizados).
+  const teamTokens = new Map<string, Set<string>>();
+  if (opts.teamMembers && opts.teamMembers.length > 0) {
+    for (const m of opts.teamMembers) {
+      const set = teamTokens.get(m.team_id) || new Set<string>();
+      const a = norm(m.member_nome || "");
+      const b = norm(m.member_nick || "");
+      if (a) set.add(a);
+      if (b) set.add(b);
+      // Também adiciona apenas o primeiro nome para casamentos curtos ("bianquinha2401 e Maria").
+      const first = norm((m.member_nome || "").trim().split(/\s+/)[0] || "");
+      if (first) set.add(first);
+      teamTokens.set(m.team_id, set);
+    }
+  }
   // Normaliza: quebra também em ". " (ponto seguido de espaço) para suportar
   // textos colados em uma única linha. Scores são inteiros, então é seguro.
   const normalized = text.replace(/\.\s+/g, ".\n");
@@ -122,7 +191,7 @@ export function parseResultsText(text: string, players: PlayerLite[], opts: { lo
     const picked = scoreLines.slice(0, 2);
 
     // Candidatos brutos para cada jogador
-    const cands = picked.map((s) => ({ raw: s.name, score: s.score, candidates: candidatesFor(s.name, players) }));
+    const cands = picked.map((s) => ({ raw: s.name, score: s.score, candidates: candidatesFor(s.name, players, teamTokens) }));
 
     // Resolução conjunta: prefere combinação onde ambos pertencem ao mesmo grupo.
     const resolved: { raw: string; score: number; player?: PlayerLite }[] = cands.map((c) => ({
@@ -178,13 +247,21 @@ export function parseResultsText(text: string, players: PlayerLite[], opts: { lo
 
     let winnerIdx = -1;
     if (winnerLine) {
-      const winnerCands = candidatesFor(winnerLine, players);
+      const winnerCands = candidatesFor(winnerLine, players, teamTokens);
       const wp = winnerCands.length === 1 ? winnerCands[0] : undefined;
       if (wp) {
         winnerIdx = resolved.findIndex((r) => r.player?.id === wp.id);
       }
       if (winnerIdx < 0) {
         winnerIdx = resolved.findIndex((r) => norm(r.raw) === norm(winnerLine));
+      }
+      if (winnerIdx < 0) {
+        // Última tentativa: comparar tokens de membros entre winnerLine e raw de cada lado.
+        const wParts = splitMembers(winnerLine).map(norm).filter(Boolean).sort().join("|");
+        winnerIdx = resolved.findIndex((r) => {
+          const rParts = splitMembers(r.raw).map(norm).filter(Boolean).sort().join("|");
+          return rParts.length > 0 && rParts === wParts;
+        });
       }
       if (winnerIdx < 0) errors.push(`Vencedor "${winnerLine}" não corresponde aos jogadores do bloco.`);
     } else if (resolved.length === 2) {

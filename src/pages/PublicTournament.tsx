@@ -186,8 +186,10 @@ export default function PublicTournament() {
 
       <main className="max-w-5xl mx-auto px-3 py-6 sm:px-4">
         {(() => {
-          const tabCount = 4 + (showDrawTab ? 1 : 0);
-          const gridCls = tabCount === 5
+          const tabCount = 4 + (showDrawTab ? 1 : 0) + (showGroupsTab ? 1 : 0);
+          const gridCls = tabCount >= 6
+            ? "grid-cols-2 sm:grid-cols-6"
+            : tabCount === 5
             ? "grid-cols-2 sm:grid-cols-5"
             : "grid-cols-4";
           return (
@@ -196,6 +198,9 @@ export default function PublicTournament() {
                 <TabsTrigger value="results" className="text-xs sm:text-sm py-2">Resultados</TabsTrigger>
                 <TabsTrigger value="standings" className="text-xs sm:text-sm py-2">{standingsTabLabel}</TabsTrigger>
                 <TabsTrigger value="schedule" className="text-xs sm:text-sm py-2">Confrontos</TabsTrigger>
+                {showGroupsTab && (
+                  <TabsTrigger value="groups" className="text-xs sm:text-sm py-2">Disposição dos grupos</TabsTrigger>
+                )}
                 {showDrawTab && (
                   <TabsTrigger value="draw" className="text-xs sm:text-sm py-2">{drawTabLabel}</TabsTrigger>
                 )}

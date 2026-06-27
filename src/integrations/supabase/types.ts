@@ -619,6 +619,7 @@ export type Database = {
         Returns: {
           grupo: string
           id: string
+          is_team: boolean
           nick_playroom: string
           nome_completo: string
           tournament_id: string

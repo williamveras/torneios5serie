@@ -35,6 +35,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
   const [repescagemTotal, setRepescagemTotal] = useState<string>("");
   const [modalidade, setModalidade] = useState<"individual" | "duplas">("individual");
   const [maxParticipants, setMaxParticipants] = useState<string>("");
+  const [lowerScoreWins, setLowerScoreWins] = useState<boolean>(false);
 
   const [totalInscritos, setTotalInscritos] = useState(0);
   const [numGrupos, setNumGrupos] = useState(0);
@@ -58,6 +59,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
         setRepescagemTotal(anyT.repescagem_total?.toString() ?? "");
         setModalidade((anyT.modalidade as "individual" | "duplas") ?? "individual");
         setMaxParticipants(anyT.max_participants?.toString() ?? "");
+        setLowerScoreWins(anyT.lower_score_wins === true);
       }
       const players = (pr.data as { grupo: string | null }[] | null) ?? [];
       setTotalInscritos(players.length);
@@ -138,6 +140,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
         repescagem_total: rt,
         modalidade,
         max_participants: mx,
+        lower_score_wins: lowerScoreWins,
       })
       .eq("id", tournamentId);
     setSaving(false);

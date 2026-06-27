@@ -200,7 +200,7 @@ export function parseResultsText(text: string, players: PlayerLite[]): ParsedRes
       players: resolved.map((r, i) => ({
         rawName: r.raw,
         playerId: r.player?.id,
-        playerName: r.player ? (r.player.nick_playroom || r.player.nome_completo) : r.raw,
+        playerName: r.player ? (r.player.is_team ? r.player.nome_completo : (r.player.nick_playroom || r.player.nome_completo)) : r.raw,
         pontosMesa: r.score,
         pontosJogo: winnerIdx === i ? 3 : 0,
       })),

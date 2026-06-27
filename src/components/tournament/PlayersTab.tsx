@@ -443,6 +443,49 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
                 Os grupos já foram definidos. Clique em "Sortear Grupos" para refazer o sorteio.
               </p>
             )}
+
+            {/* Agendar sorteio automático dos grupos */}
+            <div className="pt-3 border-t space-y-2">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm font-medium">Agendar sorteio automático dos grupos</p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                O sistema distribuirá os participantes não eliminados em grupos automaticamente na data e horário informados, usando a quantidade definida em "Jogadores por grupo".
+              </p>
+              <div className="flex flex-wrap gap-2 items-end">
+                <div>
+                  <Label htmlFor="group-draw-date" className="text-xs">Data</Label>
+                  <Input id="group-draw-date" type="date" value={groupDrawDate} onChange={(e) => setGroupDrawDate(e.target.value)} className="w-40" />
+                </div>
+                <div>
+                  <Label htmlFor="group-draw-time" className="text-xs">Horário</Label>
+                  <Input id="group-draw-time" type="time" value={groupDrawTime} onChange={(e) => setGroupDrawTime(e.target.value)} className="w-32" />
+                </div>
+                <Button variant="secondary" size="sm" onClick={scheduleGroupDraw} disabled={schedulingGroupDraw}>
+                  <Clock className="h-4 w-4 mr-1" /> {schedulingGroupDraw ? "Agendando..." : "Agendar sorteio"}
+                </Button>
+              </div>
+              {pendingGroupDraws.length > 0 && (
+                <div className="space-y-1 pt-2">
+                  <p className="text-xs font-medium">Sorteios agendados</p>
+                  {pendingGroupDraws.map((s) => {
+                    const dt = new Date(s.scheduled_at);
+                    return (
+                      <div key={s.id} className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2 text-sm">
+                        <span>
+                          {dt.toLocaleDateString("pt-BR")} às {dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                          {s.per_group ? ` · ${s.per_group} por grupo` : ""}
+                        </span>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => cancelGroupDraw(s.id)} aria-label="Cancelar">
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}

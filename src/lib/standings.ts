@@ -17,7 +17,9 @@ export function computeStandings(
   results: MatchResult[],
   getPlayerName: (id: string) => string,
   getPlayerNick: (id: string) => string,
+  opts: { lowerWins?: boolean } = {},
 ): StandingRow[] {
+  const lowerWins = !!opts.lowerWins;
   const agg = new Map<string, { pontosJogo: number; pontosMesa: number; penalties: string[] }>();
   for (const r of results) {
     const prev = agg.get(r.player_id) || { pontosJogo: 0, pontosMesa: 0, penalties: [] };
@@ -69,10 +71,13 @@ export function computeStandings(
   }
 
   rows.sort((a, b) => {
-    // 1º critério: pontos de vitória (desc)
+    // 1º critério: pontos de vitória (desc) — sempre 3/0, independente da regra.
     if (a.pontosJogo !== b.pontosJogo) return b.pontosJogo - a.pontosJogo;
-    // 2º critério: pontos de mesa (desc)
-    if (a.pontosMesa !== b.pontosMesa) return b.pontosMesa - a.pontosMesa;
+    // 2º critério: pontos de mesa — direção depende da regra do torneio
+    // (desc por padrão; asc quando menor pontuação vence, ex.: dominó).
+    if (a.pontosMesa !== b.pontosMesa) {
+      return lowerWins ? a.pontosMesa - b.pontosMesa : b.pontosMesa - a.pontosMesa;
+    }
     // 3º critério: quem não tem penalidades fica na frente
     if (a.hasPenalty !== b.hasPenalty) return a.hasPenalty ? 1 : -1;
     // 4º critério: confronto direto (head-to-head) — vencedor à frente

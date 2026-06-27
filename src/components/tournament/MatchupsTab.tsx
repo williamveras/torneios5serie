@@ -69,7 +69,7 @@ function roundRobin(playerIds: string[]): Array<Array<[string, string | null]>> 
   return rounds;
 }
 
-export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) {
+export default function MatchupsTab({ tournamentId, onScheduleMatchup, onReallocateSchedule }: Props) {
   const { user } = useAuth();
   const [players, setPlayers] = useState<Player[]>([]);
   const [matchups, setMatchups] = useState<Matchup[]>([]);

@@ -95,6 +95,8 @@ export default function PublicTournament() {
       .on("postgres_changes", { event: "*", schema: "public", table: "matchups", filter: `tournament_id=eq.${tournamentId}` }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "phase_status", filter: `tournament_id=eq.${tournamentId}` }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "match_results", filter: `tournament_id=eq.${tournamentId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "scheduled_draws", filter: `tournament_id=eq.${tournamentId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "players", filter: `tournament_id=eq.${tournamentId}` }, refresh)
       .subscribe();
 
     return () => {

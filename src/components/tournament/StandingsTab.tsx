@@ -259,7 +259,7 @@ export default function StandingsTab({ tournamentId }: Props) {
     if (!hasAnyGroup) {
       return [{
         grupo: "",
-        rows: computeStandings(filteredByFase, getPlayerName, getPlayerNick),
+        rows: computeStandings(filteredByFase, getPlayerName, getPlayerNick, { lowerWins }),
       }];
     }
     return groups.map(g => ({
@@ -268,15 +268,16 @@ export default function StandingsTab({ tournamentId }: Props) {
         filteredByFase.filter(r => r.grupo === g),
         getPlayerName,
         getPlayerNick,
+        { lowerWins },
       ),
     }));
-  }, [filteredByFase, groups, hasAnyGroup, players]);
+  }, [filteredByFase, groups, hasAnyGroup, players, lowerWins]);
 
   const totalRows = sections.reduce((acc, s) => acc + s.rows.length, 0);
 
   const qualifiers = useMemo(
-    () => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick, qualifierOpts),
-    [filteredByFase, players, qualifierOpts],
+    () => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins }),
+    [filteredByFase, players, qualifierOpts, lowerWins],
   );
   const nextFase = nextPhaseName(selectedFase);
   const isGroupsPhase = selectedFase === "Fase de Grupos";
@@ -297,8 +298,10 @@ export default function StandingsTab({ tournamentId }: Props) {
       let w: string | null = null;
       if (r1.pontos_jogo > r2.pontos_jogo) w = m.player1_id;
       else if (r2.pontos_jogo > r1.pontos_jogo) w = m.player2_id;
-      else if (r1.pontos_mesa > r2.pontos_mesa) w = m.player1_id;
-      else if (r2.pontos_mesa > r1.pontos_mesa) w = m.player2_id;
+      else if (r1.pontos_mesa !== r2.pontos_mesa) {
+        if (lowerWins) w = r1.pontos_mesa < r2.pontos_mesa ? m.player1_id : m.player2_id;
+        else w = r1.pontos_mesa > r2.pontos_mesa ? m.player1_id : m.player2_id;
+      }
       if (w) qualifiedIds.add(w);
     }
     // Inclui também os participantes da "Disputa de 3º Lugar" quando cadastrada.
@@ -311,8 +314,8 @@ export default function StandingsTab({ tournamentId }: Props) {
     const winnersResults = filteredByFase
       .filter(r => qualifiedIds.has(r.player_id))
       .map(r => ({ ...r, grupo: "" })) as MatchResult[];
-    return computeQualifiers(winnersResults, getPlayerName, getPlayerNick);
-  }, [matchups, filteredByFase, selectedFase, isGroupsPhase, players]);
+    return computeQualifiers(winnersResults, getPlayerName, getPlayerNick, { lowerWins });
+  }, [matchups, filteredByFase, selectedFase, isGroupsPhase, players, lowerWins]);
 
   const showQualifiers = isConcluded && !!nextFase && totalRows > 0 && (
     isGroupsPhase
@@ -329,8 +332,8 @@ export default function StandingsTab({ tournamentId }: Props) {
     [results],
   );
   const grupoQualifiers = useMemo(
-    () => computeQualifiers(grupoResults, getPlayerName, getPlayerNick, qualifierOpts),
-    [grupoResults, players, qualifierOpts],
+    () => computeQualifiers(grupoResults, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins }),
+    [grupoResults, players, qualifierOpts, lowerWins],
   );
   const classifiedCount = grupoQualifiers.hasGroups
     ? grupoQualifiers.direct.length + grupoQualifiers.repescagem.length

@@ -69,12 +69,13 @@ interface Props {
   prefillPlayerId?: string | null;
   prefillPlayer2Id?: string | null;
   prefillGrupo?: string | null;
+  prefillEditScheduleId?: string | null;
   onPrefillConsumed?: () => void;
 }
 
 const GRUPOS = Array.from({ length: 30 }, (_, i) => String(i + 1));
 
-export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlayer2Id, prefillGrupo, onPrefillConsumed }: Props) {
+export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlayer2Id, prefillGrupo, prefillEditScheduleId, onPrefillConsumed }: Props) {
   const [players, setPlayers] = useState<Player[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [matchups, setMatchups] = useState<{ player1_id: string; player2_id: string; rodada: number | null; fase: string | null; created_at: string }[]>([]);

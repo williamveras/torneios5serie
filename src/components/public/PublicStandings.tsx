@@ -44,6 +44,7 @@ interface Props {
   matchups?: Matchup[];
   viewMode?: ViewMode;
   qualifierOpts?: { directPerGroup?: number; repescagemTotal?: number };
+  lowerWins?: boolean;
 }
 
 const naturalGroupSort = (a: string, b: string) => {
@@ -59,7 +60,7 @@ const compactCardPadding = "p-3 min-[360px]:p-4";
 const keepTogether = (text: string | number) =>
   String(text).replace(/ /g, "\u00A0").replace(/-/g, "\u2011");
 
-export default function PublicStandings({ results, players, phaseStatuses, matchups = [], viewMode = "list", qualifierOpts = {} }: Props) {
+export default function PublicStandings({ results, players, phaseStatuses, matchups = [], viewMode = "list", qualifierOpts = {}, lowerWins = false }: Props) {
   // Default fase: latest concluded phase (so the public view follows the tournament progression).
   const latestConcludedFase = useMemo(() => {
     for (let i = FASES.length - 1; i >= 0; i--) {
@@ -130,7 +131,7 @@ export default function PublicStandings({ results, players, phaseStatuses, match
     if (!hasAnyGroup) {
       return [{
         grupo: "",
-        rows: computeStandings(filteredByFase, getPlayerName, getPlayerNick),
+        rows: computeStandings(filteredByFase, getPlayerName, getPlayerNick, { lowerWins }),
       }];
     }
     return groups.map(g => ({
@@ -139,9 +140,10 @@ export default function PublicStandings({ results, players, phaseStatuses, match
         filteredByFase.filter(r => r.grupo === g),
         getPlayerName,
         getPlayerNick,
+        { lowerWins },
       ),
     }));
-  }, [filteredByFase, groups, hasAnyGroup, players]);
+  }, [filteredByFase, groups, hasAnyGroup, players, lowerWins]);
 
   const totalRows = sections.reduce((acc, s) => acc + s.rows.length, 0);
 
@@ -150,8 +152,8 @@ export default function PublicStandings({ results, players, phaseStatuses, match
   const isConcluded = phaseStatus === "concluida";
 
   const qualifiers = useMemo(
-    () => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick, qualifierOpts),
-    [filteredByFase, players, qualifierOpts],
+    () => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins }),
+    [filteredByFase, players, qualifierOpts, lowerWins],
   );
   const nextFase = nextPhaseName(selectedFase);
 
@@ -188,8 +190,10 @@ export default function PublicStandings({ results, players, phaseStatuses, match
       let w: string | null = null;
       if (r1.pontos_jogo > r2.pontos_jogo) w = m.player1_id;
       else if (r2.pontos_jogo > r1.pontos_jogo) w = m.player2_id;
-      else if (r1.pontos_mesa > r2.pontos_mesa) w = m.player1_id;
-      else if (r2.pontos_mesa > r1.pontos_mesa) w = m.player2_id;
+      else if (r1.pontos_mesa !== r2.pontos_mesa) {
+        if (lowerWins) w = r1.pontos_mesa < r2.pontos_mesa ? m.player1_id : m.player2_id;
+        else w = r1.pontos_mesa > r2.pontos_mesa ? m.player1_id : m.player2_id;
+      }
       if (w) qualifiedIds.add(w);
     }
     // Quando há "Disputa de 3º Lugar" cadastrada, inclui também os jogadores

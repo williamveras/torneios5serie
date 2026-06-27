@@ -142,6 +142,34 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
     if (data) setPhaseStatuses(data);
   }
 
+  async function fetchSchedules() {
+    const { data } = await supabase
+      .from("match_schedule")
+      .select("id,player1_id,player2_id,grupo,data_partida,horario,observacao")
+      .eq("tournament_id", tournamentId);
+    if (data) setSchedules(data as any);
+  }
+
+  // Lookup schedule by matchup (same pair + same grupo/fase)
+  function findSchedule(p1: string, p2: string, grupo: string) {
+    const pair = [p1, p2].sort().join("|");
+    return schedules.find((s) => {
+      const sp = [s.player1_id, s.player2_id].sort().join("|");
+      return sp === pair && s.grupo === grupo;
+    });
+  }
+
+  function formatScheduleWhen(s: { data_partida: string | null; horario: string | null; observacao: string | null }) {
+    const parts: string[] = [];
+    if (s.data_partida) {
+      const [y, m, d] = s.data_partida.split("-");
+      parts.push(`${d}/${m}`);
+    }
+    if (s.horario) parts.push(s.horario.slice(0, 5));
+    if (!parts.length && s.observacao) return s.observacao;
+    return parts.join(" às ") || "—";
+  }
+
   async function scheduleDraw() {
     if (!drawDate || !drawTime) {
       toast.error("Informe data e horário para o sorteio.");

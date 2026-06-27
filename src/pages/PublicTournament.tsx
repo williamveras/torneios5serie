@@ -30,6 +30,7 @@ interface PlayerLite {
   id: string;
   nome_completo: string;
   nick_playroom: string | null;
+  grupo?: string | null;
   is_team?: boolean | null;
 }
 

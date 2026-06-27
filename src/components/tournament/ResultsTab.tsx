@@ -236,7 +236,7 @@ export default function ResultsTab({ tournamentId }: Props) {
             <div className="space-y-2">
               <Label htmlFor={`penalidade-${idx}`}>Penalidades <span className="text-muted-foreground font-normal">(opcional)</span></Label>
               <Select value={r.penalidade_tipo} onValueChange={v => updateResult(idx, "penalidade_tipo", v)}>
-                <SelectTrigger id={`penalidade-${idx}`} aria-label={`Penalidade do jogador ${idx + 1}`}><SelectValue /></SelectTrigger>
+                <SelectTrigger id={`penalidade-${idx}`} aria-label={`Penalidade ${isDuplas ? "da dupla" : "do jogador"} ${idx + 1}`}><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {PENALIDADE_OPCOES.map(op => <SelectItem key={op} value={op}>{op}</SelectItem>)}
                 </SelectContent>

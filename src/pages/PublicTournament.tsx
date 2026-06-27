@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getPlayerDisplayName } from "@/lib/playerDisplay";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllMatchResults } from "@/lib/fetchAll";
@@ -27,6 +28,7 @@ interface PlayerLite {
   id: string;
   nome_completo: string;
   nick_playroom: string | null;
+  is_team?: boolean | null;
 }
 
 interface ModeratorLite {
@@ -159,7 +161,7 @@ export default function PublicTournament() {
         </div>
         {campeao && (
           <div className="bg-amber-500/10 border-t border-amber-500/30 py-2 px-4 text-center text-sm font-medium text-amber-900 dark:text-amber-200">
-            🏆 Campeão: {campeao.nick_playroom || campeao.nome_completo}
+            🏆 Campeão: {getPlayerDisplayName(campeao as any)}
           </div>
         )}
       </header>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { getPlayerDisplayName } from "@/lib/playerDisplay";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllMatchResults } from "@/lib/fetchAll";
 import { Button } from "@/components/ui/button";
@@ -66,11 +67,7 @@ export default function StatsTab({ tournamentId }: Props) {
 
   const totalGames = Math.floor(results.length / 2);
 
-  const playerName = (id: string) => {
-    const p = playersMap[id];
-    if (!p) return "Jogador desconhecido";
-    return p.nick_playroom || p.nome_completo;
-  };
+  const playerName = (id: string) => getPlayerDisplayName(playersMap[id] as any, "Jogador desconhecido");
 
   const registeredByName = (uid: string | null) => {
     if (!uid) return "Não informado";
@@ -78,7 +75,7 @@ export default function StatsTab({ tournamentId }: Props) {
   };
 
   const playersLite = useMemo(
-    () => players.map(p => ({ id: p.id, nome_completo: p.nome_completo, nick_playroom: p.nick_playroom })),
+    () => players.map(p => ({ id: p.id, nome_completo: p.nome_completo, nick_playroom: p.nick_playroom, is_team: (p as any).is_team ?? false })),
     [players],
   );
 

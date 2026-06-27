@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getPlayerDisplayName } from "@/lib/playerDisplay";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -188,8 +189,8 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
   }
 
   function getPlayerName(id: string) {
-    const p = players.find((p) => p.id === id);
-    return p?.nick_playroom || p?.nome_completo || "—";
+    const p = players.find((p) => p.id === id) as any;
+    return getPlayerDisplayName(p, "—");
   }
 
   // Active phase (used to scope form defaults, import dialog, and listing)
@@ -447,7 +448,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
                 <SelectContent>
                   {players.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.nick_playroom || p.nome_completo}{p.grupo ? ` (Grupo ${p.grupo})` : ""}
+                      {getPlayerDisplayName(p as any)}{p.grupo ? ` (Grupo ${p.grupo})` : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -460,7 +461,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
                 <SelectContent>
                   {players.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.nick_playroom || p.nome_completo}{p.grupo ? ` (Grupo ${p.grupo})` : ""}
+                      {getPlayerDisplayName(p as any)}{p.grupo ? ` (Grupo ${p.grupo})` : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -683,7 +684,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
                   <SelectContent>
                     {players.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
-                        {p.nick_playroom || p.nome_completo}{p.grupo ? ` (Grupo ${p.grupo})` : ""}
+                        {getPlayerDisplayName(p as any)}{p.grupo ? ` (Grupo ${p.grupo})` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -696,7 +697,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
                   <SelectContent>
                     {players.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
-                        {p.nick_playroom || p.nome_completo}{p.grupo ? ` (Grupo ${p.grupo})` : ""}
+                        {getPlayerDisplayName(p as any)}{p.grupo ? ` (Grupo ${p.grupo})` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>

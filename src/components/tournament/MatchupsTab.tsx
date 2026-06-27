@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getPlayerDisplayName } from "@/lib/playerDisplay";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -191,8 +192,8 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup }: Props) 
   }
 
   function getPlayerName(id: string) {
-    const p = players.find((p) => p.id === id);
-    return p?.nick_playroom || p?.nome_completo || "—";
+    const p = players.find((p) => p.id === id) as any;
+    return getPlayerDisplayName(p, "—");
   }
 
   const hasGroups = players.some((p) => p.grupo);

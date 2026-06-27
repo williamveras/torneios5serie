@@ -10,6 +10,7 @@ interface PlayerLite {
   id: string;
   nome_completo: string;
   nick_playroom: string | null;
+  is_team?: boolean | null;
 }
 
 interface Props {
@@ -35,9 +36,9 @@ const ELIM_FASES_DEFAULT = [
   "Final",
 ];
 
+import { getPlayerDisplayName } from "@/lib/playerDisplay";
 function displayName(p: PlayerLite | undefined): string {
-  if (!p) return "—";
-  return p.nick_playroom || p.nome_completo;
+  return getPlayerDisplayName(p, "—");
 }
 
 interface MatchupView {

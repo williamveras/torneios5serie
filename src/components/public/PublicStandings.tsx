@@ -17,6 +17,13 @@ import QualifiersView from "@/components/QualifiersView";
 import { buildMesaMap, isGroupPhase, pairKey } from "@/lib/phase";
 import type { ViewMode } from "./ViewModeToggle";
 import type { Tables } from "@/integrations/supabase/types";
+import { getPlayerNickForStandings, type PlayerDisplayLike } from "@/lib/playerDisplay";
+
+// Para a tabela de classificação: queremos que duplas apareçam como o nome da equipe.
+// Como a coluna usa `s.nick || s.playerName`, e para duplas o nick fica vazio,
+// basta retornar nome_completo (team name) como "playerName".
+const getPlayerFullNameForRank = (p?: PlayerDisplayLike | null) =>
+  (p?.nome_completo || "").trim() || "Jogador desconhecido";
 
 type MatchResult = Tables<"match_results">;
 type PhaseStatus = Tables<"phase_status">;
@@ -27,6 +34,7 @@ interface PlayerLite {
   id: string;
   nome_completo: string;
   nick_playroom: string | null;
+  is_team?: boolean | null;
 }
 
 interface Props {
@@ -74,8 +82,8 @@ export default function PublicStandings({ results, players, phaseStatuses, match
     return m;
   }, [players]);
 
-  const getPlayerName = (id: string) => playerMap.get(id)?.nome_completo || "Jogador desconhecido";
-  const getPlayerNick = (id: string) => playerMap.get(id)?.nick_playroom || "";
+  const getPlayerName = (id: string) => getPlayerFullNameForRank(playerMap.get(id));
+  const getPlayerNick = (id: string) => getPlayerNickForStandings(playerMap.get(id));
 
   const availableFases = useMemo(() => {
     const fases = [...new Set(results.map(r => r.fase || "Fase de Grupos"))];

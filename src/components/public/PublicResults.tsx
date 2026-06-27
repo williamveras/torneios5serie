@@ -10,6 +10,7 @@ import { FASES } from "@/lib/constants";
 import { getActivePublicPhase, isGroupPhase, buildMesaMap, pairKey } from "@/lib/phase";
 import type { ViewMode } from "./ViewModeToggle";
 import type { Tables } from "@/integrations/supabase/types";
+import { getPlayerDisplayName } from "@/lib/playerDisplay";
 
 type MatchResult = Tables<"match_results">;
 type PhaseStatus = Tables<"phase_status">;
@@ -19,6 +20,7 @@ interface PlayerLite {
   id: string;
   nome_completo: string;
   nick_playroom: string | null;
+  is_team?: boolean | null;
 }
 
 interface ModeratorLite {
@@ -151,12 +153,7 @@ export default function PublicResults({ results, players, matchups = [], phaseSt
     return m;
   }, [moderators]);
 
-  const displayName = (id: string) => {
-    const p = playerMap.get(id);
-    if (!p) return "Jogador desconhecido";
-    const nick = p.nick_playroom?.trim();
-    return nick || p.nome_completo;
-  };
+  const displayName = (id: string) => getPlayerDisplayName(playerMap.get(id), "Jogador desconhecido");
 
   const moderatorName = (uid: string | null) => {
     if (!uid) return "Não informado";

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getPlayerDisplayName } from "@/lib/playerDisplay";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -210,7 +211,7 @@ export default function ResultsTab({ tournamentId }: Props) {
                 <SelectContent>
                   {players.map(p => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.nick_playroom || p.nome_completo}
+                      {getPlayerDisplayName(p as any)}
                       {p.grupo ? ` (Grupo ${p.grupo})` : ""}
                     </SelectItem>
                   ))}

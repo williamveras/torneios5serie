@@ -50,12 +50,19 @@ function distributeIntoGroups(players: Player[], perGroup: number): Map<string, 
 }
 
 export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
+  const { user } = useAuth();
   const [players, setPlayers] = useState<Player[]>([]);
   const [modalidade, setModalidade] = useState<"individual" | "duplas">("individual");
   const [teamMembersMap, setTeamMembersMap] = useState<Record<string, TeamMember[]>>({});
   const [perGroup, setPerGroup] = useState<string>("4");
   const [sorting, setSorting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Scheduled group draw
+  const [groupDrawDate, setGroupDrawDate] = useState("");
+  const [groupDrawTime, setGroupDrawTime] = useState("");
+  const [schedulingGroupDraw, setSchedulingGroupDraw] = useState(false);
+  const [pendingGroupDraws, setPendingGroupDraws] = useState<Array<{ id: string; scheduled_at: string; per_group: number | null }>>([]);
 
   // Edit dialog state
   const [editPlayer, setEditPlayer] = useState<Player | null>(null);

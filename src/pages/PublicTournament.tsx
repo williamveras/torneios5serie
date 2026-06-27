@@ -12,6 +12,7 @@ import PublicResults from "@/components/public/PublicResults";
 import PublicStandings from "@/components/public/PublicStandings";
 import PublicRegulamento from "@/components/public/PublicRegulamento";
 import PublicDraw from "@/components/public/PublicDraw";
+import PublicGroups from "@/components/public/PublicGroups";
 
 import { FASES, isSideFase } from "@/lib/constants";
 import { nextPhaseName } from "@/lib/qualifiers";
@@ -29,6 +30,7 @@ interface PlayerLite {
   id: string;
   nome_completo: string;
   nick_playroom: string | null;
+  grupo?: string | null;
   is_team?: boolean | null;
 }
 
@@ -93,6 +95,8 @@ export default function PublicTournament() {
       .on("postgres_changes", { event: "*", schema: "public", table: "matchups", filter: `tournament_id=eq.${tournamentId}` }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "phase_status", filter: `tournament_id=eq.${tournamentId}` }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "match_results", filter: `tournament_id=eq.${tournamentId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "scheduled_draws", filter: `tournament_id=eq.${tournamentId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "players", filter: `tournament_id=eq.${tournamentId}` }, refresh)
       .subscribe();
 
     return () => {
@@ -152,6 +156,14 @@ export default function PublicTournament() {
   const showDrawTab = hasMatchupsForDrawFase || hasPendingDraw;
   const drawTabLabel = `Sorteio dos confrontos - ${drawFase}`;
 
+  // Disposição dos grupos: aparece se já houver grupos definidos
+  // ou um sorteio de grupos agendado.
+  const hasGroupsDefined = players.some((p) => p.grupo);
+  const hasPendingGroupDraw = scheduledDraws.some(
+    (s) => s.status === "pending" && ((s as any).kind === "grupos" || s.fase === "Fase de Grupos"),
+  );
+  const showGroupsTab = hasGroupsDefined || hasPendingGroupDraw;
+
   const campeaoId = (tournament as any).campeao_id as string | null | undefined;
   const campeao = campeaoId ? players.find(p => p.id === campeaoId) : null;
 
@@ -174,8 +186,10 @@ export default function PublicTournament() {
 
       <main className="max-w-5xl mx-auto px-3 py-6 sm:px-4">
         {(() => {
-          const tabCount = 4 + (showDrawTab ? 1 : 0);
-          const gridCls = tabCount === 5
+          const tabCount = 4 + (showDrawTab ? 1 : 0) + (showGroupsTab ? 1 : 0);
+          const gridCls = tabCount >= 6
+            ? "grid-cols-2 sm:grid-cols-6"
+            : tabCount === 5
             ? "grid-cols-2 sm:grid-cols-5"
             : "grid-cols-4";
           return (
@@ -184,6 +198,9 @@ export default function PublicTournament() {
                 <TabsTrigger value="results" className="text-xs sm:text-sm py-2">Resultados</TabsTrigger>
                 <TabsTrigger value="standings" className="text-xs sm:text-sm py-2">{standingsTabLabel}</TabsTrigger>
                 <TabsTrigger value="schedule" className="text-xs sm:text-sm py-2">Confrontos</TabsTrigger>
+                {showGroupsTab && (
+                  <TabsTrigger value="groups" className="text-xs sm:text-sm py-2">Disposição dos grupos</TabsTrigger>
+                )}
                 {showDrawTab && (
                   <TabsTrigger value="draw" className="text-xs sm:text-sm py-2">{drawTabLabel}</TabsTrigger>
                 )}
@@ -223,6 +240,11 @@ export default function PublicTournament() {
                 </div>
                 <PublicSchedule schedules={schedules} players={players} matchups={matchups} results={results} phaseStatuses={phaseStatuses} numeroRodadas={(tournament as any).numero_rodadas ?? null} viewMode={scheduleView} />
               </TabsContent>
+              {showGroupsTab && (
+                <TabsContent value="groups">
+                  <PublicGroups players={players} scheduledDraws={scheduledDraws as any} />
+                </TabsContent>
+              )}
               {showDrawTab && drawFase && (
                 <TabsContent value="draw">
                   <div className="flex justify-end mb-3">

@@ -47,6 +47,7 @@ export default function ResultsTab({ tournamentId }: Props) {
   const [loading, setLoading] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [activeFase, setActiveFase] = useState<string>("Fase de Grupos");
+  const [lowerWins, setLowerWins] = useState<boolean>(false);
 
   const isFaseDeGrupos = isGroupPhase(fase);
   const isDuplas = players.some(p => p.is_team);
@@ -60,6 +61,8 @@ export default function ResultsTab({ tournamentId }: Props) {
         setActiveFase(af);
         setFase(af);
       });
+    supabase.from("tournaments").select("*").eq("id", tournamentId).maybeSingle()
+      .then(({ data }) => { if (data) setLowerWins(((data as any).lower_score_wins) === true); });
   }, [tournamentId]);
 
   const getPlayerGrupo = (playerId: string): string => {
@@ -184,6 +187,7 @@ export default function ResultsTab({ tournamentId }: Props) {
           tournamentId={tournamentId}
           players={players}
           activeFase={activeFase}
+          lowerWins={lowerWins}
           onImported={() => { /* nothing to refresh in this tab */ }}
         />
         <div className="grid gap-4 grid-cols-2">
@@ -229,7 +233,10 @@ export default function ResultsTab({ tournamentId }: Props) {
                 <Input id={`pontos-vitoria-${idx}`} type="number" min={0} value={r.pontos_jogo} onChange={e => updateResult(idx, "pontos_jogo", e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor={`pontos-mesa-${idx}`}>Pontos de Mesa</Label>
+                <Label htmlFor={`pontos-mesa-${idx}`}>
+                  Pontos de Mesa
+                  {lowerWins && <span className="text-xs font-normal text-muted-foreground ml-1">(menor vence)</span>}
+                </Label>
                 <Input id={`pontos-mesa-${idx}`} type="number" min={0} value={r.pontos_mesa} onChange={e => updateResult(idx, "pontos_mesa", e.target.value)} />
               </div>
             </div>

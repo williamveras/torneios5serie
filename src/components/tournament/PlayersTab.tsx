@@ -110,7 +110,50 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
     }
   };
 
-  useEffect(() => { fetchPlayers(); }, [tournamentId]);
+  useEffect(() => { fetchPlayers(); fetchPendingGroupDraws(); }, [tournamentId]);
+
+  async function fetchPendingGroupDraws() {
+    const { data } = await (supabase.from("scheduled_draws") as any)
+      .select("id,scheduled_at,per_group,status,kind")
+      .eq("tournament_id", tournamentId)
+      .eq("kind", "grupos")
+      .eq("status", "pending")
+      .order("scheduled_at", { ascending: true });
+    setPendingGroupDraws((data || []) as any);
+  }
+
+  async function scheduleGroupDraw() {
+    const size = parseInt(perGroup);
+    if (!size || size < 2) { toast.error("Informe pelo menos 2 jogadores por grupo"); return; }
+    if (!groupDrawDate || !groupDrawTime) { toast.error("Informe data e horário para o sorteio."); return; }
+    const [y, m, d] = groupDrawDate.split("-").map(Number);
+    const [hh, mm] = groupDrawTime.split(":").map(Number);
+    const when = new Date(y, (m || 1) - 1, d || 1, hh || 0, mm || 0, 0, 0);
+    if (isNaN(when.getTime())) { toast.error("Data ou horário inválido."); return; }
+    if (when.getTime() <= Date.now()) { toast.error("O horário deve ser no futuro."); return; }
+    setSchedulingGroupDraw(true);
+    const { error } = await (supabase.from("scheduled_draws") as any).insert({
+      tournament_id: tournamentId,
+      fase: "Fase de Grupos",
+      mode: "por_grupo",
+      kind: "grupos",
+      per_group: size,
+      scheduled_at: when.toISOString(),
+      created_by: user?.id ?? null,
+    });
+    setSchedulingGroupDraw(false);
+    if (error) { toast.error("Erro ao agendar: " + error.message); return; }
+    toast.success("Sorteio dos grupos agendado!");
+    setGroupDrawDate(""); setGroupDrawTime("");
+    fetchPendingGroupDraws();
+  }
+
+  async function cancelGroupDraw(id: string) {
+    const { error } = await (supabase.from("scheduled_draws") as any)
+      .update({ status: "cancelled" }).eq("id", id);
+    if (error) toast.error("Erro ao cancelar: " + error.message);
+    else { toast.success("Sorteio cancelado."); fetchPendingGroupDraws(); }
+  }
 
   const hasGroups = players.some(p => p.grupo);
 

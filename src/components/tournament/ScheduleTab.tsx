@@ -170,6 +170,19 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
     }
   }, [prefillPlayerId, prefillPlayer2Id, prefillGrupo, players, onPrefillConsumed]);
 
+  // Pre-fill: open edit dialog for an existing schedule (Realocar)
+  useEffect(() => {
+    if (prefillEditScheduleId && schedules.length > 0) {
+      const s = schedules.find((x) => x.id === prefillEditScheduleId);
+      if (s) {
+        openEdit(s);
+        onPrefillConsumed?.();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefillEditScheduleId, schedules]);
+
   async function fetchPlayers() {
     const { data } = await supabase
       .from("players")

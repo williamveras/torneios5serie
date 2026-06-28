@@ -149,6 +149,7 @@ export default function ResultsTab({ tournamentId }: Props) {
       toast.error("Sessão não encontrada. Faça login novamente.");
       return;
     }
+    const trimmedComment = comentario.trim() || null;
     const toInsert = results.map(r => ({
       tournament_id: tournamentId,
       player_id: r.player_id,
@@ -159,6 +160,7 @@ export default function ResultsTab({ tournamentId }: Props) {
       pontos_mesa: parseInt(r.pontos_mesa),
       penalidades: resolvePenalidade(r),
       registered_by: currentUserId,
+      comentario: trimmedComment,
     }));
 
     const { error } = await supabase.from("match_results").insert(toInsert);

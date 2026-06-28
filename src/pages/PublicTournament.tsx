@@ -43,6 +43,7 @@ export default function PublicTournament() {
   const { tournamentId } = useParams<{ tournamentId: string }>();
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [players, setPlayers] = useState<PlayerLite[]>([]);
+  const [teamMembers, setTeamMembers] = useState<Record<string, { nome: string; nick: string | null }[]>>({});
   const [results, setResults] = useState<MatchResult[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [matchups, setMatchups] = useState<Matchup[]>([]);
@@ -50,6 +51,7 @@ export default function PublicTournament() {
   const [phaseStatuses, setPhaseStatuses] = useState<PhaseStatus[]>([]);
   const [moderators, setModerators] = useState<ModeratorLite[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [notFound, setNotFound] = useState(false);
   const [resultsView, setResultsView] = useState<ViewMode>("list");
   const [standingsView, setStandingsView] = useState<ViewMode>("list");
@@ -76,7 +78,25 @@ export default function PublicTournament() {
       if (!t.data) { setNotFound(true); setLoading(false); return; }
       setNotFound(false);
       setTournament(t.data);
-      setPlayers(((p.data as unknown) as PlayerLite[]) || []);
+      const playersData = ((p.data as unknown) as PlayerLite[]) || [];
+      setPlayers(playersData);
+      // Carrega membros das equipes (duplas) para exibir nomes nos rótulos.
+      const teamIds = playersData.filter((pl) => pl.is_team).map((pl) => pl.id);
+      if (teamIds.length > 0) {
+        const { data: tm } = await (supabase.from("team_members") as any)
+          .select("team_id, member_nome, member_nick, position")
+          .in("team_id", teamIds);
+        const map: Record<string, { nome: string; nick: string | null }[]> = {};
+        ((tm as any[]) || [])
+          .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+          .forEach((row) => {
+            const arr = map[row.team_id] || (map[row.team_id] = []);
+            arr.push({ nome: row.member_nome, nick: row.member_nick });
+          });
+        setTeamMembers(map);
+      } else {
+        setTeamMembers({});
+      }
       setResults(r.data || []);
       setSchedules(s.data || []);
       setPhaseStatuses(ps.data || []);
@@ -85,6 +105,7 @@ export default function PublicTournament() {
       setScheduledDraws(sd.data || []);
       setLoading(false);
     };
+
 
     loadData(true);
 
@@ -220,6 +241,7 @@ export default function PublicTournament() {
                 <PublicStandings
                   results={results}
                   players={players}
+                  teamMembers={teamMembers}
                   matchups={matchups}
                   phaseStatuses={phaseStatuses}
                   viewMode={standingsView}
@@ -233,6 +255,7 @@ export default function PublicTournament() {
                     return opts;
                   })()}
                 />
+
               </TabsContent>
               <TabsContent value="schedule">
                 <div className="flex justify-end mb-3">

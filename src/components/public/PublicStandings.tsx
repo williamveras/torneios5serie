@@ -25,6 +25,22 @@ import { getPlayerNickForStandings, type PlayerDisplayLike } from "@/lib/playerD
 const getPlayerFullNameForRank = (p?: PlayerDisplayLike | null) =>
   (p?.nome_completo || "").trim() || "Jogador desconhecido";
 
+type TeamMembersMap = Record<string, { nome: string; nick: string | null }[]>;
+
+const formatTeamWithMembers = (
+  baseName: string,
+  player: PlayerLite | undefined,
+  teamMembers: TeamMembersMap,
+) => {
+  if (!player?.is_team) return baseName;
+  const members = teamMembers[player.id] || [];
+  if (members.length === 0) return baseName;
+  const memberLabels = members.map((m) => (m.nick || "").trim() || (m.nome || "").trim()).filter(Boolean);
+  if (memberLabels.length === 0) return baseName;
+  return `${baseName} (${memberLabels.join(" x ")})`;
+};
+
+
 type MatchResult = Tables<"match_results">;
 type PhaseStatus = Tables<"phase_status">;
 
@@ -40,12 +56,14 @@ interface PlayerLite {
 interface Props {
   results: MatchResult[];
   players: PlayerLite[];
+  teamMembers?: TeamMembersMap;
   phaseStatuses: PhaseStatus[];
   matchups?: Matchup[];
   viewMode?: ViewMode;
   qualifierOpts?: { directPerGroup?: number; repescagemTotal?: number };
   lowerWins?: boolean;
 }
+
 
 const naturalGroupSort = (a: string, b: string) => {
   const na = Number(a), nb = Number(b);
@@ -60,7 +78,7 @@ const compactCardPadding = "p-3 min-[360px]:p-4";
 const keepTogether = (text: string | number) =>
   String(text).replace(/ /g, "\u00A0").replace(/-/g, "\u2011");
 
-export default function PublicStandings({ results, players, phaseStatuses, matchups = [], viewMode = "list", qualifierOpts = {}, lowerWins = false }: Props) {
+export default function PublicStandings({ results, players, teamMembers = {}, phaseStatuses, matchups = [], viewMode = "list", qualifierOpts = {}, lowerWins = false }: Props) {
   // Default fase: latest concluded phase (so the public view follows the tournament progression).
   const latestConcludedFase = useMemo(() => {
     for (let i = FASES.length - 1; i >= 0; i--) {
@@ -292,9 +310,10 @@ export default function PublicStandings({ results, players, phaseStatuses, match
                 </TableHeader>
                 <TableBody>
                   {sec.rows.map(s => {
-                    const baseName = s.nick || s.playerName;
+                    const baseName = formatTeamWithMembers(s.nick || s.playerName, playerMap.get(s.playerId), teamMembers);
                     const mesa = playerMesaMap.get(s.playerId);
                     const displayName = mesa ? `${baseName}, mesa ${mesa}` : baseName;
+
                     return (
                       <TableRow key={s.playerId} className={s.hasPenalty ? "bg-destructive/5" : ""}>
                         <TableCell className="font-bold tabular-nums">{s.position}º</TableCell>
@@ -324,16 +343,13 @@ export default function PublicStandings({ results, players, phaseStatuses, match
             )}
             <ol
               className="space-y-2"
-              aria-label={
-                hasAnyGroup
-                  ? `Classificação do grupo ${sec.grupo}`
-                  : `Classificação — ${selectedFase}`
-              }
+              aria-label={hasAnyGroup ? "Classificação" : `Classificação — ${selectedFase}`}
             >
               {sec.rows.map(s => {
-                const baseName = s.nick || s.playerName;
+                const baseName = formatTeamWithMembers(s.nick || s.playerName, playerMap.get(s.playerId), teamMembers);
                 const mesa = playerMesaMap.get(s.playerId);
                 const displayName = mesa ? `${baseName}, mesa ${mesa}` : baseName;
+
                 return (
                   <li
                     key={s.playerId}
@@ -412,7 +428,7 @@ export default function PublicStandings({ results, players, phaseStatuses, match
         <div className="space-y-6">
           <div className="space-y-4">
             <h2 className="text-xl font-bold">Classificados para a {nextFase === "Final" ? "grande final e disputa de terceiro" : nextFase}</h2>
-            <QualifiersView qualifiers={qualifiersToShow} viewMode={viewMode} playerMesaMap={nextPhaseMesaMap.size > 0 ? nextPhaseMesaMap : playerMesaMap} />
+            <QualifiersView qualifiers={qualifiersToShow} viewMode={viewMode} playerMesaMap={nextPhaseMesaMap.size > 0 ? nextPhaseMesaMap : playerMesaMap} players={players} teamMembers={teamMembers} />
           </div>
           <Accordion type="single" collapsible className="rounded-md border bg-background px-4">
             <AccordionItem value="full-list" className="border-b-0">

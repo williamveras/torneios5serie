@@ -44,6 +44,7 @@ export default function ResultsTab({ tournamentId }: Props) {
   const [grupo, setGrupo] = useState("");
   const [rodada, setRodada] = useState("");
   const [results, setResults] = useState<PlayerResult[]>([emptyResult()]);
+  const [comentario, setComentario] = useState("");
   const [loading, setLoading] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [activeFase, setActiveFase] = useState<string>("Fase de Grupos");

@@ -490,7 +490,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
               <p className="text-sm font-medium">Agendar sorteio automático</p>
             </div>
             <p className="text-xs text-muted-foreground">
-              O sistema realizará o sorteio automaticamente na data e horário informados, substituindo os confrontos existentes da fase selecionada.
+              O sistema realizará o sorteio automaticamente na data e horário informados. Se informar uma rodada, somente os confrontos daquela rodada serão gerados — sem repetir nenhum confronto já existente em outras rodadas da mesma fase de grupos. Sem rodada, substitui todos os confrontos da fase.
             </p>
             <div className="flex flex-wrap gap-2 items-end">
               <div>
@@ -500,6 +500,10 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
               <div>
                 <Label htmlFor="draw-time" className="text-xs">Horário</Label>
                 <Input id="draw-time" type="time" value={drawTime} onChange={(e) => setDrawTime(e.target.value)} className="w-32" />
+              </div>
+              <div>
+                <Label htmlFor="draw-rodada" className="text-xs">Rodada (opcional)</Label>
+                <Input id="draw-rodada" type="number" min={1} placeholder="Ex: 2" value={drawRodada} onChange={(e) => setDrawRodada(e.target.value)} className="w-28" />
               </div>
               <Button variant="secondary" onClick={scheduleDraw} disabled={schedulingDraw}>
                 <Clock className="h-4 w-4 mr-1" /> {schedulingDraw ? "Agendando..." : "Agendar sorteio"}

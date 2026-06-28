@@ -2,11 +2,22 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import type { QualifiersResult, QualifierRow } from "@/lib/qualifiers";
 import type { ViewMode } from "@/components/public/ViewModeToggle";
 
+interface PlayerLike {
+  id: string;
+  nome_completo: string;
+  nick_playroom: string | null;
+  is_team?: boolean | null;
+}
+
+type TeamMembersMap = Record<string, { nome: string; nick: string | null }[]>;
+
 interface Props {
   qualifiers: QualifiersResult;
   variant?: "admin" | "public";
   viewMode?: ViewMode;
   playerMesaMap?: Map<string, number>;
+  players?: PlayerLike[];
+  teamMembers?: TeamMembersMap;
 }
 
 const noWrapText = "public-nowrap";
@@ -21,7 +32,20 @@ const naturalGroupSort = (a: string, b: string) => {
   return a.localeCompare(b);
 };
 
-function TableSection({ title, rows, usePos, playerMesaMap }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number> }) {
+const formatTeamWithMembers = (
+  baseName: string,
+  player: PlayerLike | undefined,
+  teamMembers: TeamMembersMap,
+) => {
+  if (!player?.is_team) return baseName;
+  const members = teamMembers[player.id] || [];
+  if (members.length === 0) return baseName;
+  const labels = members.map((m) => (m.nick || "").trim() || (m.nome || "").trim()).filter(Boolean);
+  if (labels.length === 0) return baseName;
+  return `${baseName} (${labels.join(" x ")})`;
+};
+
+function TableSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembers }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number>; playerMap?: Map<string, PlayerLike>; teamMembers: TeamMembersMap }) {
   return (
     <section>
       <h3 className="font-semibold text-lg mb-2">{title}</h3>
@@ -39,7 +63,7 @@ function TableSection({ title, rows, usePos, playerMesaMap }: { title: string; r
           <TableBody>
             {rows.map(s => {
               const pos = usePos === "group" ? s.groupPosition : s.position;
-              const baseName = s.nick || s.playerName;
+              const baseName = formatTeamWithMembers(s.nick || s.playerName, playerMap?.get(s.playerId), teamMembers);
               const mesa = playerMesaMap?.get(s.playerId);
               const displayName = mesa ? `${baseName}, mesa ${mesa}` : baseName;
               return (
@@ -61,14 +85,14 @@ function TableSection({ title, rows, usePos, playerMesaMap }: { title: string; r
   );
 }
 
-function ListSection({ title, rows, usePos, playerMesaMap }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number> }) {
+function ListSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembers }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number>; playerMap?: Map<string, PlayerLike>; teamMembers: TeamMembersMap }) {
   return (
     <section>
       <h3 className="font-semibold text-lg mb-2">{title}</h3>
-      <ol className="space-y-2" aria-label={title}>
+      <ol className="space-y-2" aria-label="Classificados">
         {rows.map(s => {
           const pos = usePos === "group" ? s.groupPosition : s.position;
-          const baseName = s.nick || s.playerName;
+          const baseName = formatTeamWithMembers(s.nick || s.playerName, playerMap?.get(s.playerId), teamMembers);
           const mesa = playerMesaMap?.get(s.playerId);
           const displayName = mesa ? `${baseName}, mesa ${mesa}` : baseName;
           return (
@@ -96,13 +120,18 @@ function ListSection({ title, rows, usePos, playerMesaMap }: { title: string; ro
   );
 }
 
-export default function QualifiersView({ qualifiers, viewMode = "list", playerMesaMap }: Props) {
+export default function QualifiersView({ qualifiers, viewMode = "list", playerMesaMap, players, teamMembers = {} }: Props) {
   const Section = viewMode === "table" ? TableSection : ListSection;
+  const playerMap = (() => {
+    const m = new Map<string, PlayerLike>();
+    (players || []).forEach((p) => m.set(p.id, p));
+    return m;
+  })();
 
   if (!qualifiers.hasGroups) {
     return (
       <div className="space-y-6">
-        <Section title="Classificados" rows={qualifiers.direct} usePos="overall" playerMesaMap={playerMesaMap} />
+        <Section title="Classificados" rows={qualifiers.direct} usePos="overall" playerMesaMap={playerMesaMap} playerMap={playerMap} teamMembers={teamMembers} />
       </div>
     );
   }
@@ -115,7 +144,7 @@ export default function QualifiersView({ qualifiers, viewMode = "list", playerMe
         const rows = qualifiers.direct
           .filter(r => r.grupo === g)
           .sort((a, b) => a.groupPosition - b.groupPosition);
-        return <Section key={g} title={`Grupo ${g}`} rows={rows} usePos="group" playerMesaMap={playerMesaMap} />;
+        return <Section key={g} title={`Grupo ${g}`} rows={rows} usePos="group" playerMesaMap={playerMesaMap} playerMap={playerMap} teamMembers={teamMembers} />;
       })}
       {qualifiers.repescagem.length > 0 && (
         <Section
@@ -123,8 +152,11 @@ export default function QualifiersView({ qualifiers, viewMode = "list", playerMe
           rows={qualifiers.repescagem}
           usePos="overall"
           playerMesaMap={playerMesaMap}
+          playerMap={playerMap}
+          teamMembers={teamMembers}
         />
       )}
     </div>
   );
 }
+

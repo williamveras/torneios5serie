@@ -85,6 +85,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [drawDate, setDrawDate] = useState("");
   const [drawTime, setDrawTime] = useState("");
+  const [drawRodada, setDrawRodada] = useState("");
   const [schedulingDraw, setSchedulingDraw] = useState(false);
   const [schedules, setSchedules] = useState<Array<{ id: string; player1_id: string; player2_id: string; grupo: string; data_partida: string | null; horario: string | null; observacao: string | null }>>([]);
 

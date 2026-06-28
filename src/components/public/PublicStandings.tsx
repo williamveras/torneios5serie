@@ -25,6 +25,22 @@ import { getPlayerNickForStandings, type PlayerDisplayLike } from "@/lib/playerD
 const getPlayerFullNameForRank = (p?: PlayerDisplayLike | null) =>
   (p?.nome_completo || "").trim() || "Jogador desconhecido";
 
+type TeamMembersMap = Record<string, { nome: string; nick: string | null }[]>;
+
+const formatTeamWithMembers = (
+  baseName: string,
+  player: PlayerLite | undefined,
+  teamMembers: TeamMembersMap,
+) => {
+  if (!player?.is_team) return baseName;
+  const members = teamMembers[player.id] || [];
+  if (members.length === 0) return baseName;
+  const memberLabels = members.map((m) => (m.nick || "").trim() || (m.nome || "").trim()).filter(Boolean);
+  if (memberLabels.length === 0) return baseName;
+  return `${baseName} (${memberLabels.join(" x ")})`;
+};
+
+
 type MatchResult = Tables<"match_results">;
 type PhaseStatus = Tables<"phase_status">;
 
@@ -40,12 +56,14 @@ interface PlayerLite {
 interface Props {
   results: MatchResult[];
   players: PlayerLite[];
+  teamMembers?: TeamMembersMap;
   phaseStatuses: PhaseStatus[];
   matchups?: Matchup[];
   viewMode?: ViewMode;
   qualifierOpts?: { directPerGroup?: number; repescagemTotal?: number };
   lowerWins?: boolean;
 }
+
 
 const naturalGroupSort = (a: string, b: string) => {
   const na = Number(a), nb = Number(b);

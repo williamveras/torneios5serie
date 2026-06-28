@@ -408,6 +408,7 @@ export type Database = {
           kind: string
           mode: string
           per_group: number | null
+          rodada: number | null
           scheduled_at: string
           status: string
           tournament_id: string
@@ -423,6 +424,7 @@ export type Database = {
           kind?: string
           mode: string
           per_group?: number | null
+          rodada?: number | null
           scheduled_at: string
           status?: string
           tournament_id: string
@@ -438,6 +440,7 @@ export type Database = {
           kind?: string
           mode?: string
           per_group?: number | null
+          rodada?: number | null
           scheduled_at?: string
           status?: string
           tournament_id?: string

@@ -85,6 +85,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [drawDate, setDrawDate] = useState("");
   const [drawTime, setDrawTime] = useState("");
+  const [drawRodada, setDrawRodada] = useState("");
   const [schedulingDraw, setSchedulingDraw] = useState(false);
   const [schedules, setSchedules] = useState<Array<{ id: string; player1_id: string; player2_id: string; grupo: string; data_partida: string | null; horario: string | null; observacao: string | null }>>([]);
 
@@ -192,13 +193,24 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
       return;
     }
     setSchedulingDraw(true);
+    let rodadaNum: number | null = null;
+    if (drawRodada.trim()) {
+      const n = parseInt(drawRodada.trim(), 10);
+      if (isNaN(n) || n < 1) {
+        setSchedulingDraw(false);
+        toast.error("Rodada inválida.");
+        return;
+      }
+      rodadaNum = n;
+    }
     const { error } = await supabase.from("scheduled_draws").insert({
       tournament_id: tournamentId,
       fase,
       mode,
       scheduled_at: when.toISOString(),
       created_by: user?.id ?? null,
-    });
+      rodada: rodadaNum,
+    } as any);
     setSchedulingDraw(false);
     if (error) {
       toast.error("Erro ao agendar sorteio: " + error.message);
@@ -207,6 +219,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
     toast.success("Sorteio agendado!");
     setDrawDate("");
     setDrawTime("");
+    setDrawRodada("");
     fetchScheduledDraws();
   }
 
@@ -477,7 +490,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
               <p className="text-sm font-medium">Agendar sorteio automático</p>
             </div>
             <p className="text-xs text-muted-foreground">
-              O sistema realizará o sorteio automaticamente na data e horário informados, substituindo os confrontos existentes da fase selecionada.
+              O sistema realizará o sorteio automaticamente na data e horário informados. Se informar uma rodada, somente os confrontos daquela rodada serão gerados — sem repetir nenhum confronto já existente em outras rodadas da mesma fase de grupos. Sem rodada, substitui todos os confrontos da fase.
             </p>
             <div className="flex flex-wrap gap-2 items-end">
               <div>
@@ -487,6 +500,10 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
               <div>
                 <Label htmlFor="draw-time" className="text-xs">Horário</Label>
                 <Input id="draw-time" type="time" value={drawTime} onChange={(e) => setDrawTime(e.target.value)} className="w-32" />
+              </div>
+              <div>
+                <Label htmlFor="draw-rodada" className="text-xs">Rodada (opcional)</Label>
+                <Input id="draw-rodada" type="number" min={1} placeholder="Ex: 2" value={drawRodada} onChange={(e) => setDrawRodada(e.target.value)} className="w-28" />
               </div>
               <Button variant="secondary" onClick={scheduleDraw} disabled={schedulingDraw}>
                 <Clock className="h-4 w-4 mr-1" /> {schedulingDraw ? "Agendando..." : "Agendar sorteio"}
@@ -503,7 +520,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
                 return (
                   <div key={s.id} className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2 text-sm">
                     <span>
-                      <strong>{s.fase}</strong> — {s.mode === "geral" ? "Geral" : "Por grupo"} · {dt.toLocaleDateString("pt-BR")} às {dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                      <strong>{s.fase}</strong>{(s as any).rodada != null ? ` · Rodada ${(s as any).rodada}` : ""} — {s.mode === "geral" ? "Geral" : "Por grupo"} · {dt.toLocaleDateString("pt-BR")} às {dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                     </span>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => cancelScheduledDraw(s.id)} aria-label="Cancelar">
                       <X className="h-4 w-4" />

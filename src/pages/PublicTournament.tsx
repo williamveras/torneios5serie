@@ -241,6 +241,7 @@ export default function PublicTournament() {
                 <PublicStandings
                   results={results}
                   players={players}
+                  teamMembers={teamMembers}
                   matchups={matchups}
                   phaseStatuses={phaseStatuses}
                   viewMode={standingsView}
@@ -254,6 +255,7 @@ export default function PublicTournament() {
                     return opts;
                   })()}
                 />
+
               </TabsContent>
               <TabsContent value="schedule">
                 <div className="flex justify-end mb-3">

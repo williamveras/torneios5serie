@@ -193,13 +193,24 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
       return;
     }
     setSchedulingDraw(true);
+    let rodadaNum: number | null = null;
+    if (drawRodada.trim()) {
+      const n = parseInt(drawRodada.trim(), 10);
+      if (isNaN(n) || n < 1) {
+        setSchedulingDraw(false);
+        toast.error("Rodada inválida.");
+        return;
+      }
+      rodadaNum = n;
+    }
     const { error } = await supabase.from("scheduled_draws").insert({
       tournament_id: tournamentId,
       fase,
       mode,
       scheduled_at: when.toISOString(),
       created_by: user?.id ?? null,
-    });
+      rodada: rodadaNum,
+    } as any);
     setSchedulingDraw(false);
     if (error) {
       toast.error("Erro ao agendar sorteio: " + error.message);
@@ -208,6 +219,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
     toast.success("Sorteio agendado!");
     setDrawDate("");
     setDrawTime("");
+    setDrawRodada("");
     fetchScheduledDraws();
   }
 

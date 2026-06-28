@@ -160,15 +160,13 @@ export default function PublicDraw({ matchups, players, fase, scheduledDraws = [
               <CardContent className="pt-4 space-y-2">
                 {items.map(mu => (
                   <div key={mu.id} className="rounded-md border bg-muted/30 p-3 min-[360px]:p-4 min-w-0 overflow-hidden">
-                    <div className={`text-sm text-muted-foreground ${scrollLine}`}>
-                      <span className="public-line-content">
-                        {keepTogether(
-                          group
-                            ? `Grupo ${mu.grupo}`
-                            : `Mesa ${mesaMap.get(pairKey(mu.player1_id, mu.player2_id)) ?? "—"}`
-                        )}
-                      </span>
-                    </div>
+                    {!group && (
+                      <div className={`text-sm text-muted-foreground ${scrollLine}`}>
+                        <span className="public-line-content">
+                          {keepTogether(`Mesa ${mesaMap.get(pairKey(mu.player1_id, mu.player2_id)) ?? "—"}`)}
+                        </span>
+                      </div>
+                    )}
                     <h3 className={`text-base sm:text-lg font-semibold ${scrollLine}`}>
                       <span className="public-line-content">
                         <span>{keepTogether(displayName(playerMap.get(mu.player1_id)))}</span>{" "}
@@ -179,6 +177,7 @@ export default function PublicDraw({ matchups, players, fase, scheduledDraws = [
                   </div>
                 ))}
               </CardContent>
+
             </Card>
           )}
         </section>

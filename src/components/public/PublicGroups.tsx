@@ -102,20 +102,19 @@ export default function PublicGroups({ players, scheduledDraws = [] }: Props) {
           <Card key={grupo}>
             <CardContent className="pt-4 space-y-2">
               <h2 className="text-lg font-semibold">{formatGroupLabel(grupo)}</h2>
-              <ul className="space-y-1">
-                {items.map((p) => (
-                  <li key={p.id} className="text-sm">
+              <p className="text-base">
+                {items.map((p, i) => (
+                  <span key={p.id}>
+                    {i > 0 && <span className="text-muted-foreground font-normal"> x </span>}
                     {getPlayerDisplayName(p)}
-                  </li>
+                  </span>
                 ))}
-              </ul>
-              <p className="text-xs text-muted-foreground pt-1">
-                {items.length} {items.length === 1 ? "participante" : "participantes"}
               </p>
             </CardContent>
           </Card>
         ))}
       </div>
+
     </div>
   );
 }

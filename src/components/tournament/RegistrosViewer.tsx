@@ -368,6 +368,15 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
                             );
                           })}
                         </ul>
+                        {(() => {
+                          const comentario = c.results.map(r => (r as any).comentario).find(v => v && String(v).trim());
+                          return comentario ? (
+                            <div className="rounded-md border border-dashed bg-background p-3 text-sm">
+                              <p className="text-xs font-medium text-muted-foreground mb-1">Comentário do moderador</p>
+                              <p className="whitespace-pre-wrap">{comentario}</p>
+                            </div>
+                          ) : null;
+                        })()}
                         <p className="text-xs text-muted-foreground">
                           Registrado por: <span className="font-medium text-foreground">{registeredByName(c.registered_by)}</span>
                         </p>

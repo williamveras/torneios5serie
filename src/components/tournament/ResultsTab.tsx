@@ -44,6 +44,7 @@ export default function ResultsTab({ tournamentId }: Props) {
   const [grupo, setGrupo] = useState("");
   const [rodada, setRodada] = useState("");
   const [results, setResults] = useState<PlayerResult[]>([emptyResult()]);
+  const [comentario, setComentario] = useState("");
   const [loading, setLoading] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [activeFase, setActiveFase] = useState<string>("Fase de Grupos");
@@ -148,6 +149,7 @@ export default function ResultsTab({ tournamentId }: Props) {
       toast.error("Sessão não encontrada. Faça login novamente.");
       return;
     }
+    const trimmedComment = comentario.trim() || null;
     const toInsert = results.map(r => ({
       tournament_id: tournamentId,
       player_id: r.player_id,
@@ -158,6 +160,7 @@ export default function ResultsTab({ tournamentId }: Props) {
       pontos_mesa: parseInt(r.pontos_mesa),
       penalidades: resolvePenalidade(r),
       registered_by: currentUserId,
+      comentario: trimmedComment,
     }));
 
     const { error } = await supabase.from("match_results").insert(toInsert);
@@ -168,6 +171,7 @@ export default function ResultsTab({ tournamentId }: Props) {
       setResults([emptyResult()]);
       setGrupo("");
       setRodada("");
+      setComentario("");
     }
     setLoading(false);
   };
@@ -272,6 +276,20 @@ export default function ResultsTab({ tournamentId }: Props) {
             <Input id="grupo-input" value={grupo ? `Grupo ${grupo}` : ""} readOnly placeholder="Selecione um jogador para preencher" className="bg-muted" />
           </div>
         )}
+
+        <div className="space-y-2">
+          <Label htmlFor="comentario-input">
+            Comentário <span className="text-muted-foreground font-normal">(opcional — visível apenas para administradores)</span>
+          </Label>
+          <Textarea
+            id="comentario-input"
+            value={comentario}
+            onChange={e => setComentario(e.target.value)}
+            placeholder="Anote algo sobre a partida, se necessário."
+            rows={3}
+          />
+        </div>
+
 
         <div className="flex gap-3">
           {results.length < 2 && (

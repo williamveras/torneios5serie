@@ -277,6 +277,20 @@ export default function ResultsTab({ tournamentId }: Props) {
           </div>
         )}
 
+        <div className="space-y-2">
+          <Label htmlFor="comentario-input">
+            Comentário <span className="text-muted-foreground font-normal">(opcional — visível apenas para administradores)</span>
+          </Label>
+          <Textarea
+            id="comentario-input"
+            value={comentario}
+            onChange={e => setComentario(e.target.value)}
+            placeholder="Anote algo sobre a partida, se necessário."
+            rows={3}
+          />
+        </div>
+
+
         <div className="flex gap-3">
           {results.length < 2 && (
             <Button variant="outline" type="button" onClick={addSecondPlayer}>

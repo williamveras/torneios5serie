@@ -520,7 +520,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
                 return (
                   <div key={s.id} className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2 text-sm">
                     <span>
-                      <strong>{s.fase}</strong> — {s.mode === "geral" ? "Geral" : "Por grupo"} · {dt.toLocaleDateString("pt-BR")} às {dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                      <strong>{s.fase}</strong>{(s as any).rodada != null ? ` · Rodada ${(s as any).rodada}` : ""} — {s.mode === "geral" ? "Geral" : "Por grupo"} · {dt.toLocaleDateString("pt-BR")} às {dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                     </span>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => cancelScheduledDraw(s.id)} aria-label="Cancelar">
                       <X className="h-4 w-4" />

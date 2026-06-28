@@ -37,6 +37,7 @@ export type Database = {
       }
       match_results: {
         Row: {
+          comentario: string | null
           created_at: string
           fase: string
           grupo: string
@@ -50,6 +51,7 @@ export type Database = {
           tournament_id: string
         }
         Insert: {
+          comentario?: string | null
           created_at?: string
           fase?: string
           grupo: string
@@ -63,6 +65,7 @@ export type Database = {
           tournament_id: string
         }
         Update: {
+          comentario?: string | null
           created_at?: string
           fase?: string
           grupo?: string

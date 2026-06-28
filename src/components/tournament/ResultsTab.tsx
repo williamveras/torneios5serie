@@ -171,6 +171,7 @@ export default function ResultsTab({ tournamentId }: Props) {
       setResults([emptyResult()]);
       setGrupo("");
       setRodada("");
+      setComentario("");
     }
     setLoading(false);
   };

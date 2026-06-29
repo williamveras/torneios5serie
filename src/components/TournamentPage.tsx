@@ -14,6 +14,7 @@ import RegulamentoTab from "./tournament/RegulamentoTab";
 import RegistrationLinkTab from "./tournament/RegistrationLinkTab";
 import TournamentSettingsDialog from "./tournament/TournamentSettingsDialog";
 import { useStandingsTabLabel } from "@/hooks/useStandingsTabLabel";
+import { useMainFases } from "@/hooks/useMainFases";
 
 type Tournament = Tables<"tournaments">;
 

@@ -1,24 +1,49 @@
 import { FASES, isSideFase } from "./constants";
+import { projectPhases } from "./phaseProjection";
 
 export interface PhaseStatusLite { fase: string; status: string; }
 
 /**
- * Public-facing "current" phase:
- * - Returns the phase immediately AFTER the last phase marked "concluida",
- *   pulando fases laterais (ex.: "Disputa de 3º Lugar"), que não fazem parte
- *   do caminho principal Semifinal -> Final.
- * - If no phase concluded yet, returns "Fase de Grupos".
- * - If the last possible phase ("Final") is concluded, returns it.
+ * Build the projected "main" phase sequence for a tournament starting from
+ * "Fase de Grupos". When the number of qualifiers is known (directPerGroup,
+ * numGroups, optional repescagem), it uses projectPhases to pick the right
+ * elimination names (Quartas/Semi/Final) and skips generic "Segunda Fase" /
+ * "Terceira Fase" in smaller brackets. Returns null when not computable.
  */
-export const getActivePublicPhase = (statuses: PhaseStatusLite[]): string => {
-  const mainFases = FASES.filter(f => !isSideFase(f));
+export function buildMainFases(opts: {
+  directPerGroup?: number | null;
+  repescagemTotal?: number | null;
+  numGroups?: number | null;
+}): string[] | null {
+  const dpg = opts.directPerGroup ?? null;
+  const ng = opts.numGroups ?? null;
+  if (!dpg || !ng || ng < 1) return null;
+  const rep = opts.repescagemTotal ?? 0;
+  const total = dpg * ng + (rep > 0 ? rep : 0);
+  const proj = projectPhases(total);
+  if (proj.length === 0) return null;
+  return ["Fase de Grupos", ...proj.map(p => p.fase)];
+}
+
+/**
+ * Public-facing "current" phase. When `mainFases` is provided, it uses that
+ * projected sequence; otherwise falls back to the static FASES (excluding
+ * side phases like "Disputa de 3º Lugar").
+ */
+export const getActivePublicPhase = (
+  statuses: PhaseStatusLite[],
+  mainFases?: string[] | null,
+): string => {
+  const main = mainFases && mainFases.length > 0
+    ? mainFases
+    : FASES.filter(f => !isSideFase(f));
   let lastConcludedIdx = -1;
-  for (let i = 0; i < mainFases.length; i++) {
-    if (statuses.find(s => s.fase === mainFases[i])?.status === "concluida") lastConcludedIdx = i;
+  for (let i = 0; i < main.length; i++) {
+    if (statuses.find(s => s.fase === main[i])?.status === "concluida") lastConcludedIdx = i;
   }
-  if (lastConcludedIdx === -1) return "Fase de Grupos";
-  const nextIdx = Math.min(lastConcludedIdx + 1, mainFases.length - 1);
-  return mainFases[nextIdx];
+  if (lastConcludedIdx === -1) return main[0] ?? "Fase de Grupos";
+  const nextIdx = Math.min(lastConcludedIdx + 1, main.length - 1);
+  return main[nextIdx];
 };
 
 export const isGroupPhase = (fase: string) => fase === "Fase de Grupos";

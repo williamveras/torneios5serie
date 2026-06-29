@@ -12,6 +12,7 @@ import { Shuffle, Trash2, CalendarPlus, Wand2, Save, RefreshCw, Clock, X } from 
 import { toast } from "sonner";
 import { FASES, type Fase } from "@/lib/constants";
 import { getActivePublicPhase } from "@/lib/phase";
+import { useMainFases } from "@/hooks/useMainFases";
 import { useAuth } from "@/hooks/useAuth";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -70,6 +71,7 @@ function roundRobin(playerIds: string[]): Array<Array<[string, string | null]>> 
 }
 
 export default function MatchupsTab({ tournamentId, onScheduleMatchup, onReallocateSchedule }: Props) {
+  const mainFases = useMainFases(tournamentId);
   const { user } = useAuth();
   const [players, setPlayers] = useState<Player[]>([]);
   const [matchups, setMatchups] = useState<Matchup[]>([]);
@@ -99,8 +101,8 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
 
   useEffect(() => {
     if (userPickedFase) return;
-    setFase(getActivePublicPhase(phaseStatuses) as Fase);
-  }, [phaseStatuses, userPickedFase]);
+    setFase(getActivePublicPhase(phaseStatuses, mainFases) as Fase);
+  }, [phaseStatuses, userPickedFase, mainFases]);
 
   // Auto-adjust mode when fase changes
   useEffect(() => {

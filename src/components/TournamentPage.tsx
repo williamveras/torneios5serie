@@ -14,6 +14,7 @@ import RegulamentoTab from "./tournament/RegulamentoTab";
 import RegistrationLinkTab from "./tournament/RegistrationLinkTab";
 import TournamentSettingsDialog from "./tournament/TournamentSettingsDialog";
 import { useStandingsTabLabel } from "@/hooks/useStandingsTabLabel";
+import { useMainFases } from "@/hooks/useMainFases";
 
 type Tournament = Tables<"tournaments">;
 
@@ -25,7 +26,8 @@ interface Props {
 export default function TournamentPage({ tournament, onBack }: Props) {
   const [activeTab, setActiveTab] = useState("players");
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const { label: standingsLabel } = useStandingsTabLabel(tournament.id);
+  const mainFases = useMainFases(tournament.id);
+  const { label: standingsLabel } = useStandingsTabLabel(tournament.id, undefined, mainFases);
   const [prefillPlayerId, setPrefillPlayerId] = useState<string | null>(null);
   const [prefillPlayer2Id, setPrefillPlayer2Id] = useState<string | null>(null);
   const [prefillGrupo, setPrefillGrupo] = useState<string | null>(null);

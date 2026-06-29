@@ -101,8 +101,8 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
 
   useEffect(() => {
     if (userPickedFase) return;
-    setFase(getActivePublicPhase(phaseStatuses) as Fase);
-  }, [phaseStatuses, userPickedFase]);
+    setFase(getActivePublicPhase(phaseStatuses, mainFases) as Fase);
+  }, [phaseStatuses, userPickedFase, mainFases]);
 
   // Auto-adjust mode when fase changes
   useEffect(() => {

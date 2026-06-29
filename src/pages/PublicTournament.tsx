@@ -16,7 +16,7 @@ import PublicGroups from "@/components/public/PublicGroups";
 
 import { FASES, isSideFase } from "@/lib/constants";
 import { nextPhaseName } from "@/lib/qualifiers";
-import { getActivePublicPhase } from "@/lib/phase";
+import { getActivePublicPhase, buildMainFases } from "@/lib/phase";
 import ViewModeToggle, { type ViewMode } from "@/components/public/ViewModeToggle";
 
 type Tournament = Tables<"tournaments">;

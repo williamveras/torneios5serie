@@ -14,7 +14,7 @@ type PhaseStatus = Tables<"phase_status">;
  *
  * Also returns the concluded fase name (or null) so consumers can adjust behavior.
  */
-export function useStandingsTabLabel(tournamentId: string, initial?: PhaseStatus[]) {
+export function useStandingsTabLabel(tournamentId: string, initial?: PhaseStatus[], mainFases?: string[] | null) {
   const [statuses, setStatuses] = useState<PhaseStatus[]>(initial || []);
 
   useEffect(() => {

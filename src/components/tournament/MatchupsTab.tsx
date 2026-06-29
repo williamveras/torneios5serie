@@ -71,6 +71,7 @@ function roundRobin(playerIds: string[]): Array<Array<[string, string | null]>> 
 }
 
 export default function MatchupsTab({ tournamentId, onScheduleMatchup, onReallocateSchedule }: Props) {
+  const mainFases = useMainFases(tournamentId);
   const { user } = useAuth();
   const [players, setPlayers] = useState<Player[]>([]);
   const [matchups, setMatchups] = useState<Matchup[]>([]);

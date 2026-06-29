@@ -88,9 +88,12 @@ export function computeQualifiers(
   };
 }
 
-export function nextPhaseName(currentFase: string): string {
-  // Caminho principal ignora fases laterais como "Disputa de 3º Lugar".
-  const main = FASES.filter(f => f !== "Disputa de 3º Lugar");
+export function nextPhaseName(currentFase: string, mainFases?: string[] | null): string {
+  // Caminho principal: usa projeção quando fornecida, senão a lista padrão
+  // FASES (ignorando fases laterais como "Disputa de 3º Lugar").
+  const main = mainFases && mainFases.length > 0
+    ? mainFases
+    : FASES.filter(f => f !== "Disputa de 3º Lugar");
   const i = main.indexOf(currentFase as any);
   if (i < 0 || i === main.length - 1) return "";
   return main[i + 1];

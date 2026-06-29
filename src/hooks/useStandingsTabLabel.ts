@@ -49,13 +49,15 @@ export function useStandingsTabLabel(tournamentId: string, initial?: PhaseStatus
     };
   }, [tournamentId, initial]);
 
-  // Find the latest concluded fase (by FASES order), ignorando fases laterais
-  // como "Disputa de 3º Lugar" para que o label do tab acompanhe o caminho
-  // principal Semifinal -> Final.
+  // Find the latest concluded fase along the main path (projection-aware when
+  // available; falls back to static FASES). Ignora fases laterais como
+  // "Disputa de 3º Lugar" no caminho principal Semifinal -> Final.
+  const mainList = (mainFases && mainFases.length > 0)
+    ? mainFases
+    : FASES.filter(f => !isSideFase(f));
   let concludedFase: string | null = null;
-  for (let i = FASES.length - 1; i >= 0; i--) {
-    const f = FASES[i];
-    if (isSideFase(f)) continue;
+  for (let i = mainList.length - 1; i >= 0; i--) {
+    const f = mainList[i];
     const s = statuses.find(p => p.fase === f);
     if (s?.status === "concluida") {
       concludedFase = f;
@@ -63,7 +65,7 @@ export function useStandingsTabLabel(tournamentId: string, initial?: PhaseStatus
     }
   }
 
-  const next = concludedFase ? nextPhaseName(concludedFase) : "";
+  const next = concludedFase ? nextPhaseName(concludedFase, mainFases ?? null) : "";
   const nextLabel = next === "Final" ? "grande final e disputa de terceiro" : next;
   const label = concludedFase && next ? `Classificados para a ${nextLabel}` : "Classificação";
 

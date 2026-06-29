@@ -12,6 +12,7 @@ import { Shuffle, Trash2, CalendarPlus, Wand2, Save, RefreshCw, Clock, X } from 
 import { toast } from "sonner";
 import { FASES, type Fase } from "@/lib/constants";
 import { getActivePublicPhase } from "@/lib/phase";
+import { useMainFases } from "@/hooks/useMainFases";
 import { useAuth } from "@/hooks/useAuth";
 import type { Tables } from "@/integrations/supabase/types";
 

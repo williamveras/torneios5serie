@@ -156,20 +156,36 @@ export default function PublicTournament() {
     );
   }
 
-  // Latest concluded fase (by FASES order) drives the tab label.
+  // Projeção do caminho principal de fases para este torneio (Quartas/Semi/Final
+  // calculadas a partir do nº de classificados). Usado para rotular abas e
+  // detectar a fase ativa em torneios menores.
+  const numGroups = new Set(
+    players.map((p) => p.grupo).filter((g) => g != null && String(g).trim() !== ""),
+  ).size;
+  const td: any = tournament;
+  const repTotal = td.repescagem_enabled === false ? 0 : (td.repescagem_total ?? 0);
+  const mainFases = buildMainFases({
+    directPerGroup: td.direct_per_group ?? null,
+    repescagemTotal: repTotal,
+    numGroups,
+  });
+  const mainList = mainFases && mainFases.length > 0
+    ? mainFases
+    : FASES.filter((f) => !isSideFase(f));
+
+  // Latest concluded fase (by main path) drives the tab label.
   let latestConcluded: string | null = null;
-  for (let i = FASES.length - 1; i >= 0; i--) {
-    const f = FASES[i];
-    if (isSideFase(f)) continue;
+  for (let i = mainList.length - 1; i >= 0; i--) {
+    const f = mainList[i];
     if (phaseStatuses.find(p => p.fase === f)?.status === "concluida") { latestConcluded = f; break; }
   }
-  const nextFaseLabel = latestConcluded ? nextPhaseName(latestConcluded) : "";
+  const nextFaseLabel = latestConcluded ? nextPhaseName(latestConcluded, mainFases) : "";
   const nextFaseDisplay = nextFaseLabel === "Final" ? "grande final e disputa de terceiro" : nextFaseLabel;
   const standingsTabLabel = latestConcluded && nextFaseLabel ? `Classificados (${nextFaseDisplay})` : "Classificação";
 
   // Sorteio tab: mostra a fase pública ativa quando houver confrontos sorteados
   // ou um sorteio agendado pendente para ela.
-  const drawFase = getActivePublicPhase(phaseStatuses);
+  const drawFase = getActivePublicPhase(phaseStatuses, mainFases);
   const hasMatchupsForDrawFase = matchups.some((m) => (m.fase || "Fase de Grupos") === drawFase);
   const hasPendingDraw = scheduledDraws.some(
     (s) => s.fase === drawFase && s.status === "pending",

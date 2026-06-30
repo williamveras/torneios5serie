@@ -145,6 +145,8 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
         modalidade,
         max_participants: mx,
         lower_score_wins: lowerScoreWins,
+        elimination_only: eliminationOnly,
+
       })
       .eq("id", tournamentId);
     setSaving(false);

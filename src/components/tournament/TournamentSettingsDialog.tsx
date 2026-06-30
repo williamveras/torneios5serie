@@ -62,6 +62,8 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
         setModalidade((anyT.modalidade as "individual" | "duplas") ?? "individual");
         setMaxParticipants(anyT.max_participants?.toString() ?? "");
         setLowerScoreWins(anyT.lower_score_wins === true);
+        setEliminationOnly(anyT.elimination_only === true);
+
       }
       const players = (pr.data as { grupo: string | null }[] | null) ?? [];
       setTotalInscritos(players.length);

@@ -181,6 +181,44 @@ export default function StandingsTab({ tournamentId }: Props) {
     });
   }, [matchups, results, players, tournamentId]);
 
+  // Auto-elimina jogadores NÃO CLASSIFICADOS da Fase de Grupos assim que ela
+  // for encerrada. Sem isso, os não-classificados continuam com eliminado=false
+  // e entrariam indevidamente no sorteio das fases seguintes.
+  useEffect(() => {
+    if (!grupoConcluded) return;
+    if (players.length === 0 || results.length === 0) return;
+    const groupResults = results.filter(r => (r.fase || "Fase de Grupos") === "Fase de Grupos");
+    if (groupResults.length === 0) return;
+    const nameOf = (id: string) => {
+      const p = players.find(pp => pp.id === id);
+      return p ? getPlayerDisplayName(p as any) : id;
+    };
+    const nickOf = (id: string) => {
+      const p = players.find(pp => pp.id === id);
+      return p ? getPlayerNickForStandings(p as any) : "";
+    };
+    const q = computeQualifiers(groupResults, nameOf, nickOf, { ...qualifierOpts, lowerWins });
+    const classifiedIds = new Set([...q.direct, ...q.repescagem].map(r => r.playerId));
+    // Só considera jogadores que tiveram participação na Fase de Grupos
+    const playedInGroups = new Set(groupResults.map(r => r.player_id));
+    const toEliminate = players
+      .filter(p => !p.eliminado && playedInGroups.has(p.id) && !classifiedIds.has(p.id))
+      .map(p => p.id);
+    if (toEliminate.length === 0) return;
+    supabase.from("players").update({ eliminado: true }).in("id", toEliminate).then(({ error }) => {
+      if (error) return;
+      toast.success(
+        toEliminate.length === 1
+          ? "1 participante eliminado automaticamente — não classificado na Fase de Grupos."
+          : `${toEliminate.length} participantes eliminados automaticamente — não classificados na Fase de Grupos.`,
+      );
+      supabase.from("players").select("*").eq("tournament_id", tournamentId).then(({ data }) => {
+        if (data) setPlayers(data);
+      });
+    });
+  }, [grupoConcluded, results, players, qualifierOpts, lowerWins, tournamentId]);
+
+
   // Detecta automaticamente o campeão quando a Final tem um vencedor.
   useEffect(() => {
     if (campeaoId) return;

@@ -14,10 +14,10 @@ export function useMainFases(tournamentId: string): string[] | null {
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      const [{ data: t }, { data: groupsData }] = await Promise.all([
+      const [{ data: t }, { data: groupsData }, { count: playerCount }] = await Promise.all([
         supabase
           .from("tournaments")
-          .select("direct_per_group,repescagem_enabled,repescagem_total")
+          .select("direct_per_group,repescagem_enabled,repescagem_total,elimination_only,max_participants")
           .eq("id", tournamentId)
           .maybeSingle(),
         supabase
@@ -25,6 +25,10 @@ export function useMainFases(tournamentId: string): string[] | null {
           .select("grupo")
           .eq("tournament_id", tournamentId)
           .not("grupo", "is", null),
+        supabase
+          .from("players")
+          .select("id", { count: "exact", head: true })
+          .eq("tournament_id", tournamentId),
       ]);
       if (cancelled) return;
       const td: any = t || {};
@@ -34,10 +38,13 @@ export function useMainFases(tournamentId: string): string[] | null {
           .filter((g) => g != null && String(g).trim() !== ""),
       ).size;
       const rep = td.repescagem_enabled === false ? 0 : (td.repescagem_total ?? 0);
+      const totalParticipants = td.max_participants ?? playerCount ?? 0;
       const fases = buildMainFases({
         directPerGroup: td.direct_per_group ?? null,
         repescagemTotal: rep,
         numGroups,
+        eliminationOnly: td.elimination_only === true,
+        totalParticipants,
       });
       setMainFases(fases);
     }

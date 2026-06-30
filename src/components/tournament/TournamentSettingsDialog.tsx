@@ -36,6 +36,8 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
   const [modalidade, setModalidade] = useState<"individual" | "duplas">("individual");
   const [maxParticipants, setMaxParticipants] = useState<string>("");
   const [lowerScoreWins, setLowerScoreWins] = useState<boolean>(false);
+  const [eliminationOnly, setEliminationOnly] = useState<boolean>(false);
+
 
   const [totalInscritos, setTotalInscritos] = useState(0);
   const [numGrupos, setNumGrupos] = useState(0);
@@ -60,6 +62,8 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
         setModalidade((anyT.modalidade as "individual" | "duplas") ?? "individual");
         setMaxParticipants(anyT.max_participants?.toString() ?? "");
         setLowerScoreWins(anyT.lower_score_wins === true);
+        setEliminationOnly(anyT.elimination_only === true);
+
       }
       const players = (pr.data as { grupo: string | null }[] | null) ?? [];
       setTotalInscritos(players.length);
@@ -141,6 +145,8 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
         modalidade,
         max_participants: mx,
         lower_score_wins: lowerScoreWins,
+        elimination_only: eliminationOnly,
+
       })
       .eq("id", tournamentId);
     setSaving(false);
@@ -217,6 +223,19 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                     : <>Se definido, novas inscrições serão bloqueadas ao atingir esse número. Atualmente cadastrados: <strong>{totalInscritos}</strong>.</>}
                 </p>
               </div>
+              <div className="space-y-1.5 sm:col-span-2 rounded-md border p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <Label className="text-sm">Torneio eliminatório direto (sem Fase de Grupos)</Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Pula a Fase de Grupos e inicia direto no mata-mata. Ideal para torneios pequenos.
+                      O bracket é projetado a partir do total de participantes (ex.: 8 → Quartas → Semi → Final).
+                    </p>
+                  </div>
+                  <Switch checked={eliminationOnly} onCheckedChange={setEliminationOnly} />
+                </div>
+              </div>
+
               <div className="space-y-1.5 sm:col-span-2">
                 <Label>Regra de pontuação de mesa</Label>
                 <Select

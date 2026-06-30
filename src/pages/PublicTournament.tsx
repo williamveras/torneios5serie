@@ -164,10 +164,13 @@ export default function PublicTournament() {
   ).size;
   const td: any = tournament;
   const repTotal = td.repescagem_enabled === false ? 0 : (td.repescagem_total ?? 0);
+  const eliminationOnly = td.elimination_only === true;
   const mainFases = buildMainFases({
     directPerGroup: td.direct_per_group ?? null,
     repescagemTotal: repTotal,
     numGroups,
+    eliminationOnly,
+    totalParticipants: td.max_participants ?? players.length,
   });
   const mainList = mainFases && mainFases.length > 0
     ? mainFases
@@ -193,13 +196,13 @@ export default function PublicTournament() {
   const showDrawTab = hasMatchupsForDrawFase || hasPendingDraw;
   const drawTabLabel = `Sorteio dos confrontos - ${drawFase}`;
 
-  // Disposição dos grupos: aparece se já houver grupos definidos
-  // ou um sorteio de grupos agendado.
+  // Disposição dos grupos: só aparece em torneios COM Fase de Grupos
   const hasGroupsDefined = players.some((p) => p.grupo);
   const hasPendingGroupDraw = scheduledDraws.some(
     (s) => s.status === "pending" && ((s as any).kind === "grupos" || s.fase === "Fase de Grupos"),
   );
-  const showGroupsTab = hasGroupsDefined || hasPendingGroupDraw;
+  const showGroupsTab = !eliminationOnly && (hasGroupsDefined || hasPendingGroupDraw);
+
 
   const campeaoId = (tournament as any).campeao_id as string | null | undefined;
   const campeao = campeaoId ? players.find(p => p.id === campeaoId) : null;

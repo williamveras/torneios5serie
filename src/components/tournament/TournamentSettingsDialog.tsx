@@ -36,6 +36,8 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
   const [modalidade, setModalidade] = useState<"individual" | "duplas">("individual");
   const [maxParticipants, setMaxParticipants] = useState<string>("");
   const [lowerScoreWins, setLowerScoreWins] = useState<boolean>(false);
+  const [eliminationOnly, setEliminationOnly] = useState<boolean>(false);
+
 
   const [totalInscritos, setTotalInscritos] = useState(0);
   const [numGrupos, setNumGrupos] = useState(0);

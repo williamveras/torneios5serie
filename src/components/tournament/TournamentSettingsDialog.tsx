@@ -223,6 +223,19 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                     : <>Se definido, novas inscrições serão bloqueadas ao atingir esse número. Atualmente cadastrados: <strong>{totalInscritos}</strong>.</>}
                 </p>
               </div>
+              <div className="space-y-1.5 sm:col-span-2 rounded-md border p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <Label className="text-sm">Torneio eliminatório direto (sem Fase de Grupos)</Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Pula a Fase de Grupos e inicia direto no mata-mata. Ideal para torneios pequenos.
+                      O bracket é projetado a partir do total de participantes (ex.: 8 → Quartas → Semi → Final).
+                    </p>
+                  </div>
+                  <Switch checked={eliminationOnly} onCheckedChange={setEliminationOnly} />
+                </div>
+              </div>
+
               <div className="space-y-1.5 sm:col-span-2">
                 <Label>Regra de pontuação de mesa</Label>
                 <Select

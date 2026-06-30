@@ -14,7 +14,18 @@ export function buildMainFases(opts: {
   directPerGroup?: number | null;
   repescagemTotal?: number | null;
   numGroups?: number | null;
+  eliminationOnly?: boolean | null;
+  totalParticipants?: number | null;
 }): string[] | null {
+  // Modo eliminação direta (sem Fase de Grupos): projeta a partir do número
+  // total de participantes (planejado ou inscritos).
+  if (opts.eliminationOnly) {
+    const tp = opts.totalParticipants ?? 0;
+    if (!tp || tp < 2) return null;
+    const proj = projectPhases(tp);
+    if (proj.length === 0) return null;
+    return proj.map(p => p.fase);
+  }
   const dpg = opts.directPerGroup ?? null;
   const ng = opts.numGroups ?? null;
   if (!dpg || !ng || ng < 1) return null;
@@ -24,6 +35,7 @@ export function buildMainFases(opts: {
   if (proj.length === 0) return null;
   return ["Fase de Grupos", ...proj.map(p => p.fase)];
 }
+
 
 /**
  * Public-facing "current" phase. When `mainFases` is provided, it uses that

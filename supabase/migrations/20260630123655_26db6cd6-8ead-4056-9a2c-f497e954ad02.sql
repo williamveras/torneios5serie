@@ -1,0 +1,1 @@
+ALTER TABLE public.tournaments ADD COLUMN IF NOT EXISTS elimination_only boolean NOT NULL DEFAULT false;

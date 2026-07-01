@@ -181,6 +181,23 @@ export default function PublicRegistration() {
             <p className="text-muted-foreground">
               Sua inscrição em <strong>{link?.tournament_name}</strong> foi recebida com sucesso.
             </p>
+            {link?.whatsapp_group_url && (
+              <div className="rounded-lg border bg-muted/40 p-4 text-sm space-y-2 text-left">
+                <p>
+                  Segue link de entrada no grupo fechado do torneio no WhatsApp, onde
+                  passaremos todas as informações e atualizações do torneio.
+                </p>
+                <a
+                  href={link.whatsapp_group_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-primary hover:underline font-medium break-all"
+                >
+                  <ExternalLink className="h-4 w-4 shrink-0" />
+                  Entrar no grupo do WhatsApp
+                </a>
+              </div>
+            )}
             <a
               href={publicUrl}
               target="_blank"

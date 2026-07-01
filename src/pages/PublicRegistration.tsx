@@ -17,6 +17,8 @@ type LinkInfo = {
   expires_at: string;
   tournament_name?: string;
   modalidade: "individual" | "duplas";
+  regulamento?: string | null;
+  whatsapp_group_url?: string | null;
 };
 
 export default function PublicRegistration() {

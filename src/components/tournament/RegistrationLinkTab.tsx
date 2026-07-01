@@ -18,6 +18,7 @@ type RegLink = {
   token: string;
   expires_at: string;
   created_at: string;
+  whatsapp_group_url: string | null;
 };
 
 function genToken() {
@@ -33,15 +34,16 @@ export default function RegistrationLinkTab({ tournamentId }: Props) {
   const [open, setOpen] = useState(false);
   const [expiresDate, setExpiresDate] = useState("");
   const [expiresTime, setExpiresTime] = useState("");
+  const [whatsappUrl, setWhatsappUrl] = useState("");
   const [creating, setCreating] = useState(false);
 
   const fetchLinks = async () => {
     const { data } = await supabase
       .from("registration_links")
-      .select("id, token, expires_at, created_at")
+      .select("id, token, expires_at, created_at, whatsapp_group_url")
       .eq("tournament_id", tournamentId)
       .order("created_at", { ascending: false });
-    if (data) setLinks(data);
+    if (data) setLinks(data as RegLink[]);
   };
 
   useEffect(() => { fetchLinks(); }, [tournamentId]);
@@ -62,6 +64,7 @@ export default function RegistrationLinkTab({ tournamentId }: Props) {
       token,
       expires_at: expiresAt.toISOString(),
       created_by: user?.id ?? null,
+      whatsapp_group_url: whatsappUrl.trim() || null,
     });
     setCreating(false);
     if (error) {
@@ -71,6 +74,7 @@ export default function RegistrationLinkTab({ tournamentId }: Props) {
     setOpen(false);
     setExpiresDate("");
     setExpiresTime("");
+    setWhatsappUrl("");
     toast.success("Link de inscrição gerado!");
     fetchLinks();
   };
@@ -181,6 +185,19 @@ export default function RegistrationLinkTab({ tournamentId }: Props) {
                 ? `O link expirará às ${expiresTime} do dia escolhido.`
                 : "Sem horário definido, o link expirará às 23:59 do dia escolhido."}
             </p>
+            <div className="space-y-2">
+              <Label htmlFor="wa-group">Link do grupo WhatsApp do torneio (opcional)</Label>
+              <Input
+                id="wa-group"
+                type="url"
+                placeholder="https://chat.whatsapp.com/..."
+                value={whatsappUrl}
+                onChange={(e) => setWhatsappUrl(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Será exibido ao participante na tela de confirmação da inscrição.
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>

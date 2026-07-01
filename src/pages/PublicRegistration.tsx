@@ -17,6 +17,8 @@ type LinkInfo = {
   expires_at: string;
   tournament_name?: string;
   modalidade: "individual" | "duplas";
+  regulamento?: string | null;
+  whatsapp_group_url?: string | null;
 };
 
 export default function PublicRegistration() {
@@ -50,6 +52,10 @@ export default function PublicRegistration() {
   const [horarios, setHorarios] = useState<string[]>([]);
   const [comentario, setComentario] = useState("");
 
+  // Welcome / regulamento acceptance gate
+  const [acceptedRules, setAcceptedRules] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+
   const toggleHorario = (opt: string, checked: boolean) => {
     setHorarios((prev) => (checked ? [...prev, opt] : prev.filter((h) => h !== opt)));
   };
@@ -69,6 +75,8 @@ export default function PublicRegistration() {
         expires_at: row.expires_at,
         tournament_name: row.tournament_name,
         modalidade: (row.modalidade as "individual" | "duplas") || "individual",
+        regulamento: row.regulamento ?? null,
+        whatsapp_group_url: row.whatsapp_group_url ?? null,
       });
       setLoading(false);
     })();
@@ -173,6 +181,23 @@ export default function PublicRegistration() {
             <p className="text-muted-foreground">
               Sua inscrição em <strong>{link?.tournament_name}</strong> foi recebida com sucesso.
             </p>
+            {link?.whatsapp_group_url && (
+              <div className="rounded-lg border bg-muted/40 p-4 text-sm space-y-2 text-left">
+                <p>
+                  Segue link de entrada no grupo fechado do torneio no WhatsApp, onde
+                  passaremos todas as informações e atualizações do torneio.
+                </p>
+                <a
+                  href={link.whatsapp_group_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-primary hover:underline font-medium break-all"
+                >
+                  <ExternalLink className="h-4 w-4 shrink-0" />
+                  Entrar no grupo do WhatsApp
+                </a>
+              </div>
+            )}
             <a
               href={publicUrl}
               target="_blank"
@@ -212,6 +237,45 @@ export default function PublicRegistration() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {!showForm ? (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <h2 className="text-base font-semibold">Bem-vindo(a)!</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Que bom ter você aqui. Leia o regulamento abaixo, aceite marcando a
+                    caixinha e clique em continuar para ter acesso ao formulário.
+                  </p>
+                </div>
+                <div className="rounded-lg border bg-muted/30 p-4 max-h-80 overflow-auto">
+                  {link?.regulamento && link.regulamento.trim() ? (
+                    <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                      {link.regulamento}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">
+                      O organizador ainda não publicou um regulamento para este torneio.
+                    </p>
+                  )}
+                </div>
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <Checkbox
+                    id="accept-rules"
+                    checked={acceptedRules}
+                    onCheckedChange={(c) => setAcceptedRules(c === true)}
+                    className="mt-0.5"
+                  />
+                  <span className="text-sm">Li e aceito o regulamento</span>
+                </label>
+                <Button
+                  type="button"
+                  className="w-full"
+                  disabled={!acceptedRules}
+                  onClick={() => setShowForm(true)}
+                >
+                  Continuar
+                </Button>
+              </div>
+            ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               {isDuplas ? (
                 <>
@@ -341,6 +405,7 @@ export default function PublicRegistration() {
                 {submitting ? "Enviando..." : isDuplas ? "Enviar inscrição da dupla" : "Enviar inscrição"}
               </Button>
             </form>
+            )}
           </CardContent>
         </Card>
       </div>

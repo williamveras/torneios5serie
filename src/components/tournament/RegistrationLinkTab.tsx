@@ -18,6 +18,7 @@ type RegLink = {
   token: string;
   expires_at: string;
   created_at: string;
+  whatsapp_group_url: string | null;
 };
 
 function genToken() {

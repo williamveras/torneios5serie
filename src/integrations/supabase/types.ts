@@ -381,6 +381,7 @@ export type Database = {
           id: string
           token: string
           tournament_id: string
+          whatsapp_group_url: string | null
         }
         Insert: {
           created_at?: string
@@ -389,6 +390,7 @@ export type Database = {
           id?: string
           token: string
           tournament_id: string
+          whatsapp_group_url?: string | null
         }
         Update: {
           created_at?: string
@@ -397,6 +399,7 @@ export type Database = {
           id?: string
           token?: string
           tournament_id?: string
+          whatsapp_group_url?: string | null
         }
         Relationships: []
       }
@@ -688,8 +691,10 @@ export type Database = {
         Returns: {
           expires_at: string
           modalidade: string
+          regulamento: string
           tournament_id: string
           tournament_name: string
+          whatsapp_group_url: string
         }[]
       }
     }

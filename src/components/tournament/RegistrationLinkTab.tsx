@@ -64,6 +64,7 @@ export default function RegistrationLinkTab({ tournamentId }: Props) {
       token,
       expires_at: expiresAt.toISOString(),
       created_by: user?.id ?? null,
+      whatsapp_group_url: whatsappUrl.trim() || null,
     });
     setCreating(false);
     if (error) {
@@ -73,6 +74,7 @@ export default function RegistrationLinkTab({ tournamentId }: Props) {
     setOpen(false);
     setExpiresDate("");
     setExpiresTime("");
+    setWhatsappUrl("");
     toast.success("Link de inscrição gerado!");
     fetchLinks();
   };

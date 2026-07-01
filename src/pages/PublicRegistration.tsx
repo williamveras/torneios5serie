@@ -52,6 +52,10 @@ export default function PublicRegistration() {
   const [horarios, setHorarios] = useState<string[]>([]);
   const [comentario, setComentario] = useState("");
 
+  // Welcome / regulamento acceptance gate
+  const [acceptedRules, setAcceptedRules] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+
   const toggleHorario = (opt: string, checked: boolean) => {
     setHorarios((prev) => (checked ? [...prev, opt] : prev.filter((h) => h !== opt)));
   };

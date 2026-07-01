@@ -34,15 +34,16 @@ export default function RegistrationLinkTab({ tournamentId }: Props) {
   const [open, setOpen] = useState(false);
   const [expiresDate, setExpiresDate] = useState("");
   const [expiresTime, setExpiresTime] = useState("");
+  const [whatsappUrl, setWhatsappUrl] = useState("");
   const [creating, setCreating] = useState(false);
 
   const fetchLinks = async () => {
     const { data } = await supabase
       .from("registration_links")
-      .select("id, token, expires_at, created_at")
+      .select("id, token, expires_at, created_at, whatsapp_group_url")
       .eq("tournament_id", tournamentId)
       .order("created_at", { ascending: false });
-    if (data) setLinks(data);
+    if (data) setLinks(data as RegLink[]);
   };
 
   useEffect(() => { fetchLinks(); }, [tournamentId]);

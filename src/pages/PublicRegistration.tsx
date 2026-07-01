@@ -405,6 +405,7 @@ export default function PublicRegistration() {
                 {submitting ? "Enviando..." : isDuplas ? "Enviar inscrição da dupla" : "Enviar inscrição"}
               </Button>
             </form>
+            )}
           </CardContent>
         </Card>
       </div>

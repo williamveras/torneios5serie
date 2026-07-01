@@ -75,6 +75,8 @@ export default function PublicRegistration() {
         expires_at: row.expires_at,
         tournament_name: row.tournament_name,
         modalidade: (row.modalidade as "individual" | "duplas") || "individual",
+        regulamento: row.regulamento ?? null,
+        whatsapp_group_url: row.whatsapp_group_url ?? null,
       });
       setLoading(false);
     })();

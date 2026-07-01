@@ -185,6 +185,19 @@ export default function RegistrationLinkTab({ tournamentId }: Props) {
                 ? `O link expirará às ${expiresTime} do dia escolhido.`
                 : "Sem horário definido, o link expirará às 23:59 do dia escolhido."}
             </p>
+            <div className="space-y-2">
+              <Label htmlFor="wa-group">Link do grupo WhatsApp do torneio (opcional)</Label>
+              <Input
+                id="wa-group"
+                type="url"
+                placeholder="https://chat.whatsapp.com/..."
+                value={whatsappUrl}
+                onChange={(e) => setWhatsappUrl(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Será exibido ao participante na tela de confirmação da inscrição.
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>

@@ -237,6 +237,45 @@ export default function PublicRegistration() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {!showForm ? (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <h2 className="text-base font-semibold">Bem-vindo(a)!</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Que bom ter você aqui. Leia o regulamento abaixo, aceite marcando a
+                    caixinha e clique em continuar para ter acesso ao formulário.
+                  </p>
+                </div>
+                <div className="rounded-lg border bg-muted/30 p-4 max-h-80 overflow-auto">
+                  {link?.regulamento && link.regulamento.trim() ? (
+                    <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                      {link.regulamento}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">
+                      O organizador ainda não publicou um regulamento para este torneio.
+                    </p>
+                  )}
+                </div>
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <Checkbox
+                    id="accept-rules"
+                    checked={acceptedRules}
+                    onCheckedChange={(c) => setAcceptedRules(c === true)}
+                    className="mt-0.5"
+                  />
+                  <span className="text-sm">Li e aceito o regulamento</span>
+                </label>
+                <Button
+                  type="button"
+                  className="w-full"
+                  disabled={!acceptedRules}
+                  onClick={() => setShowForm(true)}
+                >
+                  Continuar
+                </Button>
+              </div>
+            ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               {isDuplas ? (
                 <>

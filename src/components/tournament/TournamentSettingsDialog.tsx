@@ -308,8 +308,9 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>{isDuplas ? "Duplas classificadas direto por grupo" : "Classificados direto por grupo"}</Label>
+                  <Label htmlFor="tsd-direct">{isDuplas ? "Duplas classificadas direto por grupo" : "Classificados direto por grupo"}</Label>
                   <Input
+                    id="tsd-direct"
                     type="number"
                     min={1}
                     value={directPerGroup}
@@ -318,9 +319,10 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Repescagem do próximo colocado</Label>
+                  <Label htmlFor="tsd-rep-switch">Repescagem do próximo colocado</Label>
                   <div className="flex items-center gap-2 h-10">
                     <Switch
+                      id="tsd-rep-switch"
                       checked={repescagemEnabled}
                       onCheckedChange={setRepescagemEnabled}
                     />
@@ -331,8 +333,9 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                 </div>
                 {repescagemEnabled && (
                   <div className="space-y-1.5 sm:col-span-2">
-                    <Label>{isDuplas ? "Quantas melhores duplas entram na repescagem" : "Quantos melhores entram na repescagem"}</Label>
+                    <Label htmlFor="tsd-rep-total">{isDuplas ? "Quantas melhores duplas entram na repescagem" : "Quantos melhores entram na repescagem"}</Label>
                     <Input
+                      id="tsd-rep-total"
                       type="number"
                       min={0}
                       value={repescagemTotal}

@@ -172,16 +172,17 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
           <div className="space-y-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5 sm:col-span-2">
-                <Label>Nome</Label>
-                <Input value={nome} onChange={e => setNome(e.target.value)} />
+                <Label htmlFor="tsd-nome">Nome</Label>
+                <Input id="tsd-nome" value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome do torneio" />
               </div>
               <div className="space-y-1.5">
-                <Label>Data de início</Label>
-                <Input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} />
+                <Label htmlFor="tsd-data">Data de início</Label>
+                <Input id="tsd-data" type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <Label>Rodadas da Fase de Grupos</Label>
+                <Label htmlFor="tsd-rodadas">Rodadas da Fase de Grupos</Label>
                 <Input
+                  id="tsd-rodadas"
                   type="number"
                   min={1}
                   value={numeroRodadas}
@@ -190,13 +191,13 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                 />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label>Modalidade</Label>
+                <Label htmlFor="tsd-modalidade">Modalidade</Label>
                 <Select
                   value={modalidade}
                   onValueChange={(v) => setModalidade(v as "individual" | "duplas")}
                   disabled={totalInscritos > 0}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="tsd-modalidade"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="individual">Individual (1 vs 1)</SelectItem>
                     <SelectItem value="duplas">Duplas (2 vs 2)</SelectItem>
@@ -209,8 +210,9 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                 )}
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label>Limite de {termPlur} participantes (opcional)</Label>
+                <Label htmlFor="tsd-max">Limite de {termPlur} participantes (opcional)</Label>
                 <Input
+                  id="tsd-max"
                   type="number"
                   min={2}
                   value={maxParticipants}
@@ -226,23 +228,23 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
               <div className="space-y-1.5 sm:col-span-2 rounded-md border p-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <Label className="text-sm">Torneio eliminatório direto (sem Fase de Grupos)</Label>
+                    <Label htmlFor="tsd-elim-only" className="text-sm">Torneio eliminatório direto (sem Fase de Grupos)</Label>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       Pula a Fase de Grupos e inicia direto no mata-mata. Ideal para torneios pequenos.
                       O bracket é projetado a partir do total de participantes (ex.: 8 → Quartas → Semi → Final).
                     </p>
                   </div>
-                  <Switch checked={eliminationOnly} onCheckedChange={setEliminationOnly} />
+                  <Switch id="tsd-elim-only" checked={eliminationOnly} onCheckedChange={setEliminationOnly} />
                 </div>
               </div>
 
               <div className="space-y-1.5 sm:col-span-2">
-                <Label>Regra de pontuação de mesa</Label>
+                <Label htmlFor="tsd-pontuacao">Regra de pontuação de mesa</Label>
                 <Select
                   value={lowerScoreWins ? "lower" : "higher"}
                   onValueChange={(v) => setLowerScoreWins(v === "lower")}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="tsd-pontuacao"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="higher">Maior pontuação vence (padrão)</SelectItem>
                     <SelectItem value="lower">Menor pontuação vence</SelectItem>
@@ -306,8 +308,9 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>{isDuplas ? "Duplas classificadas direto por grupo" : "Classificados direto por grupo"}</Label>
+                  <Label htmlFor="tsd-direct">{isDuplas ? "Duplas classificadas direto por grupo" : "Classificados direto por grupo"}</Label>
                   <Input
+                    id="tsd-direct"
                     type="number"
                     min={1}
                     value={directPerGroup}
@@ -316,9 +319,10 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Repescagem do próximo colocado</Label>
+                  <Label htmlFor="tsd-rep-switch">Repescagem do próximo colocado</Label>
                   <div className="flex items-center gap-2 h-10">
                     <Switch
+                      id="tsd-rep-switch"
                       checked={repescagemEnabled}
                       onCheckedChange={setRepescagemEnabled}
                     />
@@ -329,8 +333,9 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                 </div>
                 {repescagemEnabled && (
                   <div className="space-y-1.5 sm:col-span-2">
-                    <Label>{isDuplas ? "Quantas melhores duplas entram na repescagem" : "Quantos melhores entram na repescagem"}</Label>
+                    <Label htmlFor="tsd-rep-total">{isDuplas ? "Quantas melhores duplas entram na repescagem" : "Quantos melhores entram na repescagem"}</Label>
                     <Input
+                      id="tsd-rep-total"
                       type="number"
                       min={0}
                       value={repescagemTotal}

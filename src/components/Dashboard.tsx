@@ -147,8 +147,8 @@ export default function Dashboard() {
               <DialogHeader><DialogTitle>Nova organização</DialogTitle></DialogHeader>
               <form onSubmit={handleCreateOrg} className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Nome da organização</Label>
-                  <Input value={newOrgName} onChange={(e) => setNewOrgName(e.target.value)} required placeholder="Ex: Liga Scopas BH" />
+                  <Label htmlFor="org-nome">Nome da organização</Label>
+                  <Input id="org-nome" value={newOrgName} onChange={(e) => setNewOrgName(e.target.value)} required placeholder="Ex: Liga Scopas BH" />
                 </div>
                 <Button type="submit" className="w-full" disabled={creatingOrg}>
                   {creatingOrg ? "Criando..." : "Criar"}
@@ -181,16 +181,17 @@ export default function Dashboard() {
               <DialogHeader><DialogTitle>Criar Torneio</DialogTitle></DialogHeader>
               <form onSubmit={handleCreate} className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Nome do torneio</Label>
-                  <Input value={nome} onChange={e => setNome(e.target.value)} required placeholder="Ex: Campeonato Regional 2026" />
+                  <Label htmlFor="dash-nome">Nome do torneio</Label>
+                  <Input id="dash-nome" value={nome} onChange={e => setNome(e.target.value)} required placeholder="Ex: Campeonato Regional 2026" />
                 </div>
                 <div className="space-y-2">
-                  <Label>Data de início</Label>
-                  <Input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} required />
+                  <Label htmlFor="dash-data">Data de início</Label>
+                  <Input id="dash-data" type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
-                  <Label>Número de rodadas (Fase de Grupos)</Label>
+                  <Label htmlFor="dash-rodadas">Número de rodadas (Fase de Grupos)</Label>
                   <Input
+                    id="dash-rodadas"
                     type="number"
                     min={1}
                     value={numeroRodadas}
@@ -202,9 +203,9 @@ export default function Dashboard() {
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label>Modalidade</Label>
+                  <Label htmlFor="dash-modalidade">Modalidade</Label>
                   <Select value={modalidade} onValueChange={(v) => setModalidade(v as "individual" | "duplas")}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger id="dash-modalidade"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="individual">Individual (1 vs 1)</SelectItem>
                       <SelectItem value="duplas">Duplas (2 vs 2)</SelectItem>
@@ -215,8 +216,9 @@ export default function Dashboard() {
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label>Limite de participantes (opcional)</Label>
+                  <Label htmlFor="dash-max">Limite de participantes (opcional)</Label>
                   <Input
+                    id="dash-max"
                     type="number"
                     min={2}
                     value={maxParticipants}

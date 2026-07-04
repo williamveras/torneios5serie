@@ -210,8 +210,9 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                 )}
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label>Limite de {termPlur} participantes (opcional)</Label>
+                <Label htmlFor="tsd-max">Limite de {termPlur} participantes (opcional)</Label>
                 <Input
+                  id="tsd-max"
                   type="number"
                   min={2}
                   value={maxParticipants}
@@ -227,23 +228,23 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
               <div className="space-y-1.5 sm:col-span-2 rounded-md border p-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <Label className="text-sm">Torneio eliminatório direto (sem Fase de Grupos)</Label>
+                    <Label htmlFor="tsd-elim-only" className="text-sm">Torneio eliminatório direto (sem Fase de Grupos)</Label>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       Pula a Fase de Grupos e inicia direto no mata-mata. Ideal para torneios pequenos.
                       O bracket é projetado a partir do total de participantes (ex.: 8 → Quartas → Semi → Final).
                     </p>
                   </div>
-                  <Switch checked={eliminationOnly} onCheckedChange={setEliminationOnly} />
+                  <Switch id="tsd-elim-only" checked={eliminationOnly} onCheckedChange={setEliminationOnly} />
                 </div>
               </div>
 
               <div className="space-y-1.5 sm:col-span-2">
-                <Label>Regra de pontuação de mesa</Label>
+                <Label htmlFor="tsd-pontuacao">Regra de pontuação de mesa</Label>
                 <Select
                   value={lowerScoreWins ? "lower" : "higher"}
                   onValueChange={(v) => setLowerScoreWins(v === "lower")}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="tsd-pontuacao"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="higher">Maior pontuação vence (padrão)</SelectItem>
                     <SelectItem value="lower">Menor pontuação vence</SelectItem>

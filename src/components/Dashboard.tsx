@@ -147,8 +147,8 @@ export default function Dashboard() {
               <DialogHeader><DialogTitle>Nova organização</DialogTitle></DialogHeader>
               <form onSubmit={handleCreateOrg} className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Nome da organização</Label>
-                  <Input value={newOrgName} onChange={(e) => setNewOrgName(e.target.value)} required placeholder="Ex: Liga Scopas BH" />
+                  <Label htmlFor="org-nome">Nome da organização</Label>
+                  <Input id="org-nome" value={newOrgName} onChange={(e) => setNewOrgName(e.target.value)} required placeholder="Ex: Liga Scopas BH" />
                 </div>
                 <Button type="submit" className="w-full" disabled={creatingOrg}>
                   {creatingOrg ? "Criando..." : "Criar"}

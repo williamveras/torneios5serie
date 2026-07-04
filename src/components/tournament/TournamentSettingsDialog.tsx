@@ -172,16 +172,17 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
           <div className="space-y-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5 sm:col-span-2">
-                <Label>Nome</Label>
-                <Input value={nome} onChange={e => setNome(e.target.value)} />
+                <Label htmlFor="tsd-nome">Nome</Label>
+                <Input id="tsd-nome" value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome do torneio" />
               </div>
               <div className="space-y-1.5">
-                <Label>Data de início</Label>
-                <Input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} />
+                <Label htmlFor="tsd-data">Data de início</Label>
+                <Input id="tsd-data" type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <Label>Rodadas da Fase de Grupos</Label>
+                <Label htmlFor="tsd-rodadas">Rodadas da Fase de Grupos</Label>
                 <Input
+                  id="tsd-rodadas"
                   type="number"
                   min={1}
                   value={numeroRodadas}
@@ -190,13 +191,13 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                 />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label>Modalidade</Label>
+                <Label htmlFor="tsd-modalidade">Modalidade</Label>
                 <Select
                   value={modalidade}
                   onValueChange={(v) => setModalidade(v as "individual" | "duplas")}
                   disabled={totalInscritos > 0}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="tsd-modalidade"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="individual">Individual (1 vs 1)</SelectItem>
                     <SelectItem value="duplas">Duplas (2 vs 2)</SelectItem>

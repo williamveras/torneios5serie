@@ -50,7 +50,7 @@ export function useMainFases(tournamentId: string): string[] | null {
     }
     load();
     const channel = supabase
-      .channel(`main_fases_${tournamentId}`)
+      .channel(`main_fases_${tournamentId}_${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "players", filter: `tournament_id=eq.${tournamentId}` }, load)
       .on("postgres_changes", { event: "*", schema: "public", table: "tournaments", filter: `id=eq.${tournamentId}` }, load)
       .subscribe();

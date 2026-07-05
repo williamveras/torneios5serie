@@ -25,7 +25,7 @@ export default function Auth() {
       if (error) {
         toast.error(error.message);
       } else {
-        navigate("/");
+        navigate("/admin");
       }
     } else {
       const { error } = await supabase.auth.signUp({

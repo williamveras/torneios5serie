@@ -35,7 +35,7 @@ export default function Home() {
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 min-w-0">
             <Trophy className="h-5 w-5 text-primary shrink-0" />
-            <span className="font-semibold text-lg truncate">Torneios 5ª Série</span>
+            <span className="font-semibold text-lg truncate">Torneios Quinta Série</span>
           </div>
           <Button asChild variant="ghost" size="sm">
             <Link to="/admin"><LogIn className="h-4 w-4 mr-1" /> Área administrativa</Link>
@@ -47,7 +47,7 @@ export default function Home() {
         <section className="mb-10 text-center">
           <h1 className="text-3xl md:text-4xl font-bold mb-3">Nossos Torneios</h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Acompanhe classificações, resultados, agendas e chaves de todos os torneios organizados pela 5ª Série.
+            Acompanhe classificações, resultados, agendas e chaves de todos os torneios organizados pela Quinta Série.
           </p>
         </section>
 
@@ -93,7 +93,7 @@ export default function Home() {
 
       <footer className="border-t bg-background mt-10">
         <div className="max-w-5xl mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} 5ª Série — Torneios
+          © {new Date().getFullYear()} Quinta Série — Torneios
         </div>
       </footer>
     </div>

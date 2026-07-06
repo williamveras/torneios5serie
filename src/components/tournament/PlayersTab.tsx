@@ -88,7 +88,7 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
   const fetchPlayers = async () => {
     const [{ data: tour }, { data: pls }] = await Promise.all([
       (supabase.from("tournaments") as any).select("modalidade").eq("id", tournamentId).maybeSingle(),
-      supabase.from("players").select("*").eq("tournament_id", tournamentId).order("grupo").order("nome_completo"),
+      supabase.from("players").select("*").eq("tournament_id", tournamentId).order("created_at", { ascending: true }),
     ]);
     setModalidade(((tour as any)?.modalidade ?? "individual") as "individual" | "duplas");
     if (pls) setPlayers(pls);

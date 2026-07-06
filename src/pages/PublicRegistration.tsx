@@ -140,6 +140,14 @@ export default function PublicRegistration() {
       const msg = String(err.message || "");
       if (msg.includes("max_participants_reached")) {
         toast.error("Inscrições encerradas", { description: "O limite de participantes deste torneio já foi atingido." });
+      } else if (msg.includes("duplicate_registration")) {
+        toast.error("Inscrição duplicada", {
+          description: "Já encontramos uma inscrição com o mesmo nome, nick ou e-mail neste torneio. Esta nova inscrição foi ignorada.",
+        });
+      } else if (msg.includes("team_name_taken")) {
+        toast.error("Nome de equipe já utilizado", {
+          description: "Já existe uma equipe cadastrada com esse nome neste torneio. Por favor, escolha outro nome de equipe.",
+        });
       } else {
         toast.error("Erro ao enviar inscrição", { description: err.message });
       }

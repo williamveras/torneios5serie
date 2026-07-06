@@ -686,6 +686,7 @@ export type Database = {
         }
         Returns: string
       }
+      unaccent: { Args: { "": string }; Returns: string }
       validate_registration_token: {
         Args: { _token: string }
         Returns: {

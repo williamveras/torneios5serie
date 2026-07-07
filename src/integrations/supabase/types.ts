@@ -646,6 +646,12 @@ export type Database = {
           tournament_id: string
         }[]
       }
+      get_upcoming_matches_for_reminder: {
+        Args: { _minutes_before?: number; _window_minutes?: number }
+        Returns: {
+          id: string
+        }[]
+      }
       has_org_role: {
         Args: {
           _org: string

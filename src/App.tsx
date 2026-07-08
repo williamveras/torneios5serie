@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import PublicTournament from "./pages/PublicTournament";
 import PublicRegistration from "./pages/PublicRegistration";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/" element={<Home />} />
           <Route path="/admin" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/p/:tournamentId" element={<PublicTournament />} />
           <Route path="/inscricao/:token" element={<PublicRegistration />} />
           <Route path="*" element={<NotFound />} />

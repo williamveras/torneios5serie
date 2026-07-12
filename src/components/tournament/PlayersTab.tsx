@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, Trash2, Users, Shuffle, Lightbulb, MoreHorizontal, Pencil, CalendarPlus, Ban, RotateCcw, Plus, Crown, Clock, X } from "lucide-react";
+import { Upload, Trash2, Users, Shuffle, Lightbulb, MoreHorizontal, Pencil, CalendarPlus, Ban, RotateCcw, Plus, Crown, Clock, X, Download, FileSpreadsheet, FileText } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";

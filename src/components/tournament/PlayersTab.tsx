@@ -389,6 +389,56 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
     setSorting(false);
   };
 
+  const buildExportRows = () => {
+    if (modalidade === "duplas") {
+      return players.map((p) => {
+        const members = teamMembersMap[p.id] || [];
+        const m1 = members.find(m => m.position === 1);
+        const m2 = members.find(m => m.position === 2);
+        return {
+          "Nome da equipe": p.nome_completo || "",
+          "Nick jogador 1": m1?.member_nick || "",
+          "Nick jogador 2": m2?.member_nick || "",
+        };
+      });
+    }
+    return players.map((p) => ({ Nick: p.nick_playroom || "" }));
+  };
+
+  const safeName = (tournamentId || "torneio").slice(0, 8);
+
+  const handleExportXlsx = () => {
+    const rows = buildExportRows();
+    if (rows.length === 0) { toast.info("Nenhum participante para exportar"); return; }
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Participantes");
+    XLSX.writeFile(wb, `participantes-${safeName}.xlsx`);
+  };
+
+  const handleExportTxt = () => {
+    if (players.length === 0) { toast.info("Nenhum participante para exportar"); return; }
+    let content = "";
+    if (modalidade === "duplas") {
+      content = players.map((p) => {
+        const members = teamMembersMap[p.id] || [];
+        const m1 = members.find(m => m.position === 1);
+        const m2 = members.find(m => m.position === 2);
+        const nicks = [m1?.member_nick, m2?.member_nick].filter(Boolean).join(" / ");
+        return `${p.nome_completo}${nicks ? ` — ${nicks}` : ""}`;
+      }).join("\n");
+    } else {
+      content = players.map(p => p.nick_playroom || "").filter(Boolean).join("\n");
+    }
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `participantes-${safeName}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
@@ -405,8 +455,24 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
           <Button variant="outline" onClick={() => fileRef.current?.click()}>
             <Upload className="h-4 w-4 mr-1" /> Importar Planilha
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" disabled={players.length === 0}>
+                <Download className="h-4 w-4 mr-1" /> Exportar
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExportXlsx}>
+                <FileSpreadsheet className="h-4 w-4 mr-2" /> Planilha (.xlsx)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportTxt}>
+                <FileText className="h-4 w-4 mr-2" /> Texto (.txt)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
+
 
       {/* Sortear Grupos */}
       {players.length >= 2 && (

@@ -83,9 +83,8 @@ export default function PublicTournament() {
       // Carrega membros das equipes (duplas) para exibir nomes nos rótulos.
       const teamIds = playersData.filter((pl) => pl.is_team).map((pl) => pl.id);
       if (teamIds.length > 0) {
-        const { data: tm } = await (supabase.from("team_members") as any)
-          .select("team_id, member_nome, member_nick, position")
-          .in("team_id", teamIds);
+        const { data: tmAll } = await (supabase as any).rpc("get_team_members_public", { _tournament_id: tournamentId });
+        const tm = ((tmAll as any[]) || []).filter((r) => teamIds.includes(r.team_id));
         const map: Record<string, { nome: string; nick: string | null }[]> = {};
         ((tm as any[]) || [])
           .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))

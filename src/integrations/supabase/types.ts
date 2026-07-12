@@ -646,6 +646,15 @@ export type Database = {
           tournament_id: string
         }[]
       }
+      get_team_members_public: {
+        Args: { _tournament_id: string }
+        Returns: {
+          member_nick: string
+          member_nome: string
+          position: number
+          team_id: string
+        }[]
+      }
       get_upcoming_matches_for_reminder: {
         Args: { _minutes_before?: number; _window_minutes?: number }
         Returns: {

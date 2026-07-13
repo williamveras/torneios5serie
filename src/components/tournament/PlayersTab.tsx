@@ -890,6 +890,54 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={exportOpen} onOpenChange={setExportOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Exportar participantes</DialogTitle>
+            <DialogDescription>
+              Selecione os campos que deseja incluir na exportação.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-xs mb-2 block">Formato</Label>
+              <RadioGroup
+                value={exportFormat}
+                onValueChange={(v) => setExportFormat(v as "xlsx" | "txt")}
+                className="flex gap-4"
+              >
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <RadioGroupItem value="xlsx" /> Planilha (.xlsx)
+                </label>
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <RadioGroupItem value="txt" /> Texto (.txt)
+                </label>
+              </RadioGroup>
+            </div>
+            <div>
+              <Label className="text-xs mb-2 block">Campos</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-72 overflow-auto pr-1">
+                {getExportFields().map((f) => (
+                  <label key={f.key} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Checkbox
+                      checked={!!exportFields[f.key]}
+                      onCheckedChange={(c) => setExportFields((prev) => ({ ...prev, [f.key]: !!c }))}
+                    />
+                    {f.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setExportOpen(false)}>Cancelar</Button>
+            <Button onClick={runExport}>
+              <Download className="h-4 w-4 mr-1" /> Exportar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

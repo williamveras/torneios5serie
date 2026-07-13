@@ -496,10 +496,10 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleExportXlsx}>
+              <DropdownMenuItem onClick={() => openExportDialog("xlsx")}>
                 <FileSpreadsheet className="h-4 w-4 mr-2" /> Planilha (.xlsx)
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleExportTxt}>
+              <DropdownMenuItem onClick={() => openExportDialog("txt")}>
                 <FileText className="h-4 w-4 mr-2" /> Texto (.txt)
               </DropdownMenuItem>
             </DropdownMenuContent>

@@ -87,6 +87,12 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
   // Delete confirmation
   const [deletePlayer, setDeletePlayer] = useState<Player | null>(null);
 
+  // Export dialog
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportFormat, setExportFormat] = useState<"xlsx" | "txt">("xlsx");
+  const [exportFields, setExportFields] = useState<Record<string, boolean>>({});
+
+
   const fetchPlayers = async () => {
     const [{ data: tour }, { data: pls }] = await Promise.all([
       (supabase.from("tournaments") as any).select("modalidade").eq("id", tournamentId).maybeSingle(),

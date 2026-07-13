@@ -397,55 +397,81 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
     setSorting(false);
   };
 
-  const buildExportRows = () => {
+  type ExportField = { key: string; label: string; get: (p: Player) => string };
+
+  const getExportFields = (): ExportField[] => {
     if (modalidade === "duplas") {
-      return players.map((p) => {
-        const members = teamMembersMap[p.id] || [];
-        const m1 = members.find(m => m.position === 1);
-        const m2 = members.find(m => m.position === 2);
-        return {
-          "Nome da equipe": p.nome_completo || "",
-          "Nick jogador 1": m1?.member_nick || "",
-          "Nick jogador 2": m2?.member_nick || "",
+      const memberField = (pos: number, attr: "member_nome" | "member_nick" | "member_email" | "member_whatsapp") =>
+        (p: Player) => {
+          const members = teamMembersMap[p.id] || [];
+          const m = members.find(mm => mm.position === pos);
+          return (m?.[attr] as string) || "";
         };
-      });
+      return [
+        { key: "team_name", label: "Nome da equipe", get: (p) => p.nome_completo || "" },
+        { key: "grupo", label: "Grupo", get: (p) => p.grupo || "" },
+        { key: "m1_nick", label: "Nick jogador 1", get: memberField(1, "member_nick") },
+        { key: "m1_nome", label: "Nome jogador 1", get: memberField(1, "member_nome") },
+        { key: "m1_whats", label: "WhatsApp jogador 1", get: memberField(1, "member_whatsapp") },
+        { key: "m1_email", label: "E-mail jogador 1", get: memberField(1, "member_email") },
+        { key: "m2_nick", label: "Nick jogador 2", get: memberField(2, "member_nick") },
+        { key: "m2_nome", label: "Nome jogador 2", get: memberField(2, "member_nome") },
+        { key: "m2_whats", label: "WhatsApp jogador 2", get: memberField(2, "member_whatsapp") },
+        { key: "m2_email", label: "E-mail jogador 2", get: memberField(2, "member_email") },
+      ];
     }
-    return players.map((p) => ({ Nick: p.nick_playroom || "" }));
+    return [
+      { key: "nick", label: "Nick no Playroom", get: (p) => p.nick_playroom || "" },
+      { key: "nome", label: "Nome completo", get: (p) => p.nome_completo || "" },
+      { key: "whatsapp", label: "WhatsApp", get: (p) => p.whatsapp || "" },
+      { key: "grupo", label: "Grupo", get: (p) => p.grupo || "" },
+      { key: "horarios", label: "Preferência de horários", get: (p) => p.preferencia_horarios || "" },
+      { key: "comentario", label: "Comentário", get: (p) => p.comentario || "" },
+    ];
+  };
+
+  const openExportDialog = (format: "xlsx" | "txt") => {
+    if (players.length === 0) { toast.info("Nenhum participante para exportar"); return; }
+    setExportFormat(format);
+    const fields = getExportFields();
+    // Default: first field selected only (nick / nome da equipe)
+    const initial: Record<string, boolean> = {};
+    fields.forEach((f, i) => { initial[f.key] = i === 0 || (modalidade === "duplas" && (f.key === "m1_nick" || f.key === "m2_nick")); });
+    setExportFields(initial);
+    setExportOpen(true);
   };
 
   const safeName = (tournamentId || "torneio").slice(0, 8);
 
-  const handleExportXlsx = () => {
-    const rows = buildExportRows();
-    if (rows.length === 0) { toast.info("Nenhum participante para exportar"); return; }
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Participantes");
-    XLSX.writeFile(wb, `participantes-${safeName}.xlsx`);
+  const runExport = () => {
+    const fields = getExportFields().filter(f => exportFields[f.key]);
+    if (fields.length === 0) { toast.error("Selecione ao menos um campo"); return; }
+
+    if (exportFormat === "xlsx") {
+      const rows = players.map((p) => {
+        const row: Record<string, string> = {};
+        fields.forEach(f => { row[f.label] = f.get(p); });
+        return row;
+      });
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Participantes");
+      XLSX.writeFile(wb, `participantes-${safeName}.xlsx`);
+    } else {
+      const content = players.map((p) => {
+        return fields.map(f => f.get(p)).filter(v => v !== "").join(" — ");
+      }).filter(Boolean).join("\n");
+      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `participantes-${safeName}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    setExportOpen(false);
   };
 
-  const handleExportTxt = () => {
-    if (players.length === 0) { toast.info("Nenhum participante para exportar"); return; }
-    let content = "";
-    if (modalidade === "duplas") {
-      content = players.map((p) => {
-        const members = teamMembersMap[p.id] || [];
-        const m1 = members.find(m => m.position === 1);
-        const m2 = members.find(m => m.position === 2);
-        const nicks = [m1?.member_nick, m2?.member_nick].filter(Boolean).join(" / ");
-        return `${p.nome_completo}${nicks ? ` — ${nicks}` : ""}`;
-      }).join("\n");
-    } else {
-      content = players.map(p => p.nick_playroom || "").filter(Boolean).join("\n");
-    }
-    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `participantes-${safeName}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
 
   return (
     <div className="space-y-4">

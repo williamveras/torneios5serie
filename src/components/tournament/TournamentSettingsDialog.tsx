@@ -61,6 +61,8 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
         setDirectPerGroup(anyT.direct_per_group?.toString() ?? "");
         setRepescagemEnabled(anyT.repescagem_enabled ?? true);
         setRepescagemTotal(anyT.repescagem_total?.toString() ?? "");
+        setRepescagemMode((anyT.repescagem_mode as any) ?? "ranking");
+        setRepescagemPlayoffSize(anyT.repescagem_playoff_size?.toString() ?? "");
         setModalidade((anyT.modalidade as "individual" | "duplas") ?? "individual");
         setMaxParticipants(anyT.max_participants?.toString() ?? "");
         setLowerScoreWins(anyT.lower_score_wins === true);

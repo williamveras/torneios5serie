@@ -156,7 +156,7 @@ export default function PublicResults({ results, players, matchups = [], phaseSt
     return m;
   }, [moderators]);
 
-  const displayName = (id: string) => getPlayerDisplayName(playerMap.get(id), "Jogador desconhecido");
+  const displayName = (id: string) => formatPlayerWithTeam(playerMap.get(id), teamMembers, "Jogador desconhecido");
 
   const moderatorName = (uid: string | null) => {
     if (!uid) return "Não informado";

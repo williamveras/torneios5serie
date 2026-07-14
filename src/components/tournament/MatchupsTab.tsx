@@ -403,6 +403,131 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
   // automatically removed from view.
   const sortedSavedFases = FASES.filter((f) => grouped[f] && f === fase);
 
+  const EXPORT_FIELDS: Array<{ key: string; label: string }> = [
+    { key: "fase", label: "Fase" },
+    { key: "rodada", label: "Rodada" },
+    { key: "grupo", label: "Grupo" },
+    { key: "player1", label: "Jogador 1" },
+    { key: "player2", label: "Jogador 2" },
+    { key: "data", label: "Data" },
+    { key: "horario", label: "Horário" },
+    { key: "observacao", label: "Observação" },
+  ];
+
+  const openExportDialog = (format: "xlsx" | "txt") => {
+    if (matchups.length === 0) { toast.info("Nenhum confronto para exportar"); return; }
+    setExportFormat(format);
+    setExportOpen(true);
+  };
+
+  const safeName = (tournamentId || "torneio").slice(0, 8);
+
+  const runExport = () => {
+    const fields = EXPORT_FIELDS.filter((f) => exportFields[f.key]);
+    if (fields.length === 0) { toast.error("Selecione ao menos um campo"); return; }
+
+    // Group by rodada (across selected fase view — use all matchups)
+    const byRound = new Map<string, Matchup[]>();
+    matchups.forEach((m) => {
+      const key = m.rodada != null ? String(m.rodada) : "Sem rodada";
+      const arr = byRound.get(key) || [];
+      arr.push(m);
+      byRound.set(key, arr);
+    });
+    const roundKeys = [...byRound.keys()].sort((a, b) => {
+      if (a === "Sem rodada") return 1;
+      if (b === "Sem rodada") return -1;
+      return Number(a) - Number(b);
+    });
+
+    const buildRow = (m: Matchup): Record<string, string> => {
+      const sch = findSchedule(m.player1_id, m.player2_id, m.grupo);
+      const row: Record<string, string> = {};
+      for (const f of fields) {
+        switch (f.key) {
+          case "fase": row[f.label] = m.fase; break;
+          case "rodada": row[f.label] = m.rodada != null ? String(m.rodada) : ""; break;
+          case "grupo": row[f.label] = m.grupo; break;
+          case "player1": row[f.label] = getPlayerName(m.player1_id); break;
+          case "player2": row[f.label] = getPlayerName(m.player2_id); break;
+          case "data": {
+            if (sch?.data_partida) {
+              const [y, mo, d] = sch.data_partida.split("-");
+              row[f.label] = `${d}/${mo}/${y}`;
+            } else row[f.label] = "";
+            break;
+          }
+          case "horario": row[f.label] = sch?.horario ? sch.horario.slice(0, 5) : ""; break;
+          case "observacao": row[f.label] = sch?.observacao || ""; break;
+        }
+      }
+      return row;
+    };
+
+    if (exportFormat === "xlsx") {
+      const wb = XLSX.utils.book_new();
+      for (const rk of roundKeys) {
+        const list = byRound.get(rk)!.slice().sort((a, b) => {
+          const na = Number(a.grupo), nb = Number(b.grupo);
+          if (!isNaN(na) && !isNaN(nb)) return na - nb;
+          return a.grupo.localeCompare(b.grupo);
+        });
+        const rows = list.map(buildRow);
+        const ws = XLSX.utils.json_to_sheet(rows);
+        const sheetName = (rk === "Sem rodada" ? "Sem rodada" : `Rodada ${rk}`).slice(0, 31);
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      }
+      XLSX.writeFile(wb, `confrontos-${safeName}.xlsx`);
+    } else {
+      const lines: string[] = [];
+      for (const rk of roundKeys) {
+        lines.push(rk === "Sem rodada" ? "Sem rodada" : `Rodada ${rk}`);
+        lines.push("");
+        const list = byRound.get(rk)!.slice().sort((a, b) => {
+          const na = Number(a.grupo), nb = Number(b.grupo);
+          if (!isNaN(na) && !isNaN(nb)) return na - nb;
+          return a.grupo.localeCompare(b.grupo);
+        });
+        // sub-group by grupo
+        const byG = new Map<string, Matchup[]>();
+        list.forEach((m) => {
+          const arr = byG.get(m.grupo) || [];
+          arr.push(m);
+          byG.set(m.grupo, arr);
+        });
+        for (const g of byG.keys()) {
+          const isNumeric = !isNaN(Number(g));
+          lines.push(isNumeric ? `Grupo ${g}:` : `${g}:`);
+          for (const m of byG.get(g)!) {
+            const row = buildRow(m);
+            const parts: string[] = [];
+            const p1 = row["Jogador 1"];
+            const p2 = row["Jogador 2"];
+            if (p1 && p2) parts.push(`${p1} x ${p2}`);
+            else parts.push([p1, p2].filter(Boolean).join(" "));
+            const when: string[] = [];
+            if (row["Data"]) when.push(row["Data"]);
+            if (row["Horário"]) when.push(row["Horário"]);
+            if (when.length) parts.push(when.join(" "));
+            if (row["Observação"]) parts.push(row["Observação"]);
+            lines.push(parts.filter(Boolean).join(" — "));
+          }
+          lines.push("");
+        }
+      }
+      const content = lines.join("\n");
+      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `confrontos-${safeName}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    setExportOpen(false);
+    toast.success("Exportação concluída");
+  };
+
   return (
     <div className="space-y-6">
       {/* Generator */}

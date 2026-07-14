@@ -38,6 +38,7 @@ interface Props {
   moderators: ModeratorLite[];
   viewMode?: ViewMode;
   defaultExpanded?: boolean;
+  teamMembers?: TeamMembersMap;
 }
 
 interface Confronto {

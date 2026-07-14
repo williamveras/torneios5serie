@@ -170,10 +170,12 @@ export default function PublicTournament() {
     numGroups,
     eliminationOnly,
     totalParticipants: td.max_participants ?? players.length,
+    repescagemMode: (td.repescagem_mode as any) ?? "ranking",
+    repescagemPlayoffSize: td.repescagem_playoff_size ?? null,
   });
   const mainList = mainFases && mainFases.length > 0
     ? mainFases
-    : FASES.filter((f) => !isSideFase(f));
+    : FASES.filter((f) => !isSideFase(f) && f !== "Repescagem");
 
   // Latest concluded fase (by main path) drives the tab label.
   let latestConcluded: string | null = null;

@@ -156,6 +156,16 @@ export default function QualifiersView({ qualifiers, viewMode = "list", playerMe
           teamMembers={teamMembers}
         />
       )}
+      {qualifiers.playoff.length > 0 && (
+        <Section
+          title="Vão para a Repescagem (mata-mata)"
+          rows={qualifiers.playoff}
+          usePos="overall"
+          playerMesaMap={playerMesaMap}
+          playerMap={playerMap}
+          teamMembers={teamMembers}
+        />
+      )}
     </div>
   );
 }

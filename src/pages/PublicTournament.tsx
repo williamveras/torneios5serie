@@ -287,7 +287,7 @@ export default function PublicTournament() {
               </TabsContent>
               {showGroupsTab && (
                 <TabsContent value="groups">
-                  <PublicGroups players={players} scheduledDraws={scheduledDraws as any} />
+                  <PublicGroups players={players} teamMembers={teamMembers} scheduledDraws={scheduledDraws as any} />
                 </TabsContent>
               )}
               {showDrawTab && drawFase && (

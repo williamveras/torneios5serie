@@ -119,7 +119,7 @@ export function nextPhaseName(currentFase: string, mainFases?: string[] | null):
   // FASES (ignorando fases laterais como "Disputa de 3º Lugar").
   const main = mainFases && mainFases.length > 0
     ? mainFases
-    : FASES.filter(f => f !== "Disputa de 3º Lugar");
+    : FASES.filter(f => f !== "Disputa de 3º Lugar" && f !== "Repescagem");
   const i = main.indexOf(currentFase as any);
   if (i < 0 || i === main.length - 1) return "";
   return main[i + 1];

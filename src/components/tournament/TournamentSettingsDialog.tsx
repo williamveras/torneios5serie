@@ -33,6 +33,8 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
   const [directPerGroup, setDirectPerGroup] = useState<string>("");
   const [repescagemEnabled, setRepescagemEnabled] = useState(true);
   const [repescagemTotal, setRepescagemTotal] = useState<string>("");
+  const [repescagemMode, setRepescagemMode] = useState<"ranking" | "playoff">("ranking");
+  const [repescagemPlayoffSize, setRepescagemPlayoffSize] = useState<string>("");
   const [modalidade, setModalidade] = useState<"individual" | "duplas">("individual");
   const [maxParticipants, setMaxParticipants] = useState<string>("");
   const [lowerScoreWins, setLowerScoreWins] = useState<boolean>(false);

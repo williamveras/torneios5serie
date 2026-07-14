@@ -1,5 +1,6 @@
 export const FASES = [
   "Fase de Grupos",
+  "Repescagem",
   "Segunda Fase",
   "Terceira Fase",
   "16 Avos",
@@ -17,6 +18,9 @@ export type Fase = (typeof FASES)[number];
  * em torneios que premiam o 3º lugar. Não faz parte do caminho principal do
  * chaveamento (Semifinal -> Final), portanto é ignorada pelas funções que
  * calculam a "próxima fase" e a "fase ativa" do torneio.
+ *
+ * "Repescagem" é opcional (só entra no fluxo quando `repescagem_mode = 'playoff'`
+ * no torneio). É tratada como fase condicional em `buildMainFases`.
  */
 export const SIDE_FASES: readonly string[] = ["Disputa de 3º Lugar"];
 export const isSideFase = (fase: string) => SIDE_FASES.includes(fase);

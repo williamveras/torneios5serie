@@ -54,7 +54,7 @@ export default function PublicDraw({ matchups, players, fase, scheduledDraws = [
   }, [players]);
 
   const faseMatchups = useMemo(
-    () => matchups.filter(m => (m.fase || "Fase de Grupos") === fase),
+    () => matchups.filter(m => (m.fase || "Fase de Grupos") === fase && (m as any).published === true),
     [matchups, fase],
   );
 

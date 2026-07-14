@@ -190,7 +190,7 @@ export default function PublicTournament() {
   // Sorteio tab: mostra a fase pública ativa quando houver confrontos sorteados
   // ou um sorteio agendado pendente para ela.
   const drawFase = getActivePublicPhase(phaseStatuses, mainFases);
-  const hasMatchupsForDrawFase = matchups.some((m) => (m.fase || "Fase de Grupos") === drawFase);
+  const hasMatchupsForDrawFase = matchups.some((m) => (m.fase || "Fase de Grupos") === drawFase && (m as any).published === true);
   const hasPendingDraw = scheduledDraws.some(
     (s) => s.fase === drawFase && s.status === "pending",
   );

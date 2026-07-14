@@ -362,6 +362,22 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
     setDeleteId(null);
   }
 
+  async function togglePublish(faseName: string, rodada: number | null, publish: boolean) {
+    let q = supabase
+      .from("matchups")
+      .update({ published: publish } as any)
+      .eq("tournament_id", tournamentId)
+      .eq("fase", faseName);
+    q = rodada == null ? q.is("rodada", null) : q.eq("rodada", rodada);
+    const { error } = await q;
+    if (error) {
+      toast.error("Erro ao atualizar publicação: " + error.message);
+      return;
+    }
+    toast.success(publish ? "Publicado!" : "Despublicado.");
+    fetchMatchups();
+  }
+
   // Group saved matchups by fase, then by grupo, then by rodada (if any)
   const grouped = (() => {
     const byFase: Record<string, Record<string, Matchup[]>> = {};
@@ -644,81 +660,28 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
               </CardHeader>
               <CardContent className="space-y-4">
                 {!isGroupFase ? (
-                  <div className="space-y-1">
-                    {eliminationList.map((m, i) => {
-                      const sch = findSchedule(m.player1_id, m.player2_id, m.grupo);
-                      return (
-                      <div key={m.id} className="flex items-center justify-between py-1.5 px-3 rounded-md bg-muted/50">
-                        <span className="text-sm">
-                          <span className="text-muted-foreground mr-2">Mesa {i + 1}:</span>
-                          {getPlayerName(m.player1_id)} <span className="text-muted-foreground">vs</span> {getPlayerName(m.player2_id)}
-                          {sch && (
-                            <strong className="ml-2 text-foreground">— {formatScheduleWhen(sch)}</strong>
-                          )}
-                        </span>
-                        <div className="flex gap-1">
-                          {sch ? (
+                  (() => {
+                    const allPublished = eliminationList.length > 0 && eliminationList.every((m) => (m as any).published);
+                    return (
+                      <div className="space-y-2">
+                        {eliminationList.length > 0 && (
+                          <div className="flex justify-end">
                             <Button
-                              variant="outline"
+                              variant={allPublished ? "outline" : "default"}
                               size="sm"
-                              className="h-7"
-                              onClick={() => onReallocateSchedule?.(sch.id)}
+                              onClick={() => togglePublish(f, eliminationList[0].rodada ?? null, !allPublished)}
                             >
-                              <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Realocar
+                              {allPublished ? "Despublicar confrontos" : "Publicar confrontos"}
                             </Button>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7"
-                              onClick={() => onScheduleMatchup(m.player1_id, m.player2_id, m.fase || f)}
-                            >
-                              <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Agendar partida
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-destructive"
-                            onClick={() => setDeleteId(m.id)}
-                            aria-label="Remover confronto"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  groups.map((g) => {
-                  const list = grouped[f][g];
-                  const byRound = new Map<number | "_", Matchup[]>();
-                  list.forEach((m) => {
-                    const k = m.rodada ?? "_";
-                    const arr = byRound.get(k) || [];
-                    arr.push(m);
-                    byRound.set(k, arr);
-                  });
-                  const keys = [...byRound.keys()].sort((a, b) => {
-                    if (a === "_") return 1;
-                    if (b === "_") return -1;
-                    return (a as number) - (b as number);
-                  });
-                  return (
-                    <div key={g}>
-                      <h4 className="font-semibold text-sm mb-2">Grupo {g}</h4>
-                      {keys.map((k) => (
-                        <div key={String(k)} className="mb-2">
-                          {k !== "_" && (
-                            <p className="text-xs text-muted-foreground mb-1">Rodada {k}</p>
-                          )}
-                          <div className="space-y-1">
-                            {byRound.get(k)!.map((m) => {
-                              const sch = findSchedule(m.player1_id, m.player2_id, m.grupo);
-                              return (
+                          </div>
+                        )}
+                        <div className="space-y-1">
+                          {eliminationList.map((m, i) => {
+                            const sch = findSchedule(m.player1_id, m.player2_id, m.grupo);
+                            return (
                               <div key={m.id} className="flex items-center justify-between py-1.5 px-3 rounded-md bg-muted/50">
                                 <span className="text-sm">
+                                  <span className="text-muted-foreground mr-2">Mesa {i + 1}:</span>
                                   {getPlayerName(m.player1_id)} <span className="text-muted-foreground">vs</span> {getPlayerName(m.player2_id)}
                                   {sch && (
                                     <strong className="ml-2 text-foreground">— {formatScheduleWhen(sch)}</strong>
@@ -726,43 +689,110 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
                                 </span>
                                 <div className="flex gap-1">
                                   {sch ? (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="h-7"
-                                      onClick={() => onReallocateSchedule?.(sch.id)}
-                                    >
+                                    <Button variant="outline" size="sm" className="h-7" onClick={() => onReallocateSchedule?.(sch.id)}>
                                       <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Realocar
                                     </Button>
                                   ) : (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="h-7"
-                                      onClick={() => onScheduleMatchup(m.player1_id, m.player2_id, m.grupo)}
-                                    >
+                                    <Button variant="outline" size="sm" className="h-7" onClick={() => onScheduleMatchup(m.player1_id, m.player2_id, m.fase || f)}>
                                       <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Agendar partida
                                     </Button>
                                   )}
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 text-destructive"
-                                    onClick={() => setDeleteId(m.id)}
-                                    aria-label="Remover confronto"
-                                  >
+                                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(m.id)} aria-label="Remover confronto">
                                     <Trash2 className="h-3.5 w-3.5" />
                                   </Button>
                                 </div>
                               </div>
-                              );
-                            })}
-                          </div>
+                            );
+                          })}
                         </div>
-                      ))}
-                    </div>
-                  );
-                  })
+                      </div>
+                    );
+                  })()
+                ) : (
+                  (() => {
+                    // Group by Rodada first, then by Grupo
+                    const faseList = matchups.filter((m) => m.fase === f);
+                    const byRound = new Map<number | "_", Matchup[]>();
+                    faseList.forEach((m) => {
+                      const k = m.rodada ?? "_";
+                      const arr = byRound.get(k) || [];
+                      arr.push(m);
+                      byRound.set(k, arr);
+                    });
+                    const roundKeys = [...byRound.keys()].sort((a, b) => {
+                      if (a === "_") return 1;
+                      if (b === "_") return -1;
+                      return (a as number) - (b as number);
+                    });
+                    return roundKeys.map((rk) => {
+                      const roundList = byRound.get(rk)!;
+                      const roundLabel = rk === "_" ? "Sem rodada" : `Rodada ${rk}`;
+                      const rodadaValue = rk === "_" ? null : (rk as number);
+                      const allPublished = roundList.every((m) => (m as any).published);
+                      // group by grupo within round
+                      const byGroup = new Map<string, Matchup[]>();
+                      roundList.forEach((m) => {
+                        const arr = byGroup.get(m.grupo) || [];
+                        arr.push(m);
+                        byGroup.set(m.grupo, arr);
+                      });
+                      const groupKeys = [...byGroup.keys()].sort((a, b) => {
+                        const na = Number(a), nb = Number(b);
+                        if (!isNaN(na) && !isNaN(nb)) return na - nb;
+                        return a.localeCompare(b);
+                      });
+                      return (
+                        <div key={String(rk)} className="border rounded-md p-3 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-semibold text-base">{roundLabel}</h3>
+                            <Button
+                              variant={allPublished ? "outline" : "default"}
+                              size="sm"
+                              onClick={() => togglePublish(f, rodadaValue, !allPublished)}
+                            >
+                              {allPublished
+                                ? `Despublicar ${roundLabel.toLowerCase()}`
+                                : `Publicar ${roundLabel.toLowerCase()}`}
+                            </Button>
+                          </div>
+                          {groupKeys.map((g) => (
+                            <div key={g}>
+                              <h4 className="font-medium text-sm text-muted-foreground mb-2">Grupo {g}</h4>
+                              <div className="space-y-1">
+                                {byGroup.get(g)!.map((m) => {
+                                  const sch = findSchedule(m.player1_id, m.player2_id, m.grupo);
+                                  return (
+                                    <div key={m.id} className="flex items-center justify-between py-1.5 px-3 rounded-md bg-muted/50">
+                                      <span className="text-sm">
+                                        {getPlayerName(m.player1_id)} <span className="text-muted-foreground">vs</span> {getPlayerName(m.player2_id)}
+                                        {sch && (
+                                          <strong className="ml-2 text-foreground">— {formatScheduleWhen(sch)}</strong>
+                                        )}
+                                      </span>
+                                      <div className="flex gap-1">
+                                        {sch ? (
+                                          <Button variant="outline" size="sm" className="h-7" onClick={() => onReallocateSchedule?.(sch.id)}>
+                                            <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Realocar
+                                          </Button>
+                                        ) : (
+                                          <Button variant="outline" size="sm" className="h-7" onClick={() => onScheduleMatchup(m.player1_id, m.player2_id, m.grupo)}>
+                                            <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Agendar partida
+                                          </Button>
+                                        )}
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(m.id)} aria-label="Remover confronto">
+                                          <Trash2 className="h-3.5 w-3.5" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    });
+                  })()
                 )}
               </CardContent>
             </Card>

@@ -80,13 +80,25 @@ export default function PublicSchedule({ schedules, players, matchups, results =
   const mesaMap = useMemo(() => buildMesaMap(matchups as any, activeFase), [matchups, activeFase]);
   const mesaMap3rd = useMemo(() => buildMesaMap(matchups as any, SIDE_FASE_3RD), [matchups]);
 
+  const publishedPairsByFase = useMemo(() => {
+    const m = new Map<string, Set<string>>();
+    for (const mu of matchups) {
+      if ((mu as any).published !== true) continue;
+      const f = mu.fase || "Fase de Grupos";
+      const set = m.get(f) || new Set<string>();
+      set.add(pairKey(mu.player1_id, mu.player2_id));
+      m.set(f, set);
+    }
+    return m;
+  }, [matchups]);
+
   const eliminationItems = useMemo(() => {
     if (isGroup) return [] as Array<{ mesa: number; fase: string; player1_id: string; player2_id: string; schedule: Schedule | null }>;
     const today = todaySaoPauloISO();
     const fasesToShow = [activeFase, ...(includeThirdPlace && activeFase !== SIDE_FASE_3RD ? [SIDE_FASE_3RD] : [])];
     const items: Array<{ mesa: number; fase: string; player1_id: string; player2_id: string; schedule: Schedule | null }> = [];
     for (const fase of fasesToShow) {
-      const phaseMatchups = matchups.filter(m => (m.fase || "Fase de Grupos") === fase);
+      const phaseMatchups = matchups.filter(m => (m.fase || "Fase de Grupos") === fase && (m as any).published === true);
       const map = fase === SIDE_FASE_3RD ? mesaMap3rd : mesaMap;
       for (const mu of phaseMatchups) {
         const mesa = map.get(pairKey(mu.player1_id, mu.player2_id)) ?? 9999;
@@ -98,8 +110,6 @@ export default function PublicSchedule({ schedules, players, matchups, results =
             const priority = (s: Schedule) => {
               if (s.grupo === fase) return 0;
               if (s.grupo === mu.grupo) return 1;
-              // Compatibilidade com agendamentos de disputa de 3º lugar que
-              // foram salvos como "Final" antes da fase lateral existir.
               if (fase === SIDE_FASE_3RD && activeFase === "Final" && s.grupo === activeFase) return 2;
               if (!/^\d+$/.test(s.grupo)) return 3;
               return 4;
@@ -112,13 +122,11 @@ export default function PublicSchedule({ schedules, players, matchups, results =
         items.push({ mesa, fase, player1_id: mu.player1_id, player2_id: mu.player2_id, schedule: sched });
       }
     }
-    // Hide past matches (date already gone)
     const filtered = items.filter(it => {
       const d = it.schedule?.data_partida;
       if (!d) return true;
       return d >= today;
     });
-    // Ordena: fase principal antes da 3º Lugar, depois por mesa.
     return filtered.sort((a, b) => {
       if (a.fase !== b.fase) return a.fase === SIDE_FASE_3RD ? 1 : -1;
       return a.mesa - b.mesa;

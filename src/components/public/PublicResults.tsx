@@ -10,7 +10,9 @@ import { FASES } from "@/lib/constants";
 import { getActivePublicPhase, isGroupPhase, buildMesaMap, pairKey } from "@/lib/phase";
 import type { ViewMode } from "./ViewModeToggle";
 import type { Tables } from "@/integrations/supabase/types";
-import { getPlayerDisplayName } from "@/lib/playerDisplay";
+import { formatPlayerWithTeam } from "@/lib/playerDisplay";
+
+type TeamMembersMap = Record<string, { nome: string; nick: string | null }[]>;
 
 type MatchResult = Tables<"match_results">;
 type PhaseStatus = Tables<"phase_status">;

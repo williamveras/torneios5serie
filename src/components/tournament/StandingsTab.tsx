@@ -200,7 +200,7 @@ export default function StandingsTab({ tournamentId }: Props) {
       return p ? getPlayerNickForStandings(p as any) : "";
     };
     const q = computeQualifiers(groupResults, nameOf, nickOf, { ...qualifierOpts, lowerWins });
-    const classifiedIds = new Set([...q.direct, ...q.repescagem].map(r => r.playerId));
+    const classifiedIds = new Set([...q.direct, ...q.repescagem, ...q.playoff].map(r => r.playerId));
     // Só considera jogadores que tiveram participação na Fase de Grupos
     const playedInGroups = new Set(groupResults.map(r => r.player_id));
     const toEliminate = players

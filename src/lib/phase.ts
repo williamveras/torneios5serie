@@ -61,7 +61,7 @@ export const getActivePublicPhase = (
 ): string => {
   const main = mainFases && mainFases.length > 0
     ? mainFases
-    : FASES.filter(f => !isSideFase(f));
+    : FASES.filter(f => !isSideFase(f) && f !== "Repescagem");
   let lastConcludedIdx = -1;
   for (let i = 0; i < main.length; i++) {
     if (statuses.find(s => s.fase === main[i])?.status === "concluida") lastConcludedIdx = i;

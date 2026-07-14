@@ -19,15 +19,28 @@ interface ScheduledDrawLite {
   kind?: string | null;
 }
 
+type TeamMembersMap = Record<string, { nome: string; nick: string | null }[]>;
+
 interface Props {
   players: PlayerLite[];
+  teamMembers?: TeamMembersMap;
   scheduledDraws?: ScheduledDrawLite[];
 }
 
 const formatGroupLabel = (grupo: string) =>
   /^\d+$/.test(grupo) ? `Grupo ${grupo}` : grupo;
 
-export default function PublicGroups({ players, scheduledDraws = [] }: Props) {
+const memberLabel = (m: { nome: string; nick: string | null }) =>
+  (m.nick || "").trim() || (m.nome || "").trim();
+
+const joinMembers = (labels: string[]) => {
+  if (labels.length === 0) return "";
+  if (labels.length === 1) return labels[0];
+  if (labels.length === 2) return `${labels[0]} e ${labels[1]}`;
+  return `${labels.slice(0, -1).join(", ")} e ${labels[labels.length - 1]}`;
+};
+
+export default function PublicGroups({ players, teamMembers = {}, scheduledDraws = [] }: Props) {
   const groups = useMemo(() => {
     const map = new Map<string, PlayerLite[]>();
     for (const p of players) {
@@ -102,19 +115,30 @@ export default function PublicGroups({ players, scheduledDraws = [] }: Props) {
           <Card key={grupo}>
             <CardContent className="pt-4 space-y-2">
               <h2 className="text-lg font-semibold">{formatGroupLabel(grupo)}</h2>
-              <p className="text-base">
-                {items.map((p, i) => (
-                  <span key={p.id}>
-                    {i > 0 && <span className="text-muted-foreground font-normal"> x </span>}
-                    {getPlayerDisplayName(p)}
-                  </span>
-                ))}
-              </p>
+              <ul className="space-y-1">
+                {items.map((p) => {
+                  const name = getPlayerDisplayName(p);
+                  const members = p.is_team ? (teamMembers[p.id] || []) : [];
+                  const labels = members.map(memberLabel).filter(Boolean);
+                  const suffix = labels.length > 0 ? ` (${joinMembers(labels)})` : "";
+                  return (
+                    <li key={p.id} className="text-base leading-snug">
+                      {p.is_team ? (
+                        <>
+                          <span className="font-medium">&ldquo;{name}&rdquo;</span>
+                          {suffix && <span className="text-muted-foreground">{suffix}</span>}
+                        </>
+                      ) : (
+                        <span className="font-medium">{name}</span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
             </CardContent>
           </Card>
         ))}
       </div>
-
     </div>
   );
 }

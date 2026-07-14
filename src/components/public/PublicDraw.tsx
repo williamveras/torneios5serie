@@ -22,16 +22,18 @@ interface ScheduledDrawLite {
   status: string;
 }
 
+type TeamMembersMap = Record<string, { nome: string; nick: string | null }[]>;
+
 interface Props {
   matchups: Matchup[];
   players: PlayerLite[];
   fase: string;
   scheduledDraws?: ScheduledDrawLite[];
   viewMode?: ViewMode;
+  teamMembers?: TeamMembersMap;
 }
 
-import { getPlayerDisplayName } from "@/lib/playerDisplay";
-const displayName = (p?: PlayerLite) => getPlayerDisplayName(p, "Jogador desconhecido");
+import { formatPlayerWithTeam } from "@/lib/playerDisplay";
 
 const formatGroupLabel = (grupo: string) => {
   if (/^\d+$/.test(grupo)) return `Grupo ${grupo}`;
@@ -43,7 +45,8 @@ const scrollLine = "public-scroll-line";
 const keepTogether = (text: string | number) =>
   String(text).replace(/ /g, "\u00A0").replace(/-/g, "\u2011");
 
-export default function PublicDraw({ matchups, players, fase, scheduledDraws = [], viewMode = "list" }: Props) {
+export default function PublicDraw({ matchups, players, fase, scheduledDraws = [], viewMode = "list", teamMembers = {} }: Props) {
+  const displayName = (p?: PlayerLite) => formatPlayerWithTeam(p, teamMembers, "Jogador desconhecido");
   const playerMap = useMemo(() => {
     const m = new Map<string, PlayerLite>();
     players.forEach(p => m.set(p.id, p));

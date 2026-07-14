@@ -17,7 +17,7 @@ import QualifiersView from "@/components/QualifiersView";
 import { buildMesaMap, isGroupPhase, pairKey } from "@/lib/phase";
 import type { ViewMode } from "./ViewModeToggle";
 import type { Tables } from "@/integrations/supabase/types";
-import { getPlayerNickForStandings, type PlayerDisplayLike } from "@/lib/playerDisplay";
+import { getPlayerNickForStandings, formatPlayerWithTeam, type PlayerDisplayLike } from "@/lib/playerDisplay";
 
 // Para a tabela de classificação: queremos que duplas apareçam como o nome da equipe.
 // Como a coluna usa `s.nick || s.playerName`, e para duplas o nick fica vazio,
@@ -29,15 +29,11 @@ type TeamMembersMap = Record<string, { nome: string; nick: string | null }[]>;
 
 const formatTeamWithMembers = (
   baseName: string,
-  player: PlayerLite | undefined,
+  player: (PlayerLite | undefined),
   teamMembers: TeamMembersMap,
 ) => {
   if (!player?.is_team) return baseName;
-  const members = teamMembers[player.id] || [];
-  if (members.length === 0) return baseName;
-  const memberLabels = members.map((m) => (m.nick || "").trim() || (m.nome || "").trim()).filter(Boolean);
-  if (memberLabels.length === 0) return baseName;
-  return `${baseName} (${memberLabels.join(" x ")})`;
+  return formatPlayerWithTeam(player, teamMembers, baseName);
 };
 
 

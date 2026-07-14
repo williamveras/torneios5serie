@@ -10,7 +10,9 @@ import { FASES } from "@/lib/constants";
 import { getActivePublicPhase, isGroupPhase, buildMesaMap, pairKey } from "@/lib/phase";
 import type { ViewMode } from "./ViewModeToggle";
 import type { Tables } from "@/integrations/supabase/types";
-import { getPlayerDisplayName } from "@/lib/playerDisplay";
+import { formatPlayerWithTeam } from "@/lib/playerDisplay";
+
+type TeamMembersMap = Record<string, { nome: string; nick: string | null }[]>;
 
 type MatchResult = Tables<"match_results">;
 type PhaseStatus = Tables<"phase_status">;
@@ -36,6 +38,7 @@ interface Props {
   moderators: ModeratorLite[];
   viewMode?: ViewMode;
   defaultExpanded?: boolean;
+  teamMembers?: TeamMembersMap;
 }
 
 interface Confronto {
@@ -117,7 +120,7 @@ const formatDayLabel = (d: Date) => {
   return `Jogos de ${weekday} (${p.day}/${p.month})`;
 };
 
-export default function PublicResults({ results, players, matchups = [], phaseStatuses, moderators, viewMode = "list", defaultExpanded = false }: Props) {
+export default function PublicResults({ results, players, matchups = [], phaseStatuses, moderators, viewMode = "list", defaultExpanded = false, teamMembers = {} }: Props) {
   const activeFase = useMemo(() => getActivePublicPhase(phaseStatuses), [phaseStatuses]);
 
   const availableFases = useMemo(() => {
@@ -153,7 +156,7 @@ export default function PublicResults({ results, players, matchups = [], phaseSt
     return m;
   }, [moderators]);
 
-  const displayName = (id: string) => getPlayerDisplayName(playerMap.get(id), "Jogador desconhecido");
+  const displayName = (id: string) => formatPlayerWithTeam(playerMap.get(id), teamMembers, "Jogador desconhecido");
 
   const moderatorName = (uid: string | null) => {
     if (!uid) return "Não informado";

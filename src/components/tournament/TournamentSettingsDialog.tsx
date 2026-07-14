@@ -148,11 +148,15 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
         direct_per_group: dpg,
         repescagem_enabled: repescagemEnabled,
         repescagem_total: rt,
+        repescagem_mode: repescagemMode,
+        repescagem_playoff_size:
+          repescagemMode === "playoff" && repescagemPlayoffSize.trim()
+            ? parseInt(repescagemPlayoffSize, 10)
+            : null,
         modalidade,
         max_participants: mx,
         lower_score_wins: lowerScoreWins,
         elimination_only: eliminationOnly,
-
       })
       .eq("id", tournamentId);
     setSaving(false);

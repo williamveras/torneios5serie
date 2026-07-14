@@ -268,10 +268,12 @@ export default function PublicTournament() {
                   lowerWins={(tournament as any)?.lower_score_wins === true}
                   qualifierOpts={(() => {
                     const td = tournament as any;
-                    const opts: { directPerGroup?: number; repescagemTotal?: number } = {};
+                    const opts: { directPerGroup?: number; repescagemTotal?: number; mode?: "ranking" | "playoff"; playoffSize?: number } = {};
                     if (td.direct_per_group != null) opts.directPerGroup = td.direct_per_group;
                     if (td.repescagem_enabled === false) opts.repescagemTotal = 0;
                     else if (td.repescagem_total != null) opts.repescagemTotal = td.repescagem_total;
+                    opts.mode = (td.repescagem_mode as any) ?? "ranking";
+                    if (td.repescagem_playoff_size != null) opts.playoffSize = td.repescagem_playoff_size;
                     return opts;
                   })()}
                 />

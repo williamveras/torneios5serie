@@ -362,6 +362,22 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
     setDeleteId(null);
   }
 
+  async function togglePublish(faseName: string, rodada: number | null, publish: boolean) {
+    let q = supabase
+      .from("matchups")
+      .update({ published: publish } as any)
+      .eq("tournament_id", tournamentId)
+      .eq("fase", faseName);
+    q = rodada == null ? q.is("rodada", null) : q.eq("rodada", rodada);
+    const { error } = await q;
+    if (error) {
+      toast.error("Erro ao atualizar publicação: " + error.message);
+      return;
+    }
+    toast.success(publish ? "Publicado!" : "Despublicado.");
+    fetchMatchups();
+  }
+
   // Group saved matchups by fase, then by grupo, then by rodada (if any)
   const grouped = (() => {
     const byFase: Record<string, Record<string, Matchup[]>> = {};

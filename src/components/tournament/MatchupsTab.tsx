@@ -94,6 +94,11 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
   const [drawRodada, setDrawRodada] = useState("");
   const [schedulingDraw, setSchedulingDraw] = useState(false);
   const [schedules, setSchedules] = useState<Array<{ id: string; player1_id: string; player2_id: string; grupo: string; data_partida: string | null; horario: string | null; observacao: string | null }>>([]);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportFormat, setExportFormat] = useState<"xlsx" | "txt">("xlsx");
+  const [exportFields, setExportFields] = useState<Record<string, boolean>>({
+    fase: true, rodada: true, grupo: true, player1: true, player2: true, data: true, horario: true, observacao: false,
+  });
 
   useEffect(() => {
     fetchPlayers();

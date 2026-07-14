@@ -54,7 +54,7 @@ export function useStandingsTabLabel(tournamentId: string, initial?: PhaseStatus
   // "Disputa de 3º Lugar" no caminho principal Semifinal -> Final.
   const mainList = (mainFases && mainFases.length > 0)
     ? mainFases
-    : FASES.filter(f => !isSideFase(f));
+    : FASES.filter(f => !isSideFase(f) && f !== "Repescagem");
   let concludedFase: string | null = null;
   for (let i = mainList.length - 1; i >= 0; i--) {
     const f = mainList[i];

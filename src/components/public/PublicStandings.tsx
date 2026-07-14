@@ -60,7 +60,7 @@ interface Props {
   phaseStatuses: PhaseStatus[];
   matchups?: Matchup[];
   viewMode?: ViewMode;
-  qualifierOpts?: { directPerGroup?: number; repescagemTotal?: number };
+  qualifierOpts?: { directPerGroup?: number; repescagemTotal?: number; mode?: "ranking" | "playoff"; playoffSize?: number };
   lowerWins?: boolean;
 }
 

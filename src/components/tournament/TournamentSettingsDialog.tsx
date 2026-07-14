@@ -33,6 +33,8 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
   const [directPerGroup, setDirectPerGroup] = useState<string>("");
   const [repescagemEnabled, setRepescagemEnabled] = useState(true);
   const [repescagemTotal, setRepescagemTotal] = useState<string>("");
+  const [repescagemMode, setRepescagemMode] = useState<"ranking" | "playoff">("ranking");
+  const [repescagemPlayoffSize, setRepescagemPlayoffSize] = useState<string>("");
   const [modalidade, setModalidade] = useState<"individual" | "duplas">("individual");
   const [maxParticipants, setMaxParticipants] = useState<string>("");
   const [lowerScoreWins, setLowerScoreWins] = useState<boolean>(false);
@@ -59,6 +61,8 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
         setDirectPerGroup(anyT.direct_per_group?.toString() ?? "");
         setRepescagemEnabled(anyT.repescagem_enabled ?? true);
         setRepescagemTotal(anyT.repescagem_total?.toString() ?? "");
+        setRepescagemMode((anyT.repescagem_mode as any) ?? "ranking");
+        setRepescagemPlayoffSize(anyT.repescagem_playoff_size?.toString() ?? "");
         setModalidade((anyT.modalidade as "individual" | "duplas") ?? "individual");
         setMaxParticipants(anyT.max_participants?.toString() ?? "");
         setLowerScoreWins(anyT.lower_score_wins === true);
@@ -103,11 +107,13 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
   const previewTotal = useMemo(() => {
     const k = parseInt(directPerGroup, 10);
     const r = parseInt(repescagemTotal, 10);
+    const ps = parseInt(repescagemPlayoffSize, 10);
     if (!Number.isFinite(k) || !effectiveGrupos) return null;
     const base = k * effectiveGrupos;
     const rep = repescagemEnabled && Number.isFinite(r) ? r : 0;
-    return base + rep;
-  }, [directPerGroup, repescagemTotal, repescagemEnabled, effectiveGrupos]);
+    const playoffWinners = repescagemMode === "playoff" && Number.isFinite(ps) ? Math.floor(ps / 2) : 0;
+    return base + rep + playoffWinners;
+  }, [directPerGroup, repescagemTotal, repescagemPlayoffSize, repescagemEnabled, repescagemMode, effectiveGrupos]);
 
   const applySuggestion = (s: typeof suggestions[number]) => {
     setDirectPerGroup(s.directPerGroup.toString());
@@ -142,11 +148,15 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
         direct_per_group: dpg,
         repescagem_enabled: repescagemEnabled,
         repescagem_total: rt,
+        repescagem_mode: repescagemMode,
+        repescagem_playoff_size:
+          repescagemMode === "playoff" && repescagemPlayoffSize.trim()
+            ? parseInt(repescagemPlayoffSize, 10)
+            : null,
         modalidade,
         max_participants: mx,
         lower_score_wins: lowerScoreWins,
         elimination_only: eliminationOnly,
-
       })
       .eq("id", tournamentId);
     setSaving(false);
@@ -333,7 +343,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                 </div>
                 {repescagemEnabled && (
                   <div className="space-y-1.5 sm:col-span-2">
-                    <Label htmlFor="tsd-rep-total">{isDuplas ? "Quantas melhores duplas entram na repescagem" : "Quantos melhores entram na repescagem"}</Label>
+                    <Label htmlFor="tsd-rep-total">{isDuplas ? "Melhores próximos colocados que passam direto" : "Melhores próximos colocados que passam direto"}</Label>
                     <Input
                       id="tsd-rep-total"
                       type="number"
@@ -345,6 +355,45 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                   </div>
                 )}
               </div>
+
+              <div className="rounded-md border p-3 space-y-3 bg-muted/20">
+                <div>
+                  <Label className="text-sm font-medium">Fase extra de Repescagem</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Ative quando quiser que as {isDuplas ? "duplas" : "competidores"} logo abaixo dos classificados diretos disputem um mata-mata de jogo único e os vencedores se juntem à Segunda Fase.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="tsd-rep-mode">Modo</Label>
+                    <Select value={repescagemMode} onValueChange={(v) => setRepescagemMode(v as any)}>
+                      <SelectTrigger id="tsd-rep-mode"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ranking">Ranking (comportamento padrão)</SelectItem>
+                        <SelectItem value="playoff">Fase extra (mata-mata único)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {repescagemMode === "playoff" && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="tsd-rep-playoff-size">{isDuplas ? "Duplas que disputam a Repescagem" : "Competidores na Repescagem"}</Label>
+                      <Input
+                        id="tsd-rep-playoff-size"
+                        type="number"
+                        min={2}
+                        step={2}
+                        value={repescagemPlayoffSize}
+                        onChange={e => setRepescagemPlayoffSize(e.target.value)}
+                        placeholder="Ex: 64"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Metade avança para a Segunda Fase. Use um número par.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
 
               {previewTotal !== null && (
                 <Alert variant={isPow2(previewTotal) ? "default" : "destructive"}>

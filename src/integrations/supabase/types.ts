@@ -414,6 +414,7 @@ export type Database = {
           kind: string
           mode: string
           per_group: number | null
+          player_pool: string[] | null
           rodada: number | null
           scheduled_at: string
           status: string
@@ -430,6 +431,7 @@ export type Database = {
           kind?: string
           mode: string
           per_group?: number | null
+          player_pool?: string[] | null
           rodada?: number | null
           scheduled_at: string
           status?: string
@@ -446,6 +448,7 @@ export type Database = {
           kind?: string
           mode?: string
           per_group?: number | null
+          player_pool?: string[] | null
           rodada?: number | null
           scheduled_at?: string
           status?: string
@@ -522,6 +525,8 @@ export type Database = {
           organization_id: string
           regulamento: string | null
           repescagem_enabled: boolean
+          repescagem_mode: string
+          repescagem_playoff_size: number | null
           repescagem_total: number | null
           updated_at: string
         }
@@ -541,6 +546,8 @@ export type Database = {
           organization_id: string
           regulamento?: string | null
           repescagem_enabled?: boolean
+          repescagem_mode?: string
+          repescagem_playoff_size?: number | null
           repescagem_total?: number | null
           updated_at?: string
         }
@@ -560,6 +567,8 @@ export type Database = {
           organization_id?: string
           regulamento?: string | null
           repescagem_enabled?: boolean
+          repescagem_mode?: string
+          repescagem_playoff_size?: number | null
           repescagem_total?: number | null
           updated_at?: string
         }

@@ -45,7 +45,7 @@ export default function StandingsTab({ tournamentId }: Props) {
   const [matchups, setMatchups] = useState<Tables<"matchups">[]>([]);
   const [numeroRodadas, setNumeroRodadas] = useState<number | null>(null);
   const [campeaoId, setCampeaoId] = useState<string | null>(null);
-  const [qualifierOpts, setQualifierOpts] = useState<{ directPerGroup?: number; repescagemTotal?: number }>({});
+  const [qualifierOpts, setQualifierOpts] = useState<{ directPerGroup?: number; repescagemTotal?: number; mode?: "ranking" | "playoff"; playoffSize?: number }>({});
   const [lowerWins, setLowerWins] = useState<boolean>(false);
 
   const loadPhaseStatuses = () => {

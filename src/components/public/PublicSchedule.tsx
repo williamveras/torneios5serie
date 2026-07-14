@@ -144,6 +144,7 @@ export default function PublicSchedule({ schedules, players, matchups, results =
     for (const mu of matchups) {
       if (mu.rodada == null) continue;
       if ((mu.fase || "Fase de Grupos") !== "Fase de Grupos") continue;
+      if ((mu as any).published !== true) continue;
       const key = pairKey(mu.player1_id, mu.player2_id);
       const set = m.get(mu.rodada) || new Set<string>();
       set.add(key);

@@ -186,6 +186,7 @@ export type Database = {
           id: string
           player1_id: string
           player2_id: string
+          published: boolean
           rodada: number | null
           tournament_id: string
         }
@@ -197,6 +198,7 @@ export type Database = {
           id?: string
           player1_id: string
           player2_id: string
+          published?: boolean
           rodada?: number | null
           tournament_id: string
         }
@@ -208,6 +210,7 @@ export type Database = {
           id?: string
           player1_id?: string
           player2_id?: string
+          published?: boolean
           rodada?: number | null
           tournament_id?: string
         }

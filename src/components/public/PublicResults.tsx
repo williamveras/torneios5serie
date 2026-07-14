@@ -120,7 +120,7 @@ const formatDayLabel = (d: Date) => {
   return `Jogos de ${weekday} (${p.day}/${p.month})`;
 };
 
-export default function PublicResults({ results, players, matchups = [], phaseStatuses, moderators, viewMode = "list", defaultExpanded = false }: Props) {
+export default function PublicResults({ results, players, matchups = [], phaseStatuses, moderators, viewMode = "list", defaultExpanded = false, teamMembers = {} }: Props) {
   const activeFase = useMemo(() => getActivePublicPhase(phaseStatuses), [phaseStatuses]);
 
   const availableFases = useMemo(() => {

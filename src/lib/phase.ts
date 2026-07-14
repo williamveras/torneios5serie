@@ -16,6 +16,8 @@ export function buildMainFases(opts: {
   numGroups?: number | null;
   eliminationOnly?: boolean | null;
   totalParticipants?: number | null;
+  repescagemMode?: "ranking" | "playoff" | null;
+  repescagemPlayoffSize?: number | null;
 }): string[] | null {
   // Modo eliminação direta (sem Fase de Grupos): projeta a partir do número
   // total de participantes (planejado ou inscritos).
@@ -30,10 +32,21 @@ export function buildMainFases(opts: {
   const ng = opts.numGroups ?? null;
   if (!dpg || !ng || ng < 1) return null;
   const rep = opts.repescagemTotal ?? 0;
-  const total = dpg * ng + (rep > 0 ? rep : 0);
+  const isPlayoff = opts.repescagemMode === "playoff";
+  const playoffSize = Math.max(0, opts.repescagemPlayoffSize ?? 0);
+  // No modo playoff, os "rep" melhores extras passam direto E metade do
+  // playoffSize se junta a eles como vencedores da Repescagem.
+  const total = isPlayoff
+    ? dpg * ng + rep + Math.floor(playoffSize / 2)
+    : dpg * ng + (rep > 0 ? rep : 0);
   const proj = projectPhases(total);
   if (proj.length === 0) return null;
-  return ["Fase de Grupos", ...proj.map(p => p.fase)];
+  const base = ["Fase de Grupos", ...proj.map(p => p.fase)];
+  if (isPlayoff && playoffSize > 0) {
+    // Insere "Repescagem" entre "Fase de Grupos" e a próxima fase eliminatória
+    return [base[0], "Repescagem", ...base.slice(1)];
+  }
+  return base;
 }
 
 

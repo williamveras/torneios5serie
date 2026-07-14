@@ -770,6 +770,25 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
       </Card>
 
       {/* Saved matchups */}
+      {matchups.length > 0 && (
+        <div className="flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <Download className="h-4 w-4 mr-1" /> Exportar confrontos
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => openExportDialog("xlsx")}>
+                <FileSpreadsheet className="h-4 w-4 mr-2" /> Planilha (.xlsx)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => openExportDialog("txt")}>
+                <FileText className="h-4 w-4 mr-2" /> Texto (.txt)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
       {sortedSavedFases.length === 0 ? (
         <p className="text-center text-muted-foreground py-8">Nenhum confronto salvo ainda.</p>
       ) : (

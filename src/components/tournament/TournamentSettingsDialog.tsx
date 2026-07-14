@@ -343,7 +343,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                 </div>
                 {repescagemEnabled && (
                   <div className="space-y-1.5 sm:col-span-2">
-                    <Label htmlFor="tsd-rep-total">{isDuplas ? "Quantas melhores duplas entram na repescagem" : "Quantos melhores entram na repescagem"}</Label>
+                    <Label htmlFor="tsd-rep-total">{isDuplas ? "Melhores próximos colocados que passam direto" : "Melhores próximos colocados que passam direto"}</Label>
                     <Input
                       id="tsd-rep-total"
                       type="number"
@@ -355,6 +355,45 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                   </div>
                 )}
               </div>
+
+              <div className="rounded-md border p-3 space-y-3 bg-muted/20">
+                <div>
+                  <Label className="text-sm font-medium">Fase extra de Repescagem</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Ative quando quiser que as {isDuplas ? "duplas" : "competidores"} logo abaixo dos classificados diretos disputem um mata-mata de jogo único e os vencedores se juntem à Segunda Fase.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="tsd-rep-mode">Modo</Label>
+                    <Select value={repescagemMode} onValueChange={(v) => setRepescagemMode(v as any)}>
+                      <SelectTrigger id="tsd-rep-mode"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ranking">Ranking (comportamento padrão)</SelectItem>
+                        <SelectItem value="playoff">Fase extra (mata-mata único)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {repescagemMode === "playoff" && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="tsd-rep-playoff-size">{isDuplas ? "Duplas que disputam a Repescagem" : "Competidores na Repescagem"}</Label>
+                      <Input
+                        id="tsd-rep-playoff-size"
+                        type="number"
+                        min={2}
+                        step={2}
+                        value={repescagemPlayoffSize}
+                        onChange={e => setRepescagemPlayoffSize(e.target.value)}
+                        placeholder="Ex: 64"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Metade avança para a Segunda Fase. Use um número par.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
 
               {previewTotal !== null && (
                 <Alert variant={isPow2(previewTotal) ? "default" : "destructive"}>

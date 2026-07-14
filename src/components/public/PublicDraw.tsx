@@ -22,12 +22,15 @@ interface ScheduledDrawLite {
   status: string;
 }
 
+type TeamMembersMap = Record<string, { nome: string; nick: string | null }[]>;
+
 interface Props {
   matchups: Matchup[];
   players: PlayerLite[];
   fase: string;
   scheduledDraws?: ScheduledDrawLite[];
   viewMode?: ViewMode;
+  teamMembers?: TeamMembersMap;
 }
 
 import { getPlayerDisplayName } from "@/lib/playerDisplay";

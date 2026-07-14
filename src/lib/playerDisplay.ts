@@ -26,3 +26,28 @@ export function getPlayerFullName(p: PlayerDisplayLike | undefined | null, fallb
   // Em fluxos onde precisamos do "nome real" (não do nick): para duplas o nome é o da equipe.
   return (p.nome_completo || "").trim() || fallback;
 }
+
+// Formata membros de uma dupla como "nick1 e nick2" (ou "nick1, nick2 e nick3").
+export function joinTeamMembers(members: { nome: string; nick: string | null }[]): string {
+  const labels = members
+    .map((m) => (m.nick || "").trim() || (m.nome || "").trim())
+    .filter(Boolean);
+  if (labels.length === 0) return "";
+  if (labels.length === 1) return labels[0];
+  if (labels.length === 2) return `${labels[0]} e ${labels[1]}`;
+  return `${labels.slice(0, -1).join(", ")} e ${labels[labels.length - 1]}`;
+}
+
+// Para duplas: retorna `"Nome da equipe" (nick1 e nick2)`. Para individuais: apenas o display name.
+export function formatPlayerWithTeam(
+  p: PlayerDisplayLike | undefined | null,
+  teamMembers: Record<string, { nome: string; nick: string | null }[]> = {},
+  fallback = "—",
+): string {
+  const base = getPlayerDisplayName(p, fallback);
+  if (!p?.is_team) return base;
+  const id = (p as { id?: string }).id;
+  const members = id ? teamMembers[id] || [] : [];
+  const joined = joinTeamMembers(members);
+  return joined ? `“${base}” (${joined})` : `“${base}”`;
+}

@@ -36,7 +36,7 @@ interface DraftMatch {
 
 interface Props {
   tournamentId: string;
-  onScheduleMatchup: (player1Id: string, player2Id: string, grupo: string) => void;
+  onScheduleMatchup: (player1Id: string, player2Id: string, grupo: string, rodada?: number | null) => void;
   onReallocateSchedule?: (scheduleId: string) => void;
 }
 

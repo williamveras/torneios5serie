@@ -31,6 +31,7 @@ export default function TournamentPage({ tournament, onBack }: Props) {
   const [prefillPlayerId, setPrefillPlayerId] = useState<string | null>(null);
   const [prefillPlayer2Id, setPrefillPlayer2Id] = useState<string | null>(null);
   const [prefillGrupo, setPrefillGrupo] = useState<string | null>(null);
+  const [prefillRodada, setPrefillRodada] = useState<number | null>(null);
   const [prefillEditScheduleId, setPrefillEditScheduleId] = useState<string | null>(null);
 
   const handleScheduleForPlayer = (playerId: string) => {
@@ -41,10 +42,11 @@ export default function TournamentPage({ tournament, onBack }: Props) {
     setActiveTab("schedule");
   };
 
-  const handleScheduleMatchup = (player1Id: string, player2Id: string, grupo: string) => {
+  const handleScheduleMatchup = (player1Id: string, player2Id: string, grupo: string, rodada?: number | null) => {
     setPrefillPlayerId(player1Id);
     setPrefillPlayer2Id(player2Id);
     setPrefillGrupo(grupo);
+    setPrefillRodada(rodada ?? null);
     setPrefillEditScheduleId(null);
     setActiveTab("schedule");
   };
@@ -53,6 +55,7 @@ export default function TournamentPage({ tournament, onBack }: Props) {
     setPrefillPlayerId(null);
     setPrefillPlayer2Id(null);
     setPrefillGrupo(null);
+    setPrefillRodada(null);
     setPrefillEditScheduleId(scheduleId);
     setActiveTab("schedule");
   };
@@ -61,6 +64,7 @@ export default function TournamentPage({ tournament, onBack }: Props) {
     setPrefillPlayerId(null);
     setPrefillPlayer2Id(null);
     setPrefillGrupo(null);
+    setPrefillRodada(null);
     setPrefillEditScheduleId(null);
   };
 
@@ -129,6 +133,7 @@ export default function TournamentPage({ tournament, onBack }: Props) {
               prefillPlayerId={prefillPlayerId}
               prefillPlayer2Id={prefillPlayer2Id}
               prefillGrupo={prefillGrupo}
+              prefillRodada={prefillRodada}
               prefillEditScheduleId={prefillEditScheduleId}
               onPrefillConsumed={consumePrefill}
             />

@@ -133,6 +133,7 @@ export default function TournamentPage({ tournament, onBack }: Props) {
               prefillPlayerId={prefillPlayerId}
               prefillPlayer2Id={prefillPlayer2Id}
               prefillGrupo={prefillGrupo}
+              prefillRodada={prefillRodada}
               prefillEditScheduleId={prefillEditScheduleId}
               onPrefillConsumed={consumePrefill}
             />

@@ -157,7 +157,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
 
   // Pre-fill from PlayersTab or MatchupsTab
   useEffect(() => {
-    if ((prefillPlayerId || prefillPlayer2Id || prefillGrupo) && players.length > 0) {
+    if ((prefillPlayerId || prefillPlayer2Id || prefillGrupo || prefillRodada != null) && players.length > 0) {
       if (prefillPlayerId) setPlayer1(prefillPlayerId);
       if (prefillPlayer2Id) setPlayer2(prefillPlayer2Id);
       if (prefillGrupo) {
@@ -166,10 +166,11 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
         const p = players.find((pl) => pl.id === prefillPlayerId);
         if (p?.grupo) setGrupo(p.grupo);
       }
+      if (prefillRodada != null) setRodada(String(prefillRodada));
       onPrefillConsumed?.();
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
-  }, [prefillPlayerId, prefillPlayer2Id, prefillGrupo, players, onPrefillConsumed]);
+  }, [prefillPlayerId, prefillPlayer2Id, prefillGrupo, prefillRodada, players, onPrefillConsumed]);
 
   // Pre-fill: open edit dialog for an existing schedule (Realocar)
   useEffect(() => {

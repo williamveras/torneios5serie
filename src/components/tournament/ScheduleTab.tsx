@@ -397,16 +397,12 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
   };
 
 
-  // Filter schedules to the active phase / round only.
-  // - In group phase: keep numeric-grupo schedules of currentRound (if known).
+  // Admin view: show ALL schedules of the active phase, grouped by rodada.
+  // - In group phase: keep numeric-grupo schedules from every round.
   // - In mata-mata: keep schedules whose grupo equals the active fase.
   const filteredSchedules = schedules.filter((s) => {
     const isNumGroup = /^\d+$/.test(s.grupo);
-    if (inGroupPhase) {
-      if (!isNumGroup) return false;
-      if (currentRound != null && s.rodada !== currentRound) return false;
-      return true;
-    }
+    if (inGroupPhase) return isNumGroup;
     return s.grupo === activePhase || (activePhase === "Final" && s.grupo === "Disputa de 3º Lugar");
   });
 

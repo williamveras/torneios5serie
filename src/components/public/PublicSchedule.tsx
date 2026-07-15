@@ -165,6 +165,12 @@ export default function PublicSchedule({ schedules, players, matchups, results =
     return null;
   };
 
+  const publishedRounds = useMemo(() => {
+    const s = new Set<number>();
+    for (const r of pairsByRound.keys()) s.add(r);
+    return s;
+  }, [pairsByRound]);
+
   const visibleSchedulesByRound = useMemo(() => {
     if (!isGroup) return [] as Array<{ round: number; items: Schedule[] }>;
     if (currentRound == null) return [];
@@ -174,15 +180,18 @@ export default function PublicSchedule({ schedules, players, matchups, results =
       const r = resolveRound(s);
       if (r == null) continue;
       if (r < currentRound) continue;
+      if (!publishedRounds.has(r)) continue;
       const arr = byRound.get(r) || [];
       arr.push(s);
       byRound.set(r, arr);
     }
-    if (!byRound.has(currentRound)) byRound.set(currentRound, []);
+    if (publishedRounds.has(currentRound) && !byRound.has(currentRound)) {
+      byRound.set(currentRound, []);
+    }
     const rounds = Array.from(byRound.keys()).sort((a, b) => a - b);
     return rounds.map(round => ({ round, items: byRound.get(round) || [] }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isGroup, schedules, currentRound, pairsByRound, today]);
+  }, [isGroup, schedules, currentRound, pairsByRound, publishedRounds, today]);
 
   const groupByDate = (items: Schedule[]) => {
     const map = new Map<string, Schedule[]>();

@@ -846,7 +846,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
                                       <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Realocar
                                     </Button>
                                   ) : (
-                                    <Button variant="outline" size="sm" className="h-7" onClick={() => onScheduleMatchup(m.player1_id, m.player2_id, m.fase || f)}>
+                                    <Button variant="outline" size="sm" className="h-7" onClick={() => onScheduleMatchup(m.player1_id, m.player2_id, m.fase || f, m.rodada ?? null)}>
                                       <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Agendar partida
                                     </Button>
                                   )}

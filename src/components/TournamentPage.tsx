@@ -32,6 +32,7 @@ export default function TournamentPage({ tournament, onBack }: Props) {
   const [prefillPlayer2Id, setPrefillPlayer2Id] = useState<string | null>(null);
   const [prefillGrupo, setPrefillGrupo] = useState<string | null>(null);
   const [prefillRodada, setPrefillRodada] = useState<number | null>(null);
+  const [prefillEditScheduleId, setPrefillEditScheduleId] = useState<string | null>(null);
 
   const handleScheduleForPlayer = (playerId: string) => {
     setPrefillPlayerId(playerId);

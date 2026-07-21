@@ -208,7 +208,7 @@ export default function PublicTournament() {
   const campeaoId = (tournament as any).campeao_id as string | null | undefined;
   const campeao = campeaoId ? players.find(p => p.id === campeaoId) : null;
 
-  const isMilMilhas = /Mil milhas/i.test(tournament.nome || "");
+  const isMilMilhas = /mil\s*milhas|1000\s*milhas/i.test(tournament.nome || "");
   const sponsorBanner = isMilMilhas ? (
     <div className="mb-4 rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm font-medium text-amber-900 dark:text-amber-200">
       Patrocínio master: Barão. Apoio: Web Rádio Mix Play.

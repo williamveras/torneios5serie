@@ -264,6 +264,7 @@ export default function PublicTournament() {
                 <PublicResults results={results} players={players} matchups={matchups} phaseStatuses={phaseStatuses} moderators={moderators} viewMode={resultsView} teamMembers={teamMembers} />
               </TabsContent>
               <TabsContent value="standings">
+                <SponsorBanner />
                 <div className="flex justify-end mb-3">
                   <ViewModeToggle value={standingsView} onChange={setStandingsView} />
                 </div>

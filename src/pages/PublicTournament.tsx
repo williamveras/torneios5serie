@@ -257,6 +257,7 @@ export default function PublicTournament() {
               </TabsList>
 
               <TabsContent value="results">
+                <SponsorBanner />
                 <div className="flex justify-end mb-3">
                   <ViewModeToggle value={resultsView} onChange={setResultsView} />
                 </div>

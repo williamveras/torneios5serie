@@ -304,6 +304,7 @@ export default function PublicTournament() {
               )}
               {showDrawTab && drawFase && (
                 <TabsContent value="draw">
+                  <SponsorBanner />
                   <div className="flex justify-end mb-3">
                     <ViewModeToggle value={drawView} onChange={setDrawView} />
                   </div>

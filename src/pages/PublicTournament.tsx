@@ -263,7 +263,7 @@ export default function PublicTournament() {
                 <PublicResults results={results} players={players} matchups={matchups} phaseStatuses={phaseStatuses} moderators={moderators} viewMode={resultsView} teamMembers={teamMembers} />
               </TabsContent>
               <TabsContent value="standings">
-                <SponsorBanner />
+                {sponsorBanner}
                 <div className="flex justify-end mb-3">
                   <ViewModeToggle value={standingsView} onChange={setStandingsView} />
                 </div>
@@ -289,7 +289,7 @@ export default function PublicTournament() {
 
               </TabsContent>
               <TabsContent value="schedule">
-                <SponsorBanner />
+                {sponsorBanner}
                 <div className="flex justify-end mb-3">
                   <ViewModeToggle value={scheduleView} onChange={setScheduleView} />
                 </div>
@@ -297,13 +297,13 @@ export default function PublicTournament() {
               </TabsContent>
               {showGroupsTab && (
                 <TabsContent value="groups">
-                  <SponsorBanner />
+                  {sponsorBanner}
                   <PublicGroups players={players} teamMembers={teamMembers} scheduledDraws={scheduledDraws as any} />
                 </TabsContent>
               )}
               {showDrawTab && drawFase && (
                 <TabsContent value="draw">
-                  <SponsorBanner />
+                  {sponsorBanner}
                   <div className="flex justify-end mb-3">
                     <ViewModeToggle value={drawView} onChange={setDrawView} />
                   </div>
@@ -311,7 +311,7 @@ export default function PublicTournament() {
                 </TabsContent>
               )}
               <TabsContent value="regulamento">
-                <SponsorBanner />
+                {sponsorBanner}
                 <PublicRegulamento regulamento={tournament.regulamento ?? null} />
               </TabsContent>
             </Tabs>

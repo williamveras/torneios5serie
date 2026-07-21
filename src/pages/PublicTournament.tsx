@@ -290,6 +290,7 @@ export default function PublicTournament() {
 
               </TabsContent>
               <TabsContent value="schedule">
+                <SponsorBanner />
                 <div className="flex justify-end mb-3">
                   <ViewModeToggle value={scheduleView} onChange={setScheduleView} />
                 </div>

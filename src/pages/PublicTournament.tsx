@@ -208,6 +208,13 @@ export default function PublicTournament() {
   const campeaoId = (tournament as any).campeao_id as string | null | undefined;
   const campeao = campeaoId ? players.find(p => p.id === campeaoId) : null;
 
+  const isMilMilhas = /Mil milhas/i.test(tournament.nome || "");
+  const sponsorBanner = isMilMilhas ? (
+    <div className="mb-4 rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm font-medium text-amber-900 dark:text-amber-200">
+      Patrocínio master: Barão. Apoio: Web Rádio Mix Play.
+    </div>
+  ) : null;
+
   return (
     <div className="public-page min-h-screen bg-muted/30">
       <header className="border-b bg-background">
@@ -249,12 +256,14 @@ export default function PublicTournament() {
               </TabsList>
 
               <TabsContent value="results">
+                {sponsorBanner}
                 <div className="flex justify-end mb-3">
                   <ViewModeToggle value={resultsView} onChange={setResultsView} />
                 </div>
                 <PublicResults results={results} players={players} matchups={matchups} phaseStatuses={phaseStatuses} moderators={moderators} viewMode={resultsView} teamMembers={teamMembers} />
               </TabsContent>
               <TabsContent value="standings">
+                {sponsorBanner}
                 <div className="flex justify-end mb-3">
                   <ViewModeToggle value={standingsView} onChange={setStandingsView} />
                 </div>
@@ -280,6 +289,7 @@ export default function PublicTournament() {
 
               </TabsContent>
               <TabsContent value="schedule">
+                {sponsorBanner}
                 <div className="flex justify-end mb-3">
                   <ViewModeToggle value={scheduleView} onChange={setScheduleView} />
                 </div>
@@ -287,11 +297,13 @@ export default function PublicTournament() {
               </TabsContent>
               {showGroupsTab && (
                 <TabsContent value="groups">
+                  {sponsorBanner}
                   <PublicGroups players={players} teamMembers={teamMembers} scheduledDraws={scheduledDraws as any} />
                 </TabsContent>
               )}
               {showDrawTab && drawFase && (
                 <TabsContent value="draw">
+                  {sponsorBanner}
                   <div className="flex justify-end mb-3">
                     <ViewModeToggle value={drawView} onChange={setDrawView} />
                   </div>
@@ -299,6 +311,7 @@ export default function PublicTournament() {
                 </TabsContent>
               )}
               <TabsContent value="regulamento">
+                {sponsorBanner}
                 <PublicRegulamento regulamento={tournament.regulamento ?? null} />
               </TabsContent>
             </Tabs>

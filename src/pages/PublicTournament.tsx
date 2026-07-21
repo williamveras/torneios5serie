@@ -312,6 +312,7 @@ export default function PublicTournament() {
                 </TabsContent>
               )}
               <TabsContent value="regulamento">
+                <SponsorBanner />
                 <PublicRegulamento regulamento={tournament.regulamento ?? null} />
               </TabsContent>
             </Tabs>

@@ -298,6 +298,7 @@ export default function PublicTournament() {
               </TabsContent>
               {showGroupsTab && (
                 <TabsContent value="groups">
+                  <SponsorBanner />
                   <PublicGroups players={players} teamMembers={teamMembers} scheduledDraws={scheduledDraws as any} />
                 </TabsContent>
               )}

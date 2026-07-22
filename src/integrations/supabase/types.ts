@@ -39,8 +39,10 @@ export type Database = {
         Row: {
           comentario: string | null
           created_at: string
+          data_partida: string | null
           fase: string
           grupo: string
+          horario: string | null
           id: string
           penalidades: string
           player_id: string
@@ -53,8 +55,10 @@ export type Database = {
         Insert: {
           comentario?: string | null
           created_at?: string
+          data_partida?: string | null
           fase?: string
           grupo: string
+          horario?: string | null
           id?: string
           penalidades?: string
           player_id: string
@@ -67,8 +71,10 @@ export type Database = {
         Update: {
           comentario?: string | null
           created_at?: string
+          data_partida?: string | null
           fase?: string
           grupo?: string
+          horario?: string | null
           id?: string
           penalidades?: string
           player_id?: string

@@ -17,8 +17,11 @@ export interface ParsedResult {
   players: ParsedResultPlayer[];
   winnerRawName?: string;
   grupo?: string;
+  data?: string;
+  horario?: string;
   errors: string[];
 }
+
 
 interface PlayerLite {
   id: string;

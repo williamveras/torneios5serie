@@ -182,27 +182,36 @@ export function parseResultsText(
     .map((l) => l.replace(/^pontua[cç][oõ]es?\s*:?\s*/i, "").trim())
     .filter((l) => l.length > 0);
 
-  const blocks: string[][] = [];
-  let current: string[] = [];
+  interface RawBlock { lines: string[]; data?: string; horario?: string }
+  const blocks: RawBlock[] = [];
+  let current: RawBlock = { lines: [] };
 
   for (const line of lines) {
     const isScore = parseScoreLine(line) !== null;
     const isWinner = parseWinnerLine(line) !== null;
-    if (!isScore && !isWinner) continue;
-    current.push(line);
+    if (!isScore && !isWinner) {
+      // Linha "meta": tenta extrair data/horário para o bloco atual.
+      const d = extractDate(line);
+      const h = extractTime(line);
+      if (d && !current.data) current.data = d;
+      if (h && !current.horario) current.horario = h;
+      continue;
+    }
+    current.lines.push(line);
     if (isWinner) {
       blocks.push(current);
-      current = [];
+      current = { lines: [] };
     }
   }
-  if (current.length > 0) blocks.push(current);
+  if (current.lines.length > 0) blocks.push(current);
 
   const results: ParsedResult[] = [];
 
   for (const block of blocks) {
     const errors: string[] = [];
-    const scoreLines = block.map(parseScoreLine).filter(Boolean) as { name: string; score: number }[];
-    const winnerLine = block.map(parseWinnerLine).find(Boolean) || undefined;
+    const scoreLines = block.lines.map(parseScoreLine).filter(Boolean) as { name: string; score: number }[];
+    const winnerLine = block.lines.map(parseWinnerLine).find(Boolean) || undefined;
+
 
     if (scoreLines.length < 2) {
       errors.push("Bloco precisa de 2 pontuações (Jogador: número).");

@@ -325,7 +325,8 @@ export function parseResultsText(
       horario: block.horario,
       errors,
     });
-
+  }
 
   return results;
 }
+

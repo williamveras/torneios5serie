@@ -11,7 +11,9 @@ export interface ParsedResultPlayer {
   playerName: string;
   pontosMesa: number;
   pontosJogo: number;
+  penalidade?: string;
 }
+
 
 export interface ParsedResult {
   players: ParsedResultPlayer[];
@@ -317,6 +319,16 @@ export function parseResultsText(
       }
     }
 
+    // W.O.: se um lado tem 0 e o outro > 0, o lado com 0 sofreu W.O.
+    // Isso força o vencedor a ser o lado com pontuação, independente de lowerWins.
+    let woIdx = -1;
+    if (resolved.length === 2) {
+      const s0 = resolved[0].score;
+      const s1 = resolved[1].score;
+      if (s0 === 0 && s1 > 0) { woIdx = 0; winnerIdx = 1; }
+      else if (s1 === 0 && s0 > 0) { woIdx = 1; winnerIdx = 0; }
+    }
+
     const grupo = resolved.find((r) => r.player?.grupo)?.player?.grupo || undefined;
 
     results.push({
@@ -326,6 +338,7 @@ export function parseResultsText(
         playerName: r.player ? (r.player.is_team ? r.player.nome_completo : (r.player.nick_playroom || r.player.nome_completo)) : r.raw,
         pontosMesa: r.score,
         pontosJogo: winnerIdx === i ? 3 : 0,
+        penalidade: woIdx === i ? "W.O" : undefined,
       })),
       winnerRawName: winnerLine,
       grupo: grupo || undefined,
@@ -334,6 +347,7 @@ export function parseResultsText(
       errors,
     });
   }
+
 
   return results;
 }

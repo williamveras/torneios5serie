@@ -98,12 +98,13 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
     setBlocks(
       parsed.map((p) => ({
         parsed: p,
-        penalidade1: "Sem penalidades",
+        penalidade1: p.players[0]?.penalidade || "Sem penalidades",
         penalidade1Outra: "",
-        penalidade2: "Sem penalidades",
+        penalidade2: p.players[1]?.penalidade || "Sem penalidades",
         penalidade2Outra: "",
       }))
     );
+
   }
 
   function updateBlock(i: number, patch: Partial<BlockState>) {

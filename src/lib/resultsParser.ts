@@ -321,9 +321,11 @@ export function parseResultsText(
       })),
       winnerRawName: winnerLine,
       grupo: grupo || undefined,
+      data: block.data,
+      horario: block.horario,
       errors,
     });
-  }
+
 
   return results;
 }

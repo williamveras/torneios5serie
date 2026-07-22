@@ -232,6 +232,32 @@ export default function ResultsTab({ tournamentId }: Props) {
           </div>
         </div>
 
+        <div className="grid gap-4 grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="data-partida-input">Data da partida <span className="text-muted-foreground font-normal">(opcional, mm/dd)</span></Label>
+            <Input
+              id="data-partida-input"
+              value={dataPartida}
+              onChange={e => setDataPartida(e.target.value)}
+              placeholder="Ex: 08/25"
+              inputMode="numeric"
+              maxLength={5}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="horario-input">Horário <span className="text-muted-foreground font-normal">(opcional, hh:mm)</span></Label>
+            <Input
+              id="horario-input"
+              value={horario}
+              onChange={e => setHorario(e.target.value)}
+              placeholder="Ex: 16:00"
+              inputMode="numeric"
+              maxLength={5}
+            />
+          </div>
+        </div>
+
+
         {results.map((r, idx) => {
           const isDuplas = players.some(p => p.is_team);
           const entityLabel = isDuplas ? "Equipe" : "Jogador";

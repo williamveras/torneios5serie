@@ -187,12 +187,20 @@ export function parseResultsText(
   let current: RawBlock = { lines: [] };
 
   for (const line of lines) {
+    // Primeiro tenta detectar data/horário — evita que "17:30." seja
+    // interpretado como score (nome=17, valor=30).
+    const d = extractDate(line);
+    const h = extractTime(line);
+    const looksLikeMetaOnly =
+      (d || h) && !/[a-zA-Z]{3,}/.test(line.replace(/pontua[cç][oõ]es?/i, ""));
+    if (looksLikeMetaOnly) {
+      if (d && !current.data) current.data = d;
+      if (h && !current.horario) current.horario = h;
+      continue;
+    }
     const isScore = parseScoreLine(line) !== null;
     const isWinner = parseWinnerLine(line) !== null;
     if (!isScore && !isWinner) {
-      // Linha "meta": tenta extrair data/horário para o bloco atual.
-      const d = extractDate(line);
-      const h = extractTime(line);
       if (d && !current.data) current.data = d;
       if (h && !current.horario) current.horario = h;
       continue;

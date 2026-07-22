@@ -153,6 +153,20 @@ export default function ResultsTab({ tournamentId }: Props) {
       return;
     }
     const trimmedComment = comentario.trim() || null;
+    const dataTrim = dataPartida.trim();
+    const horarioTrim = horario.trim();
+    if (dataTrim && !/^(0?[1-9]|1[0-2])\/(0?[1-9]|[12]\d|3[01])$/.test(dataTrim)) {
+      toast.error("Data inválida. Use o formato mm/dd."); return;
+    }
+    if (horarioTrim && !/^([01]?\d|2[0-3]):([0-5]\d)$/.test(horarioTrim)) {
+      toast.error("Horário inválido. Use o formato hh:mm."); return;
+    }
+    const dataNorm = dataTrim
+      ? dataTrim.split("/").map(s => s.padStart(2, "0")).join("/")
+      : null;
+    const horarioNorm = horarioTrim
+      ? horarioTrim.split(":").map((s, i) => i === 0 ? s.padStart(2, "0") : s).join(":")
+      : null;
     const toInsert = results.map(r => ({
       tournament_id: tournamentId,
       player_id: r.player_id,
@@ -164,6 +178,8 @@ export default function ResultsTab({ tournamentId }: Props) {
       penalidades: resolvePenalidade(r),
       registered_by: currentUserId,
       comentario: trimmedComment,
+      data_partida: dataNorm,
+      horario: horarioNorm,
     }));
 
     const { error } = await supabase.from("match_results").insert(toInsert);
@@ -175,9 +191,12 @@ export default function ResultsTab({ tournamentId }: Props) {
       setGrupo("");
       setRodada("");
       setComentario("");
+      setDataPartida("");
+      setHorario("");
     }
     setLoading(false);
   };
+
 
   return (
     <Card>

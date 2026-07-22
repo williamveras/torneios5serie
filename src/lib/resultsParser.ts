@@ -132,14 +132,14 @@ function parseWinnerLine(line: string): string | null {
   return m ? m[1].trim() : null;
 }
 
-// Extrai data no formato mm/dd (aceita m/d, 08/8, etc.). Ignora anos se vierem juntos.
+// Extrai data no formato dd/mm (aceita d/m, 8/08, etc.). Ignora anos se vierem juntos.
 function extractDate(line: string): string | undefined {
   // Evita capturar pontuações "10/8" que estejam dentro de "X: 10/8" (linha de score).
-  const m = line.match(/\b(0?[1-9]|1[0-2])\/(0?[1-9]|[12]\d|3[01])(?!\d)/);
+  const m = line.match(/\b(0?[1-9]|[12]\d|3[01])\/(0?[1-9]|1[0-2])(?!\d)/);
   if (!m) return undefined;
-  const mm = m[1].padStart(2, "0");
-  const dd = m[2].padStart(2, "0");
-  return `${mm}/${dd}`;
+  const dd = m[1].padStart(2, "0");
+  const mm = m[2].padStart(2, "0");
+  return `${dd}/${mm}`;
 }
 
 function extractTime(line: string): string | undefined {

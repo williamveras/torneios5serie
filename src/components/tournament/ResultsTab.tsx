@@ -45,7 +45,10 @@ export default function ResultsTab({ tournamentId }: Props) {
   const [rodada, setRodada] = useState("");
   const [results, setResults] = useState<PlayerResult[]>([emptyResult()]);
   const [comentario, setComentario] = useState("");
+  const [dataPartida, setDataPartida] = useState("");
+  const [horario, setHorario] = useState("");
   const [loading, setLoading] = useState(false);
+
   const [importOpen, setImportOpen] = useState(false);
   const [activeFase, setActiveFase] = useState<string>("Fase de Grupos");
   const [lowerWins, setLowerWins] = useState<boolean>(false);
@@ -150,6 +153,20 @@ export default function ResultsTab({ tournamentId }: Props) {
       return;
     }
     const trimmedComment = comentario.trim() || null;
+    const dataTrim = dataPartida.trim();
+    const horarioTrim = horario.trim();
+    if (dataTrim && !/^(0?[1-9]|1[0-2])\/(0?[1-9]|[12]\d|3[01])$/.test(dataTrim)) {
+      toast.error("Data inválida. Use o formato mm/dd."); return;
+    }
+    if (horarioTrim && !/^([01]?\d|2[0-3]):([0-5]\d)$/.test(horarioTrim)) {
+      toast.error("Horário inválido. Use o formato hh:mm."); return;
+    }
+    const dataNorm = dataTrim
+      ? dataTrim.split("/").map(s => s.padStart(2, "0")).join("/")
+      : null;
+    const horarioNorm = horarioTrim
+      ? horarioTrim.split(":").map((s, i) => i === 0 ? s.padStart(2, "0") : s).join(":")
+      : null;
     const toInsert = results.map(r => ({
       tournament_id: tournamentId,
       player_id: r.player_id,
@@ -161,6 +178,8 @@ export default function ResultsTab({ tournamentId }: Props) {
       penalidades: resolvePenalidade(r),
       registered_by: currentUserId,
       comentario: trimmedComment,
+      data_partida: dataNorm,
+      horario: horarioNorm,
     }));
 
     const { error } = await supabase.from("match_results").insert(toInsert);
@@ -172,9 +191,12 @@ export default function ResultsTab({ tournamentId }: Props) {
       setGrupo("");
       setRodada("");
       setComentario("");
+      setDataPartida("");
+      setHorario("");
     }
     setLoading(false);
   };
+
 
   return (
     <Card>
@@ -209,6 +231,32 @@ export default function ResultsTab({ tournamentId }: Props) {
             <Input id="rodada-input" type="number" min={1} value={rodada} onChange={e => setRodada(e.target.value)} placeholder={isFaseDeGrupos ? "Ex: 1" : "Ex: 1, 2, 3..."} />
           </div>
         </div>
+
+        <div className="grid gap-4 grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="data-partida-input">Data da partida <span className="text-muted-foreground font-normal">(opcional, mm/dd)</span></Label>
+            <Input
+              id="data-partida-input"
+              value={dataPartida}
+              onChange={e => setDataPartida(e.target.value)}
+              placeholder="Ex: 08/25"
+              inputMode="numeric"
+              maxLength={5}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="horario-input">Horário <span className="text-muted-foreground font-normal">(opcional, hh:mm)</span></Label>
+            <Input
+              id="horario-input"
+              value={horario}
+              onChange={e => setHorario(e.target.value)}
+              placeholder="Ex: 16:00"
+              inputMode="numeric"
+              maxLength={5}
+            />
+          </div>
+        </div>
+
 
         {results.map((r, idx) => {
           const isDuplas = players.some(p => p.is_team);

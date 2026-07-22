@@ -17,8 +17,11 @@ export interface ParsedResult {
   players: ParsedResultPlayer[];
   winnerRawName?: string;
   grupo?: string;
+  data?: string;
+  horario?: string;
   errors: string[];
 }
+
 
 interface PlayerLite {
   id: string;
@@ -129,6 +132,25 @@ function parseWinnerLine(line: string): string | null {
   return m ? m[1].trim() : null;
 }
 
+// Extrai data no formato mm/dd (aceita m/d, 08/8, etc.). Ignora anos se vierem juntos.
+function extractDate(line: string): string | undefined {
+  // Evita capturar pontuações "10/8" que estejam dentro de "X: 10/8" (linha de score).
+  const m = line.match(/\b(0?[1-9]|1[0-2])\/(0?[1-9]|[12]\d|3[01])(?!\d)/);
+  if (!m) return undefined;
+  const mm = m[1].padStart(2, "0");
+  const dd = m[2].padStart(2, "0");
+  return `${mm}/${dd}`;
+}
+
+function extractTime(line: string): string | undefined {
+  const m = line.match(/\b([01]?\d|2[0-3])[:hH]([0-5]\d)\b/);
+  if (!m) return undefined;
+  const hh = m[1].padStart(2, "0");
+  const mm = m[2];
+  return `${hh}:${mm}`;
+}
+
+
 export function parseResultsText(
   text: string,
   players: PlayerLite[],
@@ -160,27 +182,36 @@ export function parseResultsText(
     .map((l) => l.replace(/^pontua[cç][oõ]es?\s*:?\s*/i, "").trim())
     .filter((l) => l.length > 0);
 
-  const blocks: string[][] = [];
-  let current: string[] = [];
+  interface RawBlock { lines: string[]; data?: string; horario?: string }
+  const blocks: RawBlock[] = [];
+  let current: RawBlock = { lines: [] };
 
   for (const line of lines) {
     const isScore = parseScoreLine(line) !== null;
     const isWinner = parseWinnerLine(line) !== null;
-    if (!isScore && !isWinner) continue;
-    current.push(line);
+    if (!isScore && !isWinner) {
+      // Linha "meta": tenta extrair data/horário para o bloco atual.
+      const d = extractDate(line);
+      const h = extractTime(line);
+      if (d && !current.data) current.data = d;
+      if (h && !current.horario) current.horario = h;
+      continue;
+    }
+    current.lines.push(line);
     if (isWinner) {
       blocks.push(current);
-      current = [];
+      current = { lines: [] };
     }
   }
-  if (current.length > 0) blocks.push(current);
+  if (current.lines.length > 0) blocks.push(current);
 
   const results: ParsedResult[] = [];
 
   for (const block of blocks) {
     const errors: string[] = [];
-    const scoreLines = block.map(parseScoreLine).filter(Boolean) as { name: string; score: number }[];
-    const winnerLine = block.map(parseWinnerLine).find(Boolean) || undefined;
+    const scoreLines = block.lines.map(parseScoreLine).filter(Boolean) as { name: string; score: number }[];
+    const winnerLine = block.lines.map(parseWinnerLine).find(Boolean) || undefined;
+
 
     if (scoreLines.length < 2) {
       errors.push("Bloco precisa de 2 pontuações (Jogador: número).");
@@ -290,9 +321,12 @@ export function parseResultsText(
       })),
       winnerRawName: winnerLine,
       grupo: grupo || undefined,
+      data: block.data,
+      horario: block.horario,
       errors,
     });
   }
 
   return results;
 }
+

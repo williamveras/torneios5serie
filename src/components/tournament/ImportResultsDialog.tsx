@@ -170,7 +170,10 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
           ? resolvePenalidade(b.penalidade1, b.penalidade1Outra)
           : resolvePenalidade(b.penalidade2, b.penalidade2Outra),
         registered_by: currentUserId,
+        data_partida: b.parsed.data ?? null,
+        horario: b.parsed.horario ?? null,
       }));
+
       const { error } = await supabase.from("match_results").insert(toInsert);
       if (error) failed++;
       else inserted++;

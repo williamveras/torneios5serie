@@ -234,7 +234,7 @@ export default function ResultsTab({ tournamentId }: Props) {
 
         <div className="grid gap-4 grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="data-partida-input">Data da partida <span className="text-muted-foreground font-normal">(opcional, mm/dd)</span></Label>
+            <Label htmlFor="data-partida-input">Data da partida <span className="text-muted-foreground font-normal">(opcional, dd/mm)</span></Label>
             <Input
               id="data-partida-input"
               value={dataPartida}

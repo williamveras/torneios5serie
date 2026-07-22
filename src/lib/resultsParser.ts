@@ -11,7 +11,9 @@ export interface ParsedResultPlayer {
   playerName: string;
   pontosMesa: number;
   pontosJogo: number;
+  penalidade?: string;
 }
+
 
 export interface ParsedResult {
   players: ParsedResultPlayer[];

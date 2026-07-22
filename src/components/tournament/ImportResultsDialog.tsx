@@ -237,7 +237,7 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
               className="font-mono text-xs"
             />
             <p className="text-xs text-muted-foreground mt-1">
-              Você pode colar várias partidas, separadas por linha em branco. Data (mm/dd) e horário (hh:mm) são detectados automaticamente se estiverem no texto. O grupo é detectado pelo jogador.
+              Você pode colar várias partidas, separadas por linha em branco. Data (dd/mm) e horário (hh:mm) são detectados automaticamente se estiverem no texto. O grupo é detectado pelo jogador.
             </p>
           </div>
 

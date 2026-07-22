@@ -272,9 +272,15 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
                           <TableRow key={`${i}-${idx}`} className={b.parsed.errors.length > 0 ? "bg-destructive/10" : ""}>
                             {idx === 0 && (
                               <TableCell rowSpan={2} className="align-top">
-                                {isFaseDeGrupos ? (b.parsed.grupo || <span className="text-destructive">?</span>) : `Mesa ${mesaForBlock}`}
+                                <div>{isFaseDeGrupos ? (b.parsed.grupo || <span className="text-destructive">?</span>) : `Mesa ${mesaForBlock}`}</div>
+                                {(b.parsed.data || b.parsed.horario) && (
+                                  <div className="text-xs text-muted-foreground mt-1">
+                                    {[b.parsed.data, b.parsed.horario].filter(Boolean).join(" ")}
+                                  </div>
+                                )}
                               </TableCell>
                             )}
+
                             <TableCell>
                               <div className="text-sm">{pl.playerName}</div>
                               {!pl.playerId && <div className="text-xs text-destructive">não encontrado</div>}

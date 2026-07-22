@@ -155,8 +155,8 @@ export default function ResultsTab({ tournamentId }: Props) {
     const trimmedComment = comentario.trim() || null;
     const dataTrim = dataPartida.trim();
     const horarioTrim = horario.trim();
-    if (dataTrim && !/^(0?[1-9]|1[0-2])\/(0?[1-9]|[12]\d|3[01])$/.test(dataTrim)) {
-      toast.error("Data inválida. Use o formato mm/dd."); return;
+    if (dataTrim && !/^(0?[1-9]|[12]\d|3[01])\/(0?[1-9]|1[0-2])$/.test(dataTrim)) {
+      toast.error("Data inválida. Use o formato dd/mm."); return;
     }
     if (horarioTrim && !/^([01]?\d|2[0-3]):([0-5]\d)$/.test(horarioTrim)) {
       toast.error("Horário inválido. Use o formato hh:mm."); return;

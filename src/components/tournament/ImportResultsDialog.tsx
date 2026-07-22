@@ -232,14 +232,15 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
               id="import-res-text"
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder={`Exemplo:\n\nPontuações:\nLyly01: 26.\nprincesinha: 17.\nLyly01 ganhou!`}
+              placeholder={`Exemplo:\n\nprimeira rodada, grupo A\n08/08 16:00\n\nPontuações:\nLyly01: 26.\nprincesinha: 17.\nLyly01 ganhou!`}
               rows={10}
               className="font-mono text-xs"
             />
             <p className="text-xs text-muted-foreground mt-1">
-              Você pode colar várias partidas, separadas por linha em branco. O grupo é detectado automaticamente pelo jogador.
+              Você pode colar várias partidas, separadas por linha em branco. Data (mm/dd) e horário (hh:mm) são detectados automaticamente se estiverem no texto. O grupo é detectado pelo jogador.
             </p>
           </div>
+
 
           {!blocks ? (
             <div className="flex justify-end">

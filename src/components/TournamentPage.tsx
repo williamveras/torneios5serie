@@ -12,6 +12,7 @@ import StandingsTab from "./tournament/StandingsTab";
 import StatsTab from "./tournament/StatsTab";
 import RegulamentoTab from "./tournament/RegulamentoTab";
 import RegistrationLinkTab from "./tournament/RegistrationLinkTab";
+import ExportTab from "./tournament/ExportTab";
 import TournamentSettingsDialog from "./tournament/TournamentSettingsDialog";
 import { useStandingsTabLabel } from "@/hooks/useStandingsTabLabel";
 import { useMainFases } from "@/hooks/useMainFases";
@@ -110,6 +111,7 @@ export default function TournamentPage({ tournament, onBack }: Props) {
             <TabsTrigger value="schedule">Agenda</TabsTrigger>
             <TabsTrigger value="standings">{standingsLabel}</TabsTrigger>
             <TabsTrigger value="stats">Estatísticas</TabsTrigger>
+            <TabsTrigger value="export">Exportação</TabsTrigger>
             <TabsTrigger value="regulamento">Regulamento</TabsTrigger>
             <TabsTrigger value="inscricoes">Inscrições</TabsTrigger>
           </TabsList>
@@ -143,6 +145,9 @@ export default function TournamentPage({ tournament, onBack }: Props) {
           </TabsContent>
           <TabsContent value="stats">
             <StatsTab tournamentId={tournament.id} />
+          </TabsContent>
+          <TabsContent value="export">
+            <ExportTab tournamentId={tournament.id} tournamentName={tournament.nome} />
           </TabsContent>
           <TabsContent value="regulamento">
             <RegulamentoTab tournamentId={tournament.id} />

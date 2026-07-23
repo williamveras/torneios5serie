@@ -1,77 +1,93 @@
 
-## Objetivo
+## O que o parceiro quer
 
-Permitir configurar em cada torneio uma **fase extra de Repescagem** (mata-mata em jogo único) entre a Fase de Grupos e a Segunda Fase. Os vencedores da repescagem se juntam aos classificados diretos para formar a chave da Segunda Fase.
+Analisando os dois scripts enviados, ele consome os dados do torneio em dois formatos:
 
-Fluxo do torneio de duplas do exemplo:
-- 150 duplas → 25 grupos de 6 → Fase de Grupos (round-robin, 5 jogos por dupla)
-- Classificam direto: 1º de cada grupo (25) + 7 melhores 2ºs no ranking geral = **32**
-- Repescagem: as **64** duplas seguintes disputam 32 confrontos de jogo único → **32 vencedores**
-- Segunda Fase: 32 + 32 = **64 duplas** em mata-mata até a Final
+**1. `exportar_fases.py` → arquivos `.txt` de texto puro**
 
-## Configuração (Configurações do torneio)
+Para **fase de grupos** (informando N rodadas):
+- Um arquivo por rodada: `rodada1.txt`, `rodada2.txt`, …
+- Um arquivo consolidado: `resultados gerais.txt`
+- Layout de cada arquivo:
+  ```
+  Segue abaixo os resultados da primeira rodada, dispostos na seguinte ordem:
 
-Nova seção "Repescagem" com dois modos:
+  Grupo 1:
+  <nome do jogador/dupla>
+  <pontos de vitória>
+  <pontos de mesa>
+  <penalidades — só se > 0>
+  <notas de penalidade — só se houver>
+  ```
+- Ordenação: por grupo (numérico), depois vitórias desc, mesa desc, penalidades asc, nome.
 
-- **Ranking (atual)** — os N melhores próximos colocados são promovidos direto à Segunda Fase.
-- **Fase extra (novo)** — os N seguintes disputam mata-mata de jogo único; os vencedores avançam.
+Para **fase eliminatória**:
+- Um arquivo por fase: `Quartas_de_Final.txt`, etc.
+- Mesmo layout, mas agrupado por **Mesa N** e com a palavra `eliminado` abaixo do jogador que zerou.
 
-Quando "Fase extra" estiver ativa, o campo passa a ser **"Quantas duplas disputam a repescagem"** (ex: 64). Preview atualiza para mostrar o total esperado da Segunda Fase (`diretos + repescagem/2`) e valida se fecha em potência de 2.
+**2. `gerar_classificacao_torneio_6.py` → planilha `.xlsx` estilizada**
 
-## Como funciona em cada aba
+- Uma planilha por **rodada** (grupos) ou por **fase** (eliminatória).
+- Colunas: `Nome | Grupo|Mesa | Data | Hora | Pontos de vitória | Pontos de jogo | Penalidades|Situação`.
+- Cabeçalho grande mesclado na linha 1, header azul (`#1F4E78`) branco negrito, bordas finas, freeze pane, auto-filter.
+- Aba extra `Avisos` com problemas encontrados (nome/data/hora/grupo vazios).
+- Em fase eliminatória, quem tem 0 vitórias vira `eliminado` na coluna Situação.
 
-- **Classificação (StandingsTab / PublicStandings)**: quando modo = fase extra, mostra 3 blocos — Classificados diretos · Para a repescagem · Eliminados. Os textos "próximo colocado" viram "vai para a repescagem".
-- **Confrontos (MatchupsTab)**: nova fase selecionável **"Repescagem"** aparece no filtro apenas para torneios com o modo ativado. Sorteio livre (aleatório) via `scheduled_draws` reutilizando a lógica atual de sorteio de mata-mata, com pool = duplas da repescagem calculadas pela função `computeQualifiers`.
-- **Agenda / Resultados**: nada especial — a fase "Repescagem" flui pelas mesmas telas.
-- **Segunda Fase**: quando o pool for gerado (aba Confrontos → gerar chaveamento da Segunda Fase), o sistema une classificados diretos + vencedores da repescagem antes de sortear.
+## Solução proposta
 
-## Implementação
+Criar uma **nova aba "Exportação"** em `TournamentPage.tsx` (entre "Estatísticas" e "Regulamento"), com um único componente `ExportTab.tsx` que:
 
-### Banco de dados (1 migration)
+1. Lista as fases existentes no torneio (a partir de `match_results` + `useMainFases`) e identifica quais são de grupos vs. eliminatórias.
+2. Para cada fase de grupos, mostra as rodadas detectadas nos resultados; usuário marca quais quer incluir.
+3. Botão único **"Baixar pacote (.zip)"** que gera, do lado do cliente, um ZIP com toda a estrutura que o parceiro espera:
 
-Colunas em `public.tournaments`:
-- `repescagem_mode text` — `'ranking'` (default, comportamento atual) ou `'playoff'`.
-- `repescagem_playoff_size int` — quantas duplas entram na repescagem quando modo = playoff.
+```text
+exportacao_<torneio>.zip
+├── txt/
+│   ├── Fase de Grupos/
+│   │   ├── rodada1.txt
+│   │   ├── rodada2.txt
+│   │   └── resultados gerais.txt
+│   ├── Quartas de Final.txt
+│   ├── Semifinal.txt
+│   └── Final.txt
+└── xlsx/
+    ├── Fase de Grupos/
+    │   ├── Rodada 1.xlsx
+    │   └── Rodada 2.xlsx
+    ├── Quartas de Final.xlsx
+    ├── Semifinal.xlsx
+    └── Final.xlsx
+```
 
-Sem novas tabelas. `matchups`, `match_results`, `phase_status`, `match_schedule` já têm coluna `fase` e aceitam qualquer string.
+4. Botões auxiliares para baixar avulso: “Só TXT da rodada X”, “Só XLSX da fase Y” (opcional, mesma engine).
 
-### Constantes / fases
+## Detalhes técnicos
 
-`src/lib/constants.ts`: adicionar `"Repescagem"` ao array `FASES`, entre `"Fase de Grupos"` e `"Segunda Fase"`. Marcar como fase condicional na projeção (`buildMainFases` em `src/lib/phase.ts`): incluída só quando `repescagem_mode === 'playoff'`.
+- **Fonte de dados**: reutilizar `fetchAllMatchResults(tournamentId)` + `players` + `team_members` + `match_schedule` (para pegar `data_partida` e `horario` quando o `match_results` não tiver os campos preenchidos — o script do parceiro usa `date`/`time` do registro).
+- **Nome do jogador**: usar o helper existente `formatPlayerWithTeam` de `src/lib/playerDisplay.ts` para respeitar a regra "dupla (membro1 e membro2)".
+- **Ordenação e agregação**: replicar `aggregate_by_round` / `aggregate_general` / `player_sort_key` em TypeScript (`src/lib/exportPartner.ts`). Somar `pontos_jogo`, `pontos_mesa`, `penalidades` por jogador e concatenar `comentario`/notas de penalidade.
+- **Mesa em fases eliminatórias**: derivar de `matchups.mesa` / `match_schedule.mesa` (mesma lógica que `PublicStandings` já faz para o título "mesa X").
+- **TXT**: string builder puro, encoding UTF-8, quebra `\n`, exatamente no formato do `render_text`.
+- **XLSX**: usar `xlsx` (já instalado). Como `xlsx` community não faz merge/estilos ricos, adicionar **`xlsx-js-style`** (fork drop-in) para reproduzir:
+  - merge da linha 1 (cabeçalho grande),
+  - fill `#1F4E78` + fonte branca negrito no header,
+  - bordas finas `#D9E2F3`,
+  - `!freeze` A3, `!autofilter` A2:G{n},
+  - largura de coluna auto (`min(max(len+2,12),45)`).
+- **ZIP**: adicionar **`jszip`** e disparar download com um blob URL (`<a download>`).
+- **Sem backend novo**: tudo client-side; nenhuma edge function, nenhuma migração.
+- **Sem mudanças de RLS**: leitura já é permitida para membros da organização.
 
-### Lógica de classificados
+## Arquivos afetados
 
-`src/lib/qualifiers.ts` — nova opção `mode: 'ranking' | 'playoff'` e `playoffSize`:
-- Modo ranking: comportamento atual (retorna `repescagem` como classificados diretos extras).
-- Modo playoff: separa `direct` (1ºs + top-N 2ºs onde `N = playoffSize/2 - numGroups` calculado do bracket final, ou explicitamente configurado por `direct_extra`), `playoff` (as `playoffSize` seguintes que jogam a repescagem) e `notQualified`.
+- **Novo** `src/lib/exportPartner.ts` — agregação, ordenação, geração de TXT e XLSX (funções puras, testáveis).
+- **Novo** `src/components/tournament/ExportTab.tsx` — UI da aba (seleção de fases/rodadas, botão de download, feedback com `sonner`).
+- **Editado** `src/components/TournamentPage.tsx` — adiciona `<TabsTrigger value="export">Exportação</TabsTrigger>` e `<TabsContent>` correspondente.
+- **Dependências novas**: `jszip`, `xlsx-js-style`.
 
-Nota: no exemplo do usuário são 25 diretos + 7 melhores 2ºs + 64 na repescagem. Para não impor uma fórmula rígida, mantenho **3 configuráveis independentes**: `direct_per_group` (1), `repescagem_total` (7 — reaproveitado como "melhores extras que vão direto") e `repescagem_playoff_size` (64). O preview mostra o total resultante.
+## Perguntas rápidas antes de implementar
 
-### UI
-
-- `TournamentSettingsDialog.tsx`: `Select` "Modo de repescagem" e o input adicional. Preview atualizado com a fórmula `diretos_por_grupo × grupos + melhores_extras + playoff_size/2`.
-- `StandingsTab.tsx` + `PublicStandings.tsx`: renderizar terceiro bloco "Repescagem" quando modo = playoff. Rótulo da aba passa a mostrar "Classificados (Repescagem)" quando a fase ativa é a repescagem.
-- `MatchupsTab.tsx`: ao selecionar fase "Repescagem", o sorteio usa como pool os IDs de `computeQualifiers(...).playoff`. Reutiliza `scheduled_draws` com `mode='geral'`.
-- `useMainFases` / `useStandingsTabLabel` / `getActivePublicPhase`: incluir "Repescagem" quando aplicável.
-
-### Sorteio (RPC)
-
-`execute_scheduled_draws` já sorteia mata-mata geral (`mode='geral'`) a partir de todos jogadores não eliminados. Para a Repescagem precisamos passar um pool explícito. Solução: reaproveitar a coluna já existente `player_pool uuid[]` do `scheduled_draws` (se não existir, adiciono na migration). Quando a fase = "Repescagem" e há `player_pool`, o RPC sorteia dentro do pool.
-
-### Segunda Fase pós-repescagem
-
-Ao gerar confrontos da Segunda Fase quando a repescagem está ativa e concluída, o pool passa a ser: `direct qualifiers` + `vencedores dos match_results da fase 'Repescagem'`. Isso vive em `MatchupsTab.tsx` (helper `poolForNextPhase`).
-
-## Fora do escopo
-
-- Repescagem em múltiplos rounds (fica jogo único conforme resposta do usuário).
-- Seeding (sorteio livre conforme resposta).
-- Migração retroativa de torneios antigos — o default é `ranking` (comportamento atual preservado).
-
-## Entregáveis
-
-1. Migration com 2 colunas em `tournaments` (+ `player_pool` em `scheduled_draws` se necessário) e ajuste no RPC `execute_scheduled_draws`.
-2. `constants.ts` + `phase.ts` + `qualifiers.ts` atualizados.
-3. `TournamentSettingsDialog.tsx` com nova seção.
-4. `StandingsTab.tsx`, `PublicStandings.tsx`, `MatchupsTab.tsx` reconhecendo a fase.
-5. Rótulos e projeção de próxima fase em `useMainFases`, `useStandingsTabLabel`, `getActivePublicPhase`.
+1. Quer que eu inclua as **fases eliminatórias** no mesmo ZIP por padrão, ou só a fase de grupos (que é o foco dos dois scripts)?
+2. No TXT, o script do parceiro usa "pontos de mesa"; no nosso schema é `pontos_mesa`. Confirma que é isso mesmo que ele espera na segunda linha de cada jogador?
+3. Para a coluna **Data/Hora** do XLSX, quando um jogo tiver `data_partida/horario` vazios em `match_results`, posso **cair de volta** no `match_schedule` do confronto correspondente (ou prefere deixar em branco, como o script original faz)?

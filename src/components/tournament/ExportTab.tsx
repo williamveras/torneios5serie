@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Download, FileText, FileSpreadsheet, Loader2, Package } from "lucide-react";
+import { Download, FileText, FileSpreadsheet, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllMatchResults } from "@/lib/fetchAll";
 import { Button } from "@/components/ui/button";
@@ -161,15 +161,10 @@ export default function ExportTab({ tournamentId, tournamentName }: Props) {
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Package className="h-4 w-4" /> Exportação para parceiros
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 pt-6">
           <p className="text-sm text-muted-foreground">
             Gera um pacote <b>.zip</b> com arquivos <b>.txt</b> (por rodada e geral) e planilhas <b>.xlsx</b>{" "}
-            estilizadas — no mesmo formato usado pelos scripts do parceiro.
+            estilizadas.
           </p>
 
           {!hasAny && (

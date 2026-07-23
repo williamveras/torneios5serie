@@ -214,7 +214,7 @@ export const buildRoundTxt = (ctx: BuildCtx, round: number): string => {
   const nameFn = makePlayerNameFn(ctx);
   const rows = ctx.results.filter((r) => (r.fase || "Fase de Grupos") === "Fase de Grupos" && r.rodada === round);
   const agg = aggregate(rows, nameFn, (r) => r.grupo || "Sem grupo");
-  const title = `Segue abaixo os resultados da ${roundLabel(round)} rodada, dispostos na seguinte ordem:`;
+  const title = `Segue abaixo os resultados da rodada, dispostos na seguinte ordem:`;
   return renderText(title, agg);
 };
 

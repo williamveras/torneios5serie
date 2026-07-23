@@ -447,8 +447,15 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
     const fields = getExportFields().filter(f => exportFields[f.key]);
     if (fields.length === 0) { toast.error("Selecione ao menos um campo"); return; }
 
+    const sortedPlayers = [...players].sort((a, b) => {
+      const ga = a.grupo ? Number(a.grupo) : Infinity;
+      const gb = b.grupo ? Number(b.grupo) : Infinity;
+      if (ga !== gb) return ga - gb;
+      return a.created_at.localeCompare(b.created_at);
+    });
+
     if (exportFormat === "xlsx") {
-      const rows = players.map((p) => {
+      const rows = sortedPlayers.map((p) => {
         const row: Record<string, string> = {};
         fields.forEach(f => { row[f.label] = f.get(p); });
         return row;
@@ -458,7 +465,7 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
       XLSX.utils.book_append_sheet(wb, ws, "Participantes");
       XLSX.writeFile(wb, `participantes-${safeName}.xlsx`);
     } else {
-      const content = players.map((p) => {
+      const content = sortedPlayers.map((p) => {
         return fields.map(f => f.get(p)).filter(v => v !== "").join(" — ");
       }).filter(Boolean).join("\n");
       const blob = new Blob([content], { type: "text/plain;charset=utf-8" });

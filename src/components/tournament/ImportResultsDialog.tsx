@@ -45,8 +45,10 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
   const [saving, setSaving] = useState(false);
   const [matchups, setMatchups] = useState<MatchupLite[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMemberLite[]>([]);
+  const [loadingRefs, setLoadingRefs] = useState(false);
 
   const isFaseDeGrupos = isGroupPhase(fase);
+  const hasTeams = players.some((p: any) => p.is_team);
 
   useEffect(() => {
     if (activeFase) setFase(activeFase);
@@ -54,23 +56,32 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
 
   useEffect(() => {
     if (!open) return;
-    supabase
+    let cancelled = false;
+    setLoadingRefs(true);
+
+    const teamIds = players.filter((p: any) => p.is_team).map((p) => p.id);
+
+    const matchupsPromise = supabase
       .from("matchups")
       .select("id, fase, player1_id, player2_id, created_at")
       .eq("tournament_id", tournamentId)
-      .order("created_at", { ascending: true })
-      .then(({ data }) => { if (data) setMatchups(data as any); });
+      .order("created_at", { ascending: true });
 
-    const teamIds = players.filter((p: any) => p.is_team).map((p) => p.id);
-    if (teamIds.length > 0) {
-      supabase
-        .from("team_members")
-        .select("team_id, member_nome, member_nick")
-        .in("team_id", teamIds)
-        .then(({ data }) => { if (data) setTeamMembers(data as any); });
-    } else {
-      setTeamMembers([]);
-    }
+    const teamsPromise = teamIds.length > 0
+      ? supabase
+          .from("team_members")
+          .select("team_id, member_nome, member_nick")
+          .in("team_id", teamIds)
+      : Promise.resolve({ data: [] as TeamMemberLite[] });
+
+    Promise.all([matchupsPromise, teamsPromise]).then(([mRes, tRes]) => {
+      if (cancelled) return;
+      if (mRes.data) setMatchups(mRes.data as any);
+      setTeamMembers((tRes.data as TeamMemberLite[]) || []);
+      setLoadingRefs(false);
+    });
+
+    return () => { cancelled = true; };
   }, [open, tournamentId, players]);
 
   const mesaMap = !isFaseDeGrupos ? buildMesaMap(matchups, fase) : new Map<string, number>();

@@ -93,6 +93,10 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
   }
 
   function handlePreview() {
+    if (loadingRefs) {
+      toast.error("Aguarde o carregamento das duplas/confrontos antes de pré-visualizar.");
+      return;
+    }
     if (isFaseDeGrupos && (!rodada || isNaN(parseInt(rodada, 10)))) {
       toast.error("Informe a rodada (número).");
       return;

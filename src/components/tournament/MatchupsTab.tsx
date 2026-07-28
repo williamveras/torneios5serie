@@ -842,13 +842,20 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
                     return (
                       <div className="space-y-2">
                         {eliminationList.length > 0 && (
-                          <div className="flex justify-end">
+                          <div className="flex justify-end gap-2">
                             <Button
                               variant={allPublished ? "outline" : "default"}
                               size="sm"
                               onClick={() => togglePublish(f, eliminationList[0].rodada ?? null, !allPublished)}
                             >
                               {allPublished ? "Despublicar confrontos" : "Publicar confrontos"}
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => setDeletingRound({ fase: f, rodada: null, count: eliminationList.length, label: "Mesa" })}
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" /> Apagar mesa
                             </Button>
                           </div>
                         )}

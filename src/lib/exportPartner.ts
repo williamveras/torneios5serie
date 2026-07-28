@@ -214,7 +214,7 @@ export const buildRoundTxt = (ctx: BuildCtx, round: number): string => {
   const nameFn = makePlayerNameFn(ctx);
   const rows = ctx.results.filter((r) => (r.fase || "Fase de Grupos") === "Fase de Grupos" && r.rodada === round);
   const agg = aggregate(rows, nameFn, (r) => r.grupo || "Sem grupo");
-  const title = `Segue abaixo os resultados da rodada, dispostos na seguinte ordem:`;
+  const title = `Segue abaixo os resultados, dispostos na seguinte ordem:`;
   return renderText(title, agg);
 };
 
@@ -418,7 +418,7 @@ export const buildZip = async (opts: ZipOptions): Promise<Blob> => {
     for (const r of opts.groupsRounds) {
       const txt = buildRoundTxt(ctx, r);
       if (txt.trim()) txtDir.file(`rodada${r}.txt`, txt);
-      const buf = buildXlsx(ctx, "Fase de Grupos", r, `Classificação - Rodada ${r}`);
+      const buf = buildXlsx(ctx, "Fase de Grupos", r, "Classificação");
       xlsxDir.file(`Rodada ${r}.xlsx`, buf);
     }
     if (opts.includeGroupsGeneral) {

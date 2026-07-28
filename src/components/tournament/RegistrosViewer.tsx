@@ -429,17 +429,6 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
                               </span>
                             </div>
                           </AccordionTrigger>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            className="shrink-0"
-                            onClick={() => setDeletingGroup({
-                              rodada: group.rodada,
-                              confrontos: group.dias.flatMap(d => d.confrontos),
-                            })}
-                          >
-                            <Trash2 className="h-4 w-4 mr-1" /> Apagar {isFaseDeGrupos ? "rodada" : "mesa"}
-                          </Button>
                         </div>
                         <AccordionContent className="px-3 pb-4 min-[360px]:px-4">
                           <div className="space-y-6">
@@ -552,27 +541,6 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete}>Apagar</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={!!deletingGroup} onOpenChange={o => !o && setDeletingGroup(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              Apagar {deletingGroup ? groupLabel(deletingGroup.rodada) : ""} inteira?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {deletingGroup && (
-                `Esta ação removerá ${deletingGroup.confrontos.length} confronto(s) e ${deletingGroup.confrontos.reduce((a, c) => a + c.results.length, 0)} registro(s) de ${selectedFase}. Não pode ser desfeita.`
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteGroup} disabled={deletingGroupLoading}>
-              {deletingGroupLoading ? "Apagando..." : "Apagar tudo"}
-            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

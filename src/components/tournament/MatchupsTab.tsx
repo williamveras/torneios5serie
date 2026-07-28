@@ -95,6 +95,8 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
   const [schedulingDraw, setSchedulingDraw] = useState(false);
   const [schedules, setSchedules] = useState<Array<{ id: string; player1_id: string; player2_id: string; grupo: string; data_partida: string | null; horario: string | null; observacao: string | null }>>([]);
   const [exportOpen, setExportOpen] = useState(false);
+  const [deletingRound, setDeletingRound] = useState<{ fase: string; rodada: number | null; count: number; label: string } | null>(null);
+  const [deletingRoundLoading, setDeletingRoundLoading] = useState(false);
   const [exportFormat, setExportFormat] = useState<"xlsx" | "txt">("xlsx");
   const [exportFields, setExportFields] = useState<Record<string, boolean>>({
     fase: true, rodada: true, grupo: true, player1: true, player2: true, data: true, horario: true, observacao: false,
@@ -369,6 +371,28 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
       fetchMatchups();
     }
     setDeleteId(null);
+  }
+
+  async function deleteRound() {
+    if (!deletingRound) return;
+    setDeletingRoundLoading(true);
+    let q = supabase
+      .from("matchups")
+      .delete()
+      .eq("tournament_id", tournamentId)
+      .eq("fase", deletingRound.fase);
+    q = deletingRound.rodada == null
+      ? q.is("rodada", null)
+      : q.eq("rodada", deletingRound.rodada);
+    const { error } = await q;
+    setDeletingRoundLoading(false);
+    if (error) {
+      toast.error("Erro ao apagar rodada: " + error.message);
+      return;
+    }
+    toast.success(`${deletingRound.label} apagada (${deletingRound.count} confronto(s))`);
+    setDeletingRound(null);
+    fetchMatchups();
   }
 
   async function togglePublish(faseName: string, rodada: number | null, publish: boolean) {
@@ -818,13 +842,20 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
                     return (
                       <div className="space-y-2">
                         {eliminationList.length > 0 && (
-                          <div className="flex justify-end">
+                          <div className="flex justify-end gap-2">
                             <Button
                               variant={allPublished ? "outline" : "default"}
                               size="sm"
                               onClick={() => togglePublish(f, eliminationList[0].rodada ?? null, !allPublished)}
                             >
                               {allPublished ? "Despublicar confrontos" : "Publicar confrontos"}
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => setDeletingRound({ fase: f, rodada: null, count: eliminationList.length, label: "Mesa" })}
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" /> Apagar mesa
                             </Button>
                           </div>
                         )}
@@ -898,15 +929,24 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
                         <div key={String(rk)} className="border rounded-md p-3 space-y-3">
                           <div className="flex items-center justify-between">
                             <h3 className="font-semibold text-base">{roundLabel}</h3>
-                            <Button
-                              variant={allPublished ? "outline" : "default"}
-                              size="sm"
-                              onClick={() => togglePublish(f, rodadaValue, !allPublished)}
-                            >
-                              {allPublished
-                                ? `Despublicar ${roundLabel.toLowerCase()}`
-                                : `Publicar ${roundLabel.toLowerCase()}`}
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button
+                                variant={allPublished ? "outline" : "default"}
+                                size="sm"
+                                onClick={() => togglePublish(f, rodadaValue, !allPublished)}
+                              >
+                                {allPublished
+                                  ? `Despublicar ${roundLabel.toLowerCase()}`
+                                  : `Publicar ${roundLabel.toLowerCase()}`}
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => setDeletingRound({ fase: f, rodada: rodadaValue, count: roundList.length, label: roundLabel })}
+                              >
+                                <Trash2 className="h-4 w-4 mr-1" /> Apagar rodada
+                              </Button>
+                            </div>
                           </div>
                           {groupKeys.map((g) => (
                             <div key={g}>
@@ -980,6 +1020,26 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={deleteMatchup}>Remover</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete round confirmation */}
+      <AlertDialog open={!!deletingRound} onOpenChange={(open) => !open && setDeletingRound(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Apagar {deletingRound?.label ?? "rodada"} inteira?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deletingRound && (
+                `Esta ação removerá ${deletingRound.count} confronto(s) de ${deletingRound.fase}. Não pode ser desfeita.`
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={deleteRound} disabled={deletingRoundLoading}>
+              {deletingRoundLoading ? "Apagando..." : "Apagar tudo"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

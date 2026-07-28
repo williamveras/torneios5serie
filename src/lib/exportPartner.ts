@@ -418,7 +418,7 @@ export const buildZip = async (opts: ZipOptions): Promise<Blob> => {
     for (const r of opts.groupsRounds) {
       const txt = buildRoundTxt(ctx, r);
       if (txt.trim()) txtDir.file(`rodada${r}.txt`, txt);
-      const buf = buildXlsx(ctx, "Fase de Grupos", r, `Classificação - Rodada ${r}`);
+      const buf = buildXlsx(ctx, "Fase de Grupos", r, "Classificação");
       xlsxDir.file(`Rodada ${r}.xlsx`, buf);
     }
     if (opts.includeGroupsGeneral) {

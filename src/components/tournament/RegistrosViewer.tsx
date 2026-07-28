@@ -575,6 +575,28 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={!!deletingGroup} onOpenChange={o => !o && setDeletingGroup(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Apagar {deletingGroup ? groupLabel(deletingGroup.rodada) : ""} inteira?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {deletingGroup && (
+                `Esta ação removerá ${deletingGroup.confrontos.length} confronto(s) e ${deletingGroup.confrontos.reduce((a, c) => a + c.results.length, 0)} registro(s) de ${selectedFase}. Não pode ser desfeita.`
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteGroup} disabled={deletingGroupLoading}>
+              {deletingGroupLoading ? "Apagando..." : "Apagar tudo"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
+
   );
 }

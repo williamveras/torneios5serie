@@ -275,6 +275,25 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
     load();
   };
 
+  const handleDeleteGroup = async () => {
+    if (!deletingGroup) return;
+    const ids = deletingGroup.confrontos.flatMap(c => c.results.map(r => r.id));
+    if (ids.length === 0) { setDeletingGroup(null); return; }
+    setDeletingGroupLoading(true);
+    // Apaga em lotes para evitar URLs muito longas
+    let failed = false;
+    for (let i = 0; i < ids.length; i += 100) {
+      const { error } = await supabase.from("match_results").delete().in("id", ids.slice(i, i + 100));
+      if (error) { failed = true; break; }
+    }
+    setDeletingGroupLoading(false);
+    if (failed) { toast.error("Erro ao apagar a rodada"); return; }
+    toast.success(`${groupLabel(deletingGroup.rodada)} apagada (${ids.length} registros)`);
+    setDeletingGroup(null);
+    load();
+  };
+
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>

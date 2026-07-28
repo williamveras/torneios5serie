@@ -250,7 +250,7 @@ export default function ExportTab({ tournamentId, tournamentName }: Props) {
                         size="sm"
                         variant="outline"
                         onClick={() =>
-                          dlXlsx(`Rodada ${r}.xlsx`, buildXlsx(ctx, "Fase de Grupos", r, `Classificação - Rodada ${r}`))
+                          dlXlsx(`Rodada ${r}.xlsx`, buildXlsx(ctx, "Fase de Grupos", r, "Classificação"))
                         }
                       >
                         <FileSpreadsheet className="h-3 w-3 mr-1" /> XLSX

@@ -81,8 +81,6 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Confronto | null>(null);
   const [deleting, setDeleting] = useState<Confronto | null>(null);
-  const [deletingGroup, setDeletingGroup] = useState<{ rodada: number; confrontos: Confronto[] } | null>(null);
-  const [deletingGroupLoading, setDeletingGroupLoading] = useState(false);
   const [editFase, setEditFase] = useState("Fase de Grupos");
   const [editGrupo, setEditGrupo] = useState("");
   const [editRodada, setEditRodada] = useState("");

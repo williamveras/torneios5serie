@@ -1024,6 +1024,26 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Delete round confirmation */}
+      <AlertDialog open={!!deletingRound} onOpenChange={(open) => !open && setDeletingRound(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Apagar {deletingRound?.label ?? "rodada"} inteira?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deletingRound && (
+                `Esta ação removerá ${deletingRound.count} confronto(s) de ${deletingRound.fase}. Não pode ser desfeita.`
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={deleteRound} disabled={deletingRoundLoading}>
+              {deletingRoundLoading ? "Apagando..." : "Apagar tudo"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Export dialog */}
       <Dialog open={exportOpen} onOpenChange={setExportOpen}>
         <DialogContent className="max-w-md">

@@ -929,15 +929,24 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
                         <div key={String(rk)} className="border rounded-md p-3 space-y-3">
                           <div className="flex items-center justify-between">
                             <h3 className="font-semibold text-base">{roundLabel}</h3>
-                            <Button
-                              variant={allPublished ? "outline" : "default"}
-                              size="sm"
-                              onClick={() => togglePublish(f, rodadaValue, !allPublished)}
-                            >
-                              {allPublished
-                                ? `Despublicar ${roundLabel.toLowerCase()}`
-                                : `Publicar ${roundLabel.toLowerCase()}`}
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button
+                                variant={allPublished ? "outline" : "default"}
+                                size="sm"
+                                onClick={() => togglePublish(f, rodadaValue, !allPublished)}
+                              >
+                                {allPublished
+                                  ? `Despublicar ${roundLabel.toLowerCase()}`
+                                  : `Publicar ${roundLabel.toLowerCase()}`}
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => setDeletingRound({ fase: f, rodada: rodadaValue, count: roundList.length, label: roundLabel })}
+                              >
+                                <Trash2 className="h-4 w-4 mr-1" /> Apagar rodada
+                              </Button>
+                            </div>
                           </div>
                           {groupKeys.map((g) => (
                             <div key={g}>

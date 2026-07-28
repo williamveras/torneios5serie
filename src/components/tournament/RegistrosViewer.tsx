@@ -81,6 +81,8 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Confronto | null>(null);
   const [deleting, setDeleting] = useState<Confronto | null>(null);
+  const [deletingGroup, setDeletingGroup] = useState<{ rodada: number; confrontos: Confronto[] } | null>(null);
+  const [deletingGroupLoading, setDeletingGroupLoading] = useState(false);
   const [editFase, setEditFase] = useState("Fase de Grupos");
   const [editGrupo, setEditGrupo] = useState("");
   const [editRodada, setEditRodada] = useState("");
@@ -273,6 +275,25 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
     load();
   };
 
+  const handleDeleteGroup = async () => {
+    if (!deletingGroup) return;
+    const ids = deletingGroup.confrontos.flatMap(c => c.results.map(r => r.id));
+    if (ids.length === 0) { setDeletingGroup(null); return; }
+    setDeletingGroupLoading(true);
+    // Apaga em lotes para evitar URLs muito longas
+    let failed = false;
+    for (let i = 0; i < ids.length; i += 100) {
+      const { error } = await supabase.from("match_results").delete().in("id", ids.slice(i, i + 100));
+      if (error) { failed = true; break; }
+    }
+    setDeletingGroupLoading(false);
+    if (failed) { toast.error("Erro ao apagar a rodada"); return; }
+    toast.success(`${groupLabel(deletingGroup.rodada)} apagada (${ids.length} registros)`);
+    setDeletingGroup(null);
+    load();
+  };
+
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -419,14 +440,27 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
                     const total = group.dias.reduce((acc, d) => acc + d.confrontos.length, 0);
                     return (
                       <AccordionItem key={`g-${group.rodada}`} value={`g-${group.rodada}`} className="border rounded-md bg-card">
-                        <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                          <div className="flex items-center gap-3 text-left">
-                            <span className="text-base font-semibold">{groupLabel(group.rodada)}</span>
-                            <span className="text-xs text-muted-foreground">
-                              ({total} {total === 1 ? "confronto" : "confrontos"})
-                            </span>
-                          </div>
-                        </AccordionTrigger>
+                        <div className="flex items-center gap-2 pr-3">
+                          <AccordionTrigger className="flex-1 px-4 py-3 hover:no-underline">
+                            <div className="flex items-center gap-3 text-left">
+                              <span className="text-base font-semibold">{groupLabel(group.rodada)}</span>
+                              <span className="text-xs text-muted-foreground">
+                                ({total} {total === 1 ? "confronto" : "confrontos"})
+                              </span>
+                            </div>
+                          </AccordionTrigger>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="shrink-0"
+                            onClick={() => setDeletingGroup({
+                              rodada: group.rodada,
+                              confrontos: group.dias.flatMap(d => d.confrontos),
+                            })}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" /> Apagar {isFaseDeGrupos ? "rodada" : "mesa"}
+                          </Button>
+                        </div>
                         <AccordionContent className="px-3 pb-4 min-[360px]:px-4">
                           <div className="space-y-6">
                             {group.dias.map(dia => (
@@ -541,6 +575,28 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={!!deletingGroup} onOpenChange={o => !o && setDeletingGroup(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Apagar {deletingGroup ? groupLabel(deletingGroup.rodada) : ""} inteira?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {deletingGroup && (
+                `Esta ação removerá ${deletingGroup.confrontos.length} confronto(s) e ${deletingGroup.confrontos.reduce((a, c) => a + c.results.length, 0)} registro(s) de ${selectedFase}. Não pode ser desfeita.`
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteGroup} disabled={deletingGroupLoading}>
+              {deletingGroupLoading ? "Apagando..." : "Apagar tudo"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
+
   );
 }

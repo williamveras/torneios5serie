@@ -373,6 +373,28 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
     setDeleteId(null);
   }
 
+  async function deleteRound() {
+    if (!deletingRound) return;
+    setDeletingRoundLoading(true);
+    let q = supabase
+      .from("matchups")
+      .delete()
+      .eq("tournament_id", tournamentId)
+      .eq("fase", deletingRound.fase);
+    q = deletingRound.rodada == null
+      ? q.is("rodada", null)
+      : q.eq("rodada", deletingRound.rodada);
+    const { error } = await q;
+    setDeletingRoundLoading(false);
+    if (error) {
+      toast.error("Erro ao apagar rodada: " + error.message);
+      return;
+    }
+    toast.success(`${deletingRound.label} apagada (${deletingRound.count} confronto(s))`);
+    setDeletingRound(null);
+    fetchMatchups();
+  }
+
   async function togglePublish(faseName: string, rodada: number | null, publish: boolean) {
     let q = supabase
       .from("matchups")

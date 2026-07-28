@@ -440,14 +440,27 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
                     const total = group.dias.reduce((acc, d) => acc + d.confrontos.length, 0);
                     return (
                       <AccordionItem key={`g-${group.rodada}`} value={`g-${group.rodada}`} className="border rounded-md bg-card">
-                        <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                          <div className="flex items-center gap-3 text-left">
-                            <span className="text-base font-semibold">{groupLabel(group.rodada)}</span>
-                            <span className="text-xs text-muted-foreground">
-                              ({total} {total === 1 ? "confronto" : "confrontos"})
-                            </span>
-                          </div>
-                        </AccordionTrigger>
+                        <div className="flex items-center gap-2 pr-3">
+                          <AccordionTrigger className="flex-1 px-4 py-3 hover:no-underline">
+                            <div className="flex items-center gap-3 text-left">
+                              <span className="text-base font-semibold">{groupLabel(group.rodada)}</span>
+                              <span className="text-xs text-muted-foreground">
+                                ({total} {total === 1 ? "confronto" : "confrontos"})
+                              </span>
+                            </div>
+                          </AccordionTrigger>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="shrink-0"
+                            onClick={() => setDeletingGroup({
+                              rodada: group.rodada,
+                              confrontos: group.dias.flatMap(d => d.confrontos),
+                            })}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" /> Apagar {isFaseDeGrupos ? "rodada" : "mesa"}
+                          </Button>
+                        </div>
                         <AccordionContent className="px-3 pb-4 min-[360px]:px-4">
                           <div className="space-y-6">
                             {group.dias.map(dia => (

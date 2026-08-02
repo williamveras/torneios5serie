@@ -98,7 +98,7 @@ export default function Home() {
 
       <footer className="border-t bg-background mt-10">
         <div className="max-w-5xl mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} Quinta Série — Torneios
+          © {new Date().getFullYear()} {SITE_NAME}
         </div>
       </footer>
     </div>

@@ -687,6 +687,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_org_creator: {
+        Args: { _org: string; _user: string }
+        Returns: boolean
+      }
       is_org_member: { Args: { _org: string; _user: string }; Returns: boolean }
       register_player_via_token: {
         Args: {

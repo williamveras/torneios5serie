@@ -74,17 +74,24 @@ export function useOrganizations() {
 }
 
 /** Creates an organization and adds the creator as owner. Returns the new org id. */
-export async function createOrganization(nome: string, userId: string): Promise<string> {
-  const { data: org, error } = await supabase
+export async function createOrganization(nome: string, _userId?: string): Promise<string> {
+  // Always use the current session user: RLS requires created_by = auth.uid()
+  const { data: { session } } = await supabase.auth.getSession();
+  const userId = session?.user?.id;
+  if (!userId) {
+    throw new Error("Sua sessão expirou. Faça login novamente para criar uma organização.");
+  }
+
+  const orgId = crypto.randomUUID();
+  const { error } = await supabase
     .from("organizations" as any)
-    .insert({ nome: nome.trim(), created_by: userId } as any)
-    .select("id")
-    .single();
-  if (error || !org) throw error ?? new Error("Falha ao criar organização");
-  const orgId = (org as any).id as string;
+    .insert({ id: orgId, nome: nome.trim(), created_by: userId } as any);
+  if (error) throw error;
+
   const { error: memErr } = await supabase
     .from("organization_members" as any)
     .insert({ organization_id: orgId, user_id: userId, role: "owner" } as any);
   if (memErr) throw memErr;
   return orgId;
 }
+

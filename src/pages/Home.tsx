@@ -40,7 +40,7 @@ export default function Home() {
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 min-w-0">
             <Trophy className="h-5 w-5 text-primary shrink-0" />
-            <span className="font-semibold text-lg truncate">Torneios Quinta Série</span>
+            <span className="font-semibold text-lg truncate">{SITE_NAME}</span>
           </div>
           <Button asChild variant="ghost" size="sm">
             <Link to="/admin"><LogIn className="h-4 w-4 mr-1" /> Área administrativa</Link>

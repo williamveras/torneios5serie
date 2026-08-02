@@ -20,6 +20,8 @@ type TournamentLite = {
 };
 
 export default function Home() {
+  const PUBLIC_ORG_ID = getPublicOrgId();
+  const SITE_NAME = getSiteName();
   const [tournaments, setTournaments] = useState<TournamentLite[]>([]);
   const [loading, setLoading] = useState(true);
 

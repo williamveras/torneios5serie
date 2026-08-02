@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { getPlayerDisplayName } from "@/lib/playerDisplay";
+import { SITE_NAME } from "@/lib/siteConfig";
+
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllMatchResults } from "@/lib/fetchAll";

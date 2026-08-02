@@ -116,6 +116,22 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (!sched) continue;
 
+      // Só envia lembretes de confrontos já publicados
+      const { data: pubMatchups } = await supabase
+        .from("matchups")
+        .select("id, player1_id, player2_id, published")
+        .eq("tournament_id", sched.tournament_id)
+        .eq("published", true)
+        .or(
+          `and(player1_id.eq.${sched.player1_id},player2_id.eq.${sched.player2_id}),and(player1_id.eq.${sched.player2_id},player2_id.eq.${sched.player1_id})`,
+        )
+        .limit(1);
+      if (!pubMatchups || pubMatchups.length === 0) {
+        results.push({ schedule_id: sched.id, ok: true, skipped: "not_published" });
+        continue;
+      }
+
+
       const { data: tournament } = await supabase
         .from("tournaments")
         .select("id, nome")

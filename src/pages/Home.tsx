@@ -6,7 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Trophy, Calendar, Users, ArrowRight, Loader2, LogIn } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { PUBLIC_ORG_ID, SITE_NAME } from "@/lib/siteConfig";
+import { getPublicOrgId, getSiteName } from "@/lib/siteConfig";
+
+const PUBLIC_ORG_ID = getPublicOrgId();
+const SITE_NAME = getSiteName();
 
 
 type TournamentLite = {

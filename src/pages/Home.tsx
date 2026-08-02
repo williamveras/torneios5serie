@@ -8,8 +8,8 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { getPublicOrgId, getSiteName } from "@/lib/siteConfig";
 
-const PUBLIC_ORG_ID = getPublicOrgId();
-const SITE_NAME = getSiteName();
+
+
 
 
 type TournamentLite = {

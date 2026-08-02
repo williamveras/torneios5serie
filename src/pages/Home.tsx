@@ -20,14 +20,17 @@ export default function Home() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
+      let query = supabase
         .from("tournaments")
         .select("id, nome, data_inicio, modalidade")
         .order("data_inicio", { ascending: false });
+      if (PUBLIC_ORG_ID) query = query.eq("organization_id", PUBLIC_ORG_ID);
+      const { data } = await query;
       if (data) setTournaments(data as TournamentLite[]);
       setLoading(false);
     })();
   }, []);
+
 
   return (
     <div className="min-h-screen bg-muted/30">

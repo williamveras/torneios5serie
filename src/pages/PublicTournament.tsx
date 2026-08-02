@@ -143,7 +143,7 @@ export default function PublicTournament() {
 
   useEffect(() => {
     const prev = document.title;
-    if (tournament?.nome) document.title = `${tournament.nome} - Torneios Quinta Série`;
+    if (tournament?.nome) document.title = `${tournament.nome} - ${SITE_NAME}`;
     return () => { document.title = prev; };
   }, [tournament?.nome]);
 

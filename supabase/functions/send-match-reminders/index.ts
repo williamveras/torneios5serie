@@ -111,25 +111,29 @@ Deno.serve(async (req) => {
     try {
       const { data: sched } = await supabase
         .from("match_schedule")
-        .select("id, tournament_id, player1_id, player2_id, data_partida, horario")
+        .select("id, tournament_id, player1_id, player2_id, data_partida, horario, rodada")
         .eq("id", row.id)
         .maybeSingle();
       if (!sched) continue;
 
-      // Só envia lembretes de confrontos já publicados
-      const { data: pubMatchups } = await supabase
+      // Só envia lembretes de confrontos já publicados (mesma rodada, quando informada)
+      let mq = supabase
         .from("matchups")
-        .select("id, player1_id, player2_id, published")
+        .select("id, player1_id, player2_id, published, rodada")
         .eq("tournament_id", sched.tournament_id)
-        .eq("published", true)
         .or(
           `and(player1_id.eq.${sched.player1_id},player2_id.eq.${sched.player2_id}),and(player1_id.eq.${sched.player2_id},player2_id.eq.${sched.player1_id})`,
-        )
-        .limit(1);
-      if (!pubMatchups || pubMatchups.length === 0) {
+        );
+      if (sched.rodada !== null && sched.rodada !== undefined) {
+        mq = mq.eq("rodada", sched.rodada);
+      }
+      const { data: matchupRows } = await mq;
+      const hasPublished = (matchupRows ?? []).some((m: any) => m.published === true);
+      if (!hasPublished) {
         results.push({ schedule_id: sched.id, ok: true, skipped: "not_published" });
         continue;
       }
+
 
 
       const { data: tournament } = await supabase

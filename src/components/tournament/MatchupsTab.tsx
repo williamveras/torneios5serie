@@ -402,12 +402,19 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
       .eq("tournament_id", tournamentId)
       .eq("fase", faseName);
     q = rodada == null ? q.is("rodada", null) : q.eq("rodada", rodada);
-    const { error } = await q;
+    const { data, error } = await (q.select("id") as any);
     if (error) {
       toast.error("Erro ao atualizar publicação: " + error.message);
       return;
     }
-    toast.success(publish ? "Publicado!" : "Despublicado.");
+    const n = (data as any[])?.length ?? 0;
+    if (n === 0) {
+      toast.warning("Nenhum confronto foi alterado", {
+        description: "Não existem confrontos gerados para essa rodada/fase.",
+      });
+      return;
+    }
+    toast.success(publish ? `Publicado! (${n} confronto(s))` : `Despublicado. (${n} confronto(s))`);
     fetchMatchups();
   }
 

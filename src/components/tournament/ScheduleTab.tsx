@@ -438,6 +438,102 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
     return parseInt(a, 10) - parseInt(b, 10);
   });
 
+  // ===== Publicar / apagar rodada (mesmas ações da aba Confrontos) =====
+  const targetFase = inGroupPhase ? "Fase de Grupos" : activePhase;
+
+  const roundMatchups = (rk: string) => {
+    const rodadaValue = rk === NO_ROUND_KEY ? null : parseInt(rk, 10);
+    return matchups.filter(
+      (m) => (m.fase || "Fase de Grupos") === targetFase && (m.rodada ?? null) === rodadaValue,
+    );
+  };
+
+  async function togglePublishRound(rk: string, publish: boolean) {
+    const rodadaValue = rk === NO_ROUND_KEY ? null : parseInt(rk, 10);
+    let q = supabase
+      .from("matchups")
+      .update({ published: publish } as any)
+      .eq("tournament_id", tournamentId)
+      .eq("fase", targetFase);
+    q = rodadaValue == null ? q.is("rodada", null) : q.eq("rodada", rodadaValue);
+    const { data, error } = await (q.select("id") as any);
+    if (error) {
+      toast.error("Erro ao atualizar publicação: " + error.message);
+      return;
+    }
+    const n = (data as any[])?.length ?? 0;
+    if (n === 0) {
+      toast.warning("Nenhum confronto encontrado para esta rodada", {
+        description:
+          "A agenda tem partidas, mas não existem confrontos gerados nessa rodada/fase. Gere os confrontos na aba Confrontos para poder publicá-los.",
+      });
+      return;
+    }
+    toast.success(publish ? `Publicado! (${n} confronto(s))` : `Despublicado. (${n} confronto(s))`);
+    fetchMatchups();
+  }
+
+  const [deletingRound, setDeletingRound] = useState<{ rk: string; label: string } | null>(null);
+  const [deletingRoundLoading, setDeletingRoundLoading] = useState(false);
+
+  async function deleteRound() {
+    if (!deletingRound) return;
+    const rk = deletingRound.rk;
+    const rodadaValue = rk === NO_ROUND_KEY ? null : parseInt(rk, 10);
+    setDeletingRoundLoading(true);
+
+    let mq = supabase
+      .from("matchups")
+      .delete()
+      .eq("tournament_id", tournamentId)
+      .eq("fase", targetFase);
+    mq = rodadaValue == null ? mq.is("rodada", null) : mq.eq("rodada", rodadaValue);
+    const { error: mErr } = await mq;
+
+    const ids = (groupedByRound[rk]
+      ? Object.values(groupedByRound[rk]).flatMap((byGrupo) => Object.values(byGrupo).flat())
+      : []
+    ).map((s) => s.id);
+    let sErr: any = null;
+    if (ids.length > 0) {
+      const { error } = await supabase.from("match_schedule").delete().in("id", ids);
+      sErr = error;
+    }
+
+    setDeletingRoundLoading(false);
+    if (mErr || sErr) {
+      toast.error("Erro ao apagar rodada: " + (mErr?.message || sErr?.message));
+      return;
+    }
+    toast.success(`${deletingRound.label} apagada (confrontos e agendamentos)`);
+    setDeletingRound(null);
+    fetchSchedules();
+    fetchMatchups();
+  }
+
+  const roundActions = (rk: string, label: string) => {
+    const list = roundMatchups(rk);
+    const allPublished = list.length > 0 && list.every((m) => m.published === true);
+    return (
+      <div className="flex gap-2">
+        <Button
+          variant={allPublished ? "outline" : "default"}
+          size="sm"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); togglePublishRound(rk, !allPublished); }}
+        >
+          {allPublished ? `Despublicar ${label.toLowerCase()}` : `Publicar ${label.toLowerCase()}`}
+        </Button>
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeletingRound({ rk, label }); }}
+        >
+          <Trash2 className="h-4 w-4 mr-1" /> Apagar {label.toLowerCase().startsWith("rodada") ? "rodada" : "partidas"}
+        </Button>
+      </div>
+    );
+  };
+
 
   return (
     <div className="space-y-6">

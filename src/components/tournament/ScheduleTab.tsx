@@ -949,6 +949,24 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Apagar rodada inteira */}
+      <AlertDialog open={!!deletingRound} onOpenChange={(open) => !open && setDeletingRound(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Apagar {deletingRound?.label}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Isso remove os confrontos e os agendamentos desta rodada ({targetFase}). Os resultados já registrados não são afetados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={deleteRound} disabled={deletingRoundLoading}>
+              {deletingRoundLoading ? "Apagando..." : "Apagar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <ImportMatchupsDialog
         open={importOpen}
         onOpenChange={setImportOpen}

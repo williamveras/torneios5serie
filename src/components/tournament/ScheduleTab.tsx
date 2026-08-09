@@ -750,9 +750,12 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
             if (isCurrent) {
               return (
                 <div key={rk} className="space-y-3">
-                  <h3 className="text-lg font-semibold border-b pb-1">
-                    {roundLabel} <span className="text-sm font-normal text-muted-foreground">(rodada atual)</span>
-                  </h3>
+                  <div className="flex items-center justify-between border-b pb-1 gap-2 flex-wrap">
+                    <h3 className="text-lg font-semibold">
+                      {roundLabel} <span className="text-sm font-normal text-muted-foreground">(rodada atual)</span>
+                    </h3>
+                    {roundActions(rk, roundLabel)}
+                  </div>
                   {content}
                 </div>
               );
@@ -760,13 +763,16 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
 
             return (
               <Collapsible key={rk}>
-                <CollapsibleTrigger className="flex w-full items-center justify-between border-b pb-1 group">
-                  <h3 className="text-lg font-semibold">
-                    {roundLabel}{" "}
-                    <span className="text-sm font-normal text-muted-foreground">({totalJogos} jogos)</span>
-                  </h3>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
-                </CollapsibleTrigger>
+                <div className="flex items-center justify-between border-b pb-1 gap-2 flex-wrap">
+                  <CollapsibleTrigger className="flex flex-1 items-center justify-between group">
+                    <h3 className="text-lg font-semibold">
+                      {roundLabel}{" "}
+                      <span className="text-sm font-normal text-muted-foreground">({totalJogos} jogos)</span>
+                    </h3>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                  </CollapsibleTrigger>
+                  {roundActions(rk, roundLabel)}
+                </div>
                 <CollapsibleContent className="pt-3">{content}</CollapsibleContent>
               </Collapsible>
             );

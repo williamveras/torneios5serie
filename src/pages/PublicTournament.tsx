@@ -20,6 +20,7 @@ import { FASES, isSideFase } from "@/lib/constants";
 import { nextPhaseName } from "@/lib/qualifiers";
 import { getActivePublicPhase, buildMainFases } from "@/lib/phase";
 import ViewModeToggle, { type ViewMode } from "@/components/public/ViewModeToggle";
+import { getPublicOrgId } from "@/lib/siteConfig";
 
 type Tournament = Tables<"tournaments">;
 type MatchResult = Tables<"match_results">;
@@ -93,7 +94,10 @@ export default function PublicTournament() {
         supabase.from("scheduled_draws").select("*").eq("tournament_id", tournamentId),
       ]);
       if (cancelled) return;
-      if (!t.data) { setNotFound(true); setLoading(false); return; }
+      const publicOrgId = getPublicOrgId();
+      if (!t.data || (publicOrgId && (t.data as any).organization_id !== publicOrgId)) {
+        setNotFound(true); setLoading(false); return;
+      }
       setNotFound(false);
       setTournament(t.data);
       const playersData = ((p.data as unknown) as PlayerLite[]) || [];

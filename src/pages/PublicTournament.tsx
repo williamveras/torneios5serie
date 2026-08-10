@@ -20,6 +20,7 @@ import { FASES, isSideFase } from "@/lib/constants";
 import { nextPhaseName } from "@/lib/qualifiers";
 import { getActivePublicPhase, buildMainFases } from "@/lib/phase";
 import ViewModeToggle, { type ViewMode } from "@/components/public/ViewModeToggle";
+import { getPublicOrgId } from "@/lib/siteConfig";
 
 type Tournament = Tables<"tournaments">;
 type MatchResult = Tables<"match_results">;

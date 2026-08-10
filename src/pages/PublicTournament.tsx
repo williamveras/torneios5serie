@@ -93,7 +93,10 @@ export default function PublicTournament() {
         supabase.from("scheduled_draws").select("*").eq("tournament_id", tournamentId),
       ]);
       if (cancelled) return;
-      if (!t.data) { setNotFound(true); setLoading(false); return; }
+      const publicOrgId = getPublicOrgId();
+      if (!t.data || (publicOrgId && (t.data as any).organization_id !== publicOrgId)) {
+        setNotFound(true); setLoading(false); return;
+      }
       setNotFound(false);
       setTournament(t.data);
       const playersData = ((p.data as unknown) as PlayerLite[]) || [];

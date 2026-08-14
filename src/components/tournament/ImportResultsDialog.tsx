@@ -95,10 +95,11 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
   }
 
   function handlePreview() {
-    if (loadingRefs) {
-      toast.error("Aguarde o carregamento das duplas/confrontos antes de pré-visualizar.");
+    if (loadingRefs || !refsReady || players.length === 0) {
+      toast.error("Aguarde o carregamento dos participantes e das configurações do torneio antes de pré-visualizar.");
       return;
     }
+
     if (isFaseDeGrupos && (!rodada || isNaN(parseInt(rodada, 10)))) {
       toast.error("Informe a rodada (número).");
       return;

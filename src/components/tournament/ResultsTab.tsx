@@ -219,6 +219,7 @@ export default function ResultsTab({ tournamentId }: Props) {
           players={players}
           activeFase={activeFase}
           lowerWins={lowerWins}
+          refsReady={playersLoaded && settingsLoaded}
           onImported={() => { /* nothing to refresh in this tab */ }}
         />
         <div className="grid gap-4 grid-cols-2">

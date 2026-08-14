@@ -33,10 +33,12 @@ interface Props {
   players: Player[];
   activeFase?: string;
   lowerWins?: boolean;
+  refsReady?: boolean;
   onImported: () => void;
 }
 
-export default function ImportResultsDialog({ open, onOpenChange, tournamentId, players, activeFase, lowerWins, onImported }: Props) {
+export default function ImportResultsDialog({ open, onOpenChange, tournamentId, players, activeFase, lowerWins, refsReady = true, onImported }: Props) {
+
   const { user } = useAuth();
   const [fase, setFase] = useState<string>(activeFase || "Fase de Grupos");
   const [rodada, setRodada] = useState<string>("");

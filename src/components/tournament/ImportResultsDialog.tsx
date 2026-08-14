@@ -33,10 +33,12 @@ interface Props {
   players: Player[];
   activeFase?: string;
   lowerWins?: boolean;
+  refsReady?: boolean;
   onImported: () => void;
 }
 
-export default function ImportResultsDialog({ open, onOpenChange, tournamentId, players, activeFase, lowerWins, onImported }: Props) {
+export default function ImportResultsDialog({ open, onOpenChange, tournamentId, players, activeFase, lowerWins, refsReady = true, onImported }: Props) {
+
   const { user } = useAuth();
   const [fase, setFase] = useState<string>(activeFase || "Fase de Grupos");
   const [rodada, setRodada] = useState<string>("");
@@ -93,10 +95,11 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
   }
 
   function handlePreview() {
-    if (loadingRefs) {
-      toast.error("Aguarde o carregamento das duplas/confrontos antes de pré-visualizar.");
+    if (loadingRefs || !refsReady || players.length === 0) {
+      toast.error("Aguarde o carregamento dos participantes e das configurações do torneio antes de pré-visualizar.");
       return;
     }
+
     if (isFaseDeGrupos && (!rodada || isNaN(parseInt(rodada, 10)))) {
       toast.error("Informe a rodada (número).");
       return;
@@ -260,7 +263,7 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
 
           {!blocks ? (
             <div className="flex justify-end">
-              <Button onClick={handlePreview} disabled={loadingRefs}>
+              <Button onClick={handlePreview} disabled={loadingRefs || !refsReady || players.length === 0}>
                 {loadingRefs && hasTeams ? "Carregando duplas..." : "Pré-visualizar"}
               </Button>
             </div>

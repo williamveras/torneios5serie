@@ -52,13 +52,17 @@ export default function ResultsTab({ tournamentId }: Props) {
   const [importOpen, setImportOpen] = useState(false);
   const [activeFase, setActiveFase] = useState<string>("Fase de Grupos");
   const [lowerWins, setLowerWins] = useState<boolean>(false);
+  const [playersLoaded, setPlayersLoaded] = useState(false);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
 
   const isFaseDeGrupos = isGroupPhase(fase);
   const isDuplas = players.some(p => p.is_team);
 
   useEffect(() => {
+    setPlayersLoaded(false);
+    setSettingsLoaded(false);
     supabase.from("players").select("*").eq("tournament_id", tournamentId).order("nome_completo")
-      .then(({ data }) => { if (data) setPlayers(data); });
+      .then(({ data }) => { if (data) setPlayers(data); setPlayersLoaded(true); });
     supabase.from("phase_status").select("fase, status").eq("tournament_id", tournamentId)
       .then(({ data }) => {
         const af = getActivePublicPhase((data || []) as any);
@@ -66,8 +70,9 @@ export default function ResultsTab({ tournamentId }: Props) {
         setFase(af);
       });
     supabase.from("tournaments").select("*").eq("id", tournamentId).maybeSingle()
-      .then(({ data }) => { if (data) setLowerWins(((data as any).lower_score_wins) === true); });
+      .then(({ data }) => { if (data) setLowerWins(((data as any).lower_score_wins) === true); setSettingsLoaded(true); });
   }, [tournamentId]);
+
 
   const getPlayerGrupo = (playerId: string): string => {
     const player = players.find(p => p.id === playerId);
@@ -214,6 +219,7 @@ export default function ResultsTab({ tournamentId }: Props) {
           players={players}
           activeFase={activeFase}
           lowerWins={lowerWins}
+          refsReady={playersLoaded && settingsLoaded}
           onImported={() => { /* nothing to refresh in this tab */ }}
         />
         <div className="grid gap-4 grid-cols-2">

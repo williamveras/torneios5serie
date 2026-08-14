@@ -38,6 +38,10 @@ export default function ImportMatchupsDialog({ open, onOpenChange, tournamentId,
   }
 
   function handlePreview() {
+    if (players.length === 0) {
+      toast.error("Aguarde o carregamento dos participantes antes de pré-visualizar.");
+      return;
+    }
     if (groupPhase && (!rodada || isNaN(parseInt(rodada, 10)))) {
       toast.error("Informe a rodada (número).");
       return;
@@ -196,7 +200,7 @@ export default function ImportMatchupsDialog({ open, onOpenChange, tournamentId,
 
           {!preview ? (
             <div className="flex justify-end">
-              <Button onClick={handlePreview}>Pré-visualizar</Button>
+              <Button onClick={handlePreview} disabled={players.length === 0}>Pré-visualizar</Button>
             </div>
           ) : (
             <>

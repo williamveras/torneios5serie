@@ -263,7 +263,7 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
 
           {!blocks ? (
             <div className="flex justify-end">
-              <Button onClick={handlePreview} disabled={loadingRefs}>
+              <Button onClick={handlePreview} disabled={loadingRefs || !refsReady || players.length === 0}>
                 {loadingRefs && hasTeams ? "Carregando duplas..." : "Pré-visualizar"}
               </Button>
             </div>

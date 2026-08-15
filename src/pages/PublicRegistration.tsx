@@ -103,6 +103,9 @@ export default function PublicRegistration() {
       if (!teamName.trim()) { toast.error("Informe o nome da equipe"); setSubmitting(false); return; }
       if (!p1Nome.trim() || !p2Nome.trim()) { toast.error("Informe o nome completo dos dois jogadores"); setSubmitting(false); return; }
       if (!p1Email.trim() || !p2Email.trim()) { toast.error("Informe o e-mail dos dois jogadores"); setSubmitting(false); return; }
+      if (!p1Nick.trim() || !p2Nick.trim()) { toast.error("Informe o nick no Playroom dos dois jogadores"); setSubmitting(false); return; }
+      if (!p1Whats.trim() || !p2Whats.trim()) { toast.error("Informe o WhatsApp dos dois jogadores"); setSubmitting(false); return; }
+      if (horarios.length === 0) { toast.error("Selecione ao menos uma preferência de horário"); setSubmitting(false); return; }
       const res = await (supabase as any).rpc("register_team_via_token", {
         _token: token,
         _team_name: teamName.trim() || null,
@@ -123,6 +126,9 @@ export default function PublicRegistration() {
     } else {
       if (!nome.trim()) { toast.error("Informe o nome completo"); setSubmitting(false); return; }
       if (!email.trim()) { toast.error("Informe o e-mail"); setSubmitting(false); return; }
+      if (!nick.trim()) { toast.error("Informe o nick no Playroom"); setSubmitting(false); return; }
+      if (!whats.trim()) { toast.error("Informe o WhatsApp"); setSubmitting(false); return; }
+      if (horarios.length === 0) { toast.error("Selecione ao menos uma preferência de horário"); setSubmitting(false); return; }
       const res = await (supabase as any).rpc("register_player_via_token", {
         _token: token,
         _nome_completo: nome.trim(),
@@ -305,16 +311,16 @@ export default function PublicRegistration() {
                       <Input id="p1Nome" value={p1Nome} onChange={(e) => setP1Nome(e.target.value)} required maxLength={200} />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="p1Nick">Nick no Playroom</Label>
-                      <Input id="p1Nick" value={p1Nick} onChange={(e) => setP1Nick(e.target.value)} maxLength={100} />
+                      <Label htmlFor="p1Nick">Nick no Playroom *</Label>
+                      <Input id="p1Nick" value={p1Nick} onChange={(e) => setP1Nick(e.target.value)} required maxLength={100} />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="p1Email">E-mail *</Label>
                       <Input id="p1Email" type="email" value={p1Email} onChange={(e) => setP1Email(e.target.value)} required maxLength={200} />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="p1Whats">WhatsApp</Label>
-                      <Input id="p1Whats" value={p1Whats} onChange={(e) => setP1Whats(e.target.value)} maxLength={50} />
+                      <Label htmlFor="p1Whats">WhatsApp *</Label>
+                      <Input id="p1Whats" value={p1Whats} onChange={(e) => setP1Whats(e.target.value)} required maxLength={50} />
                     </div>
                     <Button
                       type="button"
@@ -335,16 +341,16 @@ export default function PublicRegistration() {
                       <Input id="p2Nome" value={p2Nome} onChange={(e) => setP2Nome(e.target.value)} required maxLength={200} />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="p2Nick">Nick no Playroom</Label>
-                      <Input id="p2Nick" value={p2Nick} onChange={(e) => setP2Nick(e.target.value)} maxLength={100} />
+                      <Label htmlFor="p2Nick">Nick no Playroom *</Label>
+                      <Input id="p2Nick" value={p2Nick} onChange={(e) => setP2Nick(e.target.value)} required maxLength={100} />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="p2Email">E-mail *</Label>
                       <Input id="p2Email" type="email" value={p2Email} onChange={(e) => setP2Email(e.target.value)} required maxLength={200} />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="p2Whats">WhatsApp</Label>
-                      <Input id="p2Whats" value={p2Whats} onChange={(e) => setP2Whats(e.target.value)} maxLength={50} />
+                      <Label htmlFor="p2Whats">WhatsApp *</Label>
+                      <Input id="p2Whats" value={p2Whats} onChange={(e) => setP2Whats(e.target.value)} required maxLength={50} />
                     </div>
                     <Button
                       type="button"
@@ -368,22 +374,22 @@ export default function PublicRegistration() {
                     <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} required maxLength={200} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="nick">Nick no Playroom</Label>
-                    <Input id="nick" value={nick} onChange={(e) => setNick(e.target.value)} maxLength={100} />
+                    <Label htmlFor="nick">Nick no Playroom *</Label>
+                    <Input id="nick" value={nick} onChange={(e) => setNick(e.target.value)} required maxLength={100} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">E-mail *</Label>
                     <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required maxLength={200} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="whats">WhatsApp</Label>
-                    <Input id="whats" value={whats} onChange={(e) => setWhats(e.target.value)} maxLength={50} />
+                    <Label htmlFor="whats">WhatsApp *</Label>
+                    <Input id="whats" value={whats} onChange={(e) => setWhats(e.target.value)} required maxLength={50} />
                   </div>
                 </>
               )}
 
               <div className="space-y-2">
-                <Label>Preferência de horários</Label>
+                <Label>Preferência de horários *</Label>
                 <div className="grid grid-cols-2 gap-2">
                   {HORARIO_OPTIONS.map((opt) => {
                     const id = `horario-${opt}`;
@@ -406,7 +412,7 @@ export default function PublicRegistration() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="comentario">Comentário</Label>
+                <Label htmlFor="comentario">Comentário (opcional)</Label>
                 <Textarea id="comentario" value={comentario} onChange={(e) => setComentario(e.target.value)} maxLength={500} />
               </div>
               <Button type="submit" className="w-full" disabled={submitting}>

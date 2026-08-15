@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getPlayerDisplayName } from "@/lib/playerDisplay";
-import { getSiteName } from "@/lib/siteConfig";
+import { applySiteName, getSiteName } from "@/lib/siteConfig";
 
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -148,9 +148,8 @@ export default function PublicTournament() {
   }, [tournamentId]);
 
   useEffect(() => {
-    const prev = document.title;
     if (tournament?.nome) document.title = `${tournament.nome} - ${getSiteName()}`;
-    return () => { document.title = prev; };
+    return () => { applySiteName(); };
   }, [tournament?.nome]);
 
   if (loading) {

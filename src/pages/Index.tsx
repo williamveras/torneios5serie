@@ -1,9 +1,15 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import Dashboard from "@/components/Dashboard";
+import { useEffect } from "react";
+import { applySiteName } from "@/lib/siteConfig";
 
 export default function Index() {
   const { user, loading } = useAuth();
+
+  useEffect(() => {
+    applySiteName();
+  }, []);
 
   if (loading) {
     return (

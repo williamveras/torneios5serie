@@ -18,7 +18,7 @@
 const envOrgId =
   (import.meta.env.VITE_PUBLIC_ORG_ID as string | undefined)?.trim() || null;
 const envSiteName =
-  (import.meta.env.VITE_SITE_NAME as string | undefined)?.trim() || "Torneios Quinta Série";
+  (import.meta.env.VITE_SITE_NAME as string | undefined)?.trim() || "Gerenciador de Torneios";
 
 export const siteConfig: { orgId: string | null; siteName: string } = {
   orgId: envOrgId,

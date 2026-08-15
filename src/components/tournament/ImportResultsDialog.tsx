@@ -274,7 +274,7 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
                   <TableHeader>
                     <TableRow>
                       <TableHead>{isFaseDeGrupos ? "Grupo" : "Mesa"}</TableHead>
-                      <TableHead>Jogador</TableHead>
+                      <TableHead>{hasTeams ? "Equipe" : "Jogador"}</TableHead>
                       <TableHead>Vitória</TableHead>
                       <TableHead>Mesa</TableHead>
                       <TableHead>Penalidade</TableHead>
@@ -303,7 +303,17 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
                             )}
 
                             <TableCell>
-                              <div className="text-sm">{pl.playerName}</div>
+                              {(() => {
+                                const matched = pl.playerId ? players.find((p) => p.id === pl.playerId) : null;
+                                const display = matched ? getPlayerDisplayName(matched as any, pl.playerName) : pl.playerName;
+                                const showRaw = matched && pl.playerName && pl.playerName.trim().toLowerCase() !== display.trim().toLowerCase();
+                                return (
+                                  <>
+                                    <div className="text-sm">{display}</div>
+                                    {showRaw && <div className="text-xs text-muted-foreground">{pl.playerName}</div>}
+                                  </>
+                                );
+                              })()}
                               {!pl.playerId && <div className="text-xs text-destructive">não encontrado</div>}
                             </TableCell>
                             <TableCell className="font-mono">{pl.pontosJogo}</TableCell>

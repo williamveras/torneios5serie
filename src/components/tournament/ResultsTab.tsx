@@ -268,6 +268,7 @@ export default function ResultsTab({ tournamentId }: Props) {
         </div>
 
 
+        {gruposDisponiveis.length > 0 && (
         <div className="space-y-2">
           <Label htmlFor="filtro-grupo">Filtrar por grupo <span className="text-muted-foreground font-normal">(opcional)</span></Label>
           <Select value={filtroGrupo} onValueChange={setFiltroGrupo}>

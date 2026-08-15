@@ -37,6 +37,30 @@ export async function loadSiteConfig(): Promise<void> {
     if (siteName) siteConfig.siteName = siteName;
   } catch {
     // arquivo ausente ou inválido: mantém os valores do .env
+  } finally {
+    applySiteName();
+  }
+}
+
+/** Aplica o nome do site no título da aba e nas metatags. */
+export function applySiteName(): void {
+  const name = siteConfig.siteName;
+  if (!name) return;
+  document.title = name;
+  const metas: [string, string][] = [
+    ["name", "description"],
+    ["name", "author"],
+    ["property", "og:title"],
+    ["property", "og:description"],
+    ["name", "twitter:title"],
+    ["name", "twitter:description"],
+  ];
+  for (const [attr, key] of metas) {
+    const el = document.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`);
+    if (el) el.setAttribute("content", name);
+  }
+}
+    // arquivo ausente ou inválido: mantém os valores do .env
   }
 }
 

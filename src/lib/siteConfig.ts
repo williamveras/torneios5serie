@@ -60,9 +60,6 @@ export function applySiteName(): void {
     if (el) el.setAttribute("content", name);
   }
 }
-    // arquivo ausente ou inválido: mantém os valores do .env
-  }
-}
 
 export const getPublicOrgId = () => siteConfig.orgId;
 export const getSiteName = () => siteConfig.siteName;

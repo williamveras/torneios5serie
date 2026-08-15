@@ -279,6 +279,8 @@ export default function ResultsTab({ tournamentId }: Props) {
             </SelectContent>
           </Select>
         </div>
+        )}
+
 
         {results.map((r, idx) => {
           const isDuplas = players.some(p => p.is_team);

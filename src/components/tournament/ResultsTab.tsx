@@ -52,11 +52,15 @@ export default function ResultsTab({ tournamentId }: Props) {
   const [importOpen, setImportOpen] = useState(false);
   const [activeFase, setActiveFase] = useState<string>("Fase de Grupos");
   const [lowerWins, setLowerWins] = useState<boolean>(false);
+  const [filtroGrupo, setFiltroGrupo] = useState<string>("all");
   const [playersLoaded, setPlayersLoaded] = useState(false);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
 
   const isFaseDeGrupos = isGroupPhase(fase);
   const isDuplas = players.some(p => p.is_team);
+  const gruposDisponiveis = [...new Set(players.map(p => (p.grupo || "").trim()).filter(Boolean))]
+    .sort((a, b) => (parseInt(a) || 0) - (parseInt(b) || 0) || a.localeCompare(b));
+  const filteredPlayers = filtroGrupo === "all" ? players : players.filter(p => (p.grupo || "").trim() === filtroGrupo);
 
   useEffect(() => {
     setPlayersLoaded(false);
@@ -264,6 +268,20 @@ export default function ResultsTab({ tournamentId }: Props) {
         </div>
 
 
+        {gruposDisponiveis.length > 0 && (
+        <div className="space-y-2">
+          <Label htmlFor="filtro-grupo">Filtrar por grupo <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+          <Select value={filtroGrupo} onValueChange={setFiltroGrupo}>
+            <SelectTrigger id="filtro-grupo" aria-label="Filtrar por grupo"><SelectValue placeholder="Todos os grupos" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os grupos</SelectItem>
+              {gruposDisponiveis.map(g => <SelectItem key={g} value={g}>Grupo {g}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        )}
+
+
         {results.map((r, idx) => {
           const isDuplas = players.some(p => p.is_team);
           const entityLabel = isDuplas ? "Equipe" : "Jogador";
@@ -275,7 +293,7 @@ export default function ResultsTab({ tournamentId }: Props) {
               <Select value={r.player_id} onValueChange={v => updateResult(idx, "player_id", v)}>
                 <SelectTrigger id={`jogador-${idx}`} aria-label={`${entityLabel} ${idx + 1}`}><SelectValue placeholder={`Selecione a ${entityLabel.toLowerCase()}`} /></SelectTrigger>
                 <SelectContent>
-                  {players.map(p => (
+                  {filteredPlayers.map(p => (
                     <SelectItem key={p.id} value={p.id}>
                       {getPlayerDisplayName(p as any)}
                       {p.grupo ? ` (Grupo ${p.grupo})` : ""}

@@ -264,6 +264,17 @@ export default function ResultsTab({ tournamentId }: Props) {
         </div>
 
 
+        <div className="space-y-2">
+          <Label htmlFor="filtro-grupo">Filtrar por grupo <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+          <Select value={filtroGrupo} onValueChange={setFiltroGrupo}>
+            <SelectTrigger id="filtro-grupo" aria-label="Filtrar por grupo"><SelectValue placeholder="Todos os grupos" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os grupos</SelectItem>
+              {gruposDisponiveis.map(g => <SelectItem key={g} value={g}>Grupo {g}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+
         {results.map((r, idx) => {
           const isDuplas = players.some(p => p.is_team);
           const entityLabel = isDuplas ? "Equipe" : "Jogador";

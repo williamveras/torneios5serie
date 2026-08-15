@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Trophy, Calendar, Users, ArrowRight, Loader2, LogIn } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { getPublicOrgId, getSiteName } from "@/lib/siteConfig";
+import { applySiteName, getPublicOrgId, getSiteName } from "@/lib/siteConfig";
 
 
 
@@ -24,6 +24,10 @@ export default function Home() {
   const SITE_NAME = getSiteName();
   const [tournaments, setTournaments] = useState<TournamentLite[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    applySiteName();
+  }, []);
 
   useEffect(() => {
     (async () => {

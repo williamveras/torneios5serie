@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { CheckCircle2, XCircle, Loader2, Users, Crown, ExternalLink } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { applySiteName } from "@/lib/siteConfig";
 
 const HORARIO_OPTIONS = ["Manhã", "Tarde", "Noite", "Qualquer horário"] as const;
 
@@ -84,9 +85,8 @@ export default function PublicRegistration() {
 
   useEffect(() => {
     if (!link?.tournament_name) return;
-    const prev = document.title;
     document.title = `Inscrição — ${link.tournament_name}`;
-    return () => { document.title = prev; };
+    return () => { applySiteName(); };
   }, [link?.tournament_name]);
 
   const isDuplas = link?.modalidade === "duplas";

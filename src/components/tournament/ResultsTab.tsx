@@ -58,6 +58,9 @@ export default function ResultsTab({ tournamentId }: Props) {
 
   const isFaseDeGrupos = isGroupPhase(fase);
   const isDuplas = players.some(p => p.is_team);
+  const gruposDisponiveis = [...new Set(players.map(p => (p.grupo || "").trim()).filter(Boolean))]
+    .sort((a, b) => (parseInt(a) || 0) - (parseInt(b) || 0) || a.localeCompare(b));
+  const filteredPlayers = filtroGrupo === "all" ? players : players.filter(p => (p.grupo || "").trim() === filtroGrupo);
 
   useEffect(() => {
     setPlayersLoaded(false);

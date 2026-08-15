@@ -345,12 +345,12 @@ const buildRowsForPhase = (
   return { rows, warnings };
 };
 
-export const buildXlsx = (
+const makeSheet = (
   ctx: BuildCtx,
   fase: string,
   round: number | null,
   headerTitle: string,
-): ArrayBuffer => {
+): { ws: XLSX.WorkSheet; warnings: string[] } => {
   const isGroupPhase = fase === "Fase de Grupos";
   const { rows, warnings } = buildRowsForPhase(ctx, fase, round, isGroupPhase);
   const localCol = isGroupPhase ? "Grupo" : "Mesa";
@@ -369,7 +369,6 @@ export const buildXlsx = (
   ws["!freeze"] = { xSplit: 0, ySplit: 2 } as any;
   ws["!autofilter"] = { ref: `A2:${String.fromCharCode(64 + headers.length)}${aoa.length}` };
 
-  // Apply styles
   for (let c = 0; c < headers.length; c++) {
     const c1 = XLSX.utils.encode_cell({ r: 0, c });
     if (ws[c1]) ws[c1].s = HEADER_STYLE;
@@ -382,26 +381,131 @@ export const buildXlsx = (
       if (ws[addr]) ws[addr].s = CELL_STYLE;
     }
   }
+  return { ws, warnings };
+};
 
+const makeWarningsSheet = (warnings: string[]) => {
+  const wsA = XLSX.utils.aoa_to_sheet([["Aviso"], ...warnings.map((w) => [w])]);
+  wsA["!cols"] = autoWidths(["Aviso"], warnings.map((w) => [w]));
+  wsA["!freeze"] = { xSplit: 0, ySplit: 1 } as any;
+  wsA["!autofilter"] = { ref: `A1:A${warnings.length + 1}` };
+  const h = XLSX.utils.encode_cell({ r: 0, c: 0 });
+  if (wsA[h]) wsA[h].s = HEADER_STYLE;
+  for (let r = 1; r <= warnings.length; r++) {
+    const a = XLSX.utils.encode_cell({ r, c: 0 });
+    if (wsA[a]) wsA[a].s = CELL_STYLE;
+  }
+  return wsA;
+};
+
+// Aba "Geral": soma agregada das rodadas selecionadas
+const makeGeneralSheet = (ctx: BuildCtx, rounds: number[], headerTitle: string) => {
+  const nameFn = makePlayerNameFn(ctx);
+  const set = new Set(rounds);
+  const rows = ctx.results.filter(
+    (r) => (r.fase || "Fase de Grupos") === "Fase de Grupos" && set.has(r.rodada),
+  );
+  const agg = aggregate(rows, nameFn, (r) => r.grupo || "Sem grupo");
+  const headers = ["Nome", "Grupo", "Pontos de vitória", "Pontos de jogo", "Penalidades"];
+  const data: (string | number)[][] = [];
+  for (const g of [...agg.keys()].sort(cmpGroup)) {
+    for (const p of [...agg.get(g)!.values()].sort(playerSort)) {
+      data.push([
+        p.player_name,
+        extractGroupNumber(g),
+        p.victory_points | 0,
+        p.table_points | 0,
+        p.penalties || "",
+      ]);
+    }
+  }
+  const aoa: (string | number)[][] = [[headerTitle, "", "", "", ""], headers, ...data];
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } }];
+  ws["!cols"] = autoWidths(headers, data);
+  ws["!freeze"] = { xSplit: 0, ySplit: 2 } as any;
+  ws["!autofilter"] = { ref: `A2:${String.fromCharCode(64 + headers.length)}${aoa.length}` };
+  for (let c = 0; c < headers.length; c++) {
+    for (const r of [0, 1]) {
+      const a = XLSX.utils.encode_cell({ r, c });
+      if (ws[a]) ws[a].s = HEADER_STYLE;
+    }
+  }
+  for (let r = 2; r < aoa.length; r++) {
+    for (let c = 0; c < headers.length; c++) {
+      const a = XLSX.utils.encode_cell({ r, c });
+      if (ws[a]) ws[a].s = CELL_STYLE;
+    }
+  }
+  return ws;
+};
+
+export const buildXlsx = (
+  ctx: BuildCtx,
+  fase: string,
+  round: number | null,
+  headerTitle: string,
+): ArrayBuffer => {
+  const { ws, warnings } = makeSheet(ctx, fase, round, headerTitle);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Classificação");
-
-  if (warnings.length > 0) {
-    const wsA = XLSX.utils.aoa_to_sheet([["Aviso"], ...warnings.map((w) => [w])]);
-    wsA["!cols"] = autoWidths(["Aviso"], warnings.map((w) => [w]));
-    wsA["!freeze"] = { xSplit: 0, ySplit: 1 } as any;
-    wsA["!autofilter"] = { ref: `A1:A${warnings.length + 1}` };
-    const h = XLSX.utils.encode_cell({ r: 0, c: 0 });
-    if (wsA[h]) wsA[h].s = HEADER_STYLE;
-    for (let r = 1; r <= warnings.length; r++) {
-      const a = XLSX.utils.encode_cell({ r, c: 0 });
-      if (wsA[a]) wsA[a].s = CELL_STYLE;
-    }
-    XLSX.utils.book_append_sheet(wb, wsA, "Avisos");
-  }
-
+  if (warnings.length > 0) XLSX.utils.book_append_sheet(wb, makeWarningsSheet(warnings), "Avisos");
   return XLSX.write(wb, { bookType: "xlsx", type: "array" }) as ArrayBuffer;
 };
+
+// Planilha única com uma aba por rodada (+ aba Geral quando houver mais de uma)
+export const buildWorkbook = (
+  ctx: BuildCtx,
+  fase: string,
+  rounds: number[],
+  includeGeneral: boolean,
+): ArrayBuffer => {
+  const isGroupPhase = fase === "Fase de Grupos";
+  if (!isGroupPhase || rounds.length === 0) {
+    return buildXlsx(ctx, fase, null, `Classificação - ${fase}`);
+  }
+  const wb = XLSX.utils.book_new();
+  const allWarnings: string[] = [];
+  for (const r of rounds) {
+    const { ws, warnings } = makeSheet(ctx, fase, r, `Classificação - Rodada ${r}`);
+    XLSX.utils.book_append_sheet(wb, ws, `Rodada ${r}`.slice(0, 31));
+    allWarnings.push(...warnings);
+  }
+  if (includeGeneral && rounds.length > 1) {
+    XLSX.utils.book_append_sheet(
+      wb,
+      makeGeneralSheet(ctx, rounds, `Resultados gerais - rodadas ${rounds.join(", ")}`),
+      "Geral",
+    );
+  }
+  if (allWarnings.length > 0) XLSX.utils.book_append_sheet(wb, makeWarningsSheet(allWarnings), "Avisos");
+  return XLSX.write(wb, { bookType: "xlsx", type: "array" }) as ArrayBuffer;
+};
+
+// ZIP apenas com TXT das rodadas selecionadas (+ resultados gerais)
+export const buildTxtZip = async (
+  ctx: BuildCtx,
+  fase: string,
+  rounds: number[],
+  includeGeneral: boolean,
+): Promise<Blob> => {
+  const zip = new JSZip();
+  if (fase === "Fase de Grupos") {
+    for (const r of rounds) {
+      const txt = buildRoundTxt(ctx, r);
+      if (txt.trim()) zip.file(`rodada${r}.txt`, txt);
+    }
+    if (includeGeneral && rounds.length > 1) {
+      const txt = buildGeneralTxt(ctx, rounds);
+      if (txt.trim()) zip.file("resultados gerais.txt", txt);
+    }
+  } else {
+    const txt = buildPhaseTxt(ctx, fase);
+    if (txt.trim()) zip.file(`${sanitizeFileName(fase)}.txt`, txt);
+  }
+  return await zip.generateAsync({ type: "blob" });
+};
+
 
 // --------- ZIP master ---------
 export interface ZipOptions {

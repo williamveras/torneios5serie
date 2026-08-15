@@ -290,7 +290,7 @@ export default function ResultsTab({ tournamentId }: Props) {
               <Select value={r.player_id} onValueChange={v => updateResult(idx, "player_id", v)}>
                 <SelectTrigger id={`jogador-${idx}`} aria-label={`${entityLabel} ${idx + 1}`}><SelectValue placeholder={`Selecione a ${entityLabel.toLowerCase()}`} /></SelectTrigger>
                 <SelectContent>
-                  {players.map(p => (
+                  {filteredPlayers.map(p => (
                     <SelectItem key={p.id} value={p.id}>
                       {getPlayerDisplayName(p as any)}
                       {p.grupo ? ` (Grupo ${p.grupo})` : ""}

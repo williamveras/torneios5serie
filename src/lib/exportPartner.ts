@@ -218,12 +218,16 @@ export const buildRoundTxt = (ctx: BuildCtx, round: number): string => {
   return renderText(title, agg);
 };
 
-export const buildGeneralTxt = (ctx: BuildCtx): string => {
+export const buildGeneralTxt = (ctx: BuildCtx, rounds?: number[]): string => {
   const nameFn = makePlayerNameFn(ctx);
-  const rows = ctx.results.filter((r) => (r.fase || "Fase de Grupos") === "Fase de Grupos");
+  const set = rounds && rounds.length > 0 ? new Set(rounds) : null;
+  const rows = ctx.results.filter(
+    (r) => (r.fase || "Fase de Grupos") === "Fase de Grupos" && (!set || set.has(r.rodada)),
+  );
   const agg = aggregate(rows, nameFn, (r) => r.grupo || "Sem grupo");
   return renderText("Segue abaixo os resultados gerais, dispostos na seguinte ordem:", agg);
 };
+
 
 export const buildPhaseTxt = (ctx: BuildCtx, fase: string): string => {
   const nameFn = makePlayerNameFn(ctx);

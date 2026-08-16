@@ -624,15 +624,93 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
             });
             const sortedGroups = [...grouped.keys()].sort((a, b) => Number(a) - Number(b));
 
+            const renderActions = (p: Player) => (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" aria-label={`Opções de ${p.nome_completo}`}>
+                    Opções <MoreHorizontal className="h-4 w-4 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-popover z-50">
+                  <DropdownMenuItem onClick={() => openEdit(p)}>
+                    <Pencil className="h-4 w-4 mr-2" /> Editar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onScheduleMatch?.(p.id)}>
+                    <CalendarPlus className="h-4 w-4 mr-2" /> Agendar partida
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => toggleEliminado(p)}>
+                    {p.eliminado ? (
+                      <><RotateCcw className="h-4 w-4 mr-2" /> Reverter eliminação</>
+                    ) : (
+                      <><Ban className="h-4 w-4 mr-2" /> Marcar como eliminado por W.O</>
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setDeletePlayer(p)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" /> Remover
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            );
+
+            const renderNameCell = (p: Player) => {
+              const isTeam = (p as any).is_team;
+              const members = teamMembersMap[p.id] || [];
+              return (
+                <div className="font-medium">
+                  <div className="flex items-center flex-wrap gap-2">
+                    <span>{p.nome_completo}</span>
+                    {isTeam && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-xs px-2 py-0.5">
+                        <Users className="h-3 w-3" /> Dupla
+                      </span>
+                    )}
+                    {p.eliminado && <Badge variant="destructive">Eliminado por W.O</Badge>}
+                  </div>
+                  {isTeam && members.length > 0 && (() => {
+                    const captain = members.find(m => m.is_captain);
+                    return (
+                      <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                        <div>
+                          {members.map(m => (
+                            <span key={m.position}>
+                              {m.member_nome}
+                              {m.is_captain && (
+                                <Crown className="inline h-3 w-3 ml-1 -mt-0.5 text-amber-500" aria-label="Capitão" />
+                              )}
+                              {m.position === 1 ? " & " : ""}
+                            </span>
+                          ))}
+                        </div>
+                        {captain && (
+                          <div className="text-foreground/80">
+                            <span className="font-medium">Capitão:</span> {captain.member_nome}
+                            {captain.member_email ? ` • ${captain.member_email}` : ""}
+                            {captain.member_whatsapp ? ` • ${captain.member_whatsapp}` : ""}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              );
+            };
+
             const renderTable = (list: Player[]) => (
-              <div className="rounded-lg border bg-background">
+              <div className="rounded-lg border bg-background overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Nome</TableHead>
                       <TableHead>Nick</TableHead>
+                      <TableHead>E-mail</TableHead>
                       <TableHead>WhatsApp</TableHead>
+                      <TableHead>Grupo</TableHead>
                       <TableHead>Horários</TableHead>
+                      <TableHead>Comentário</TableHead>
                       <TableHead className="w-24 text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -641,91 +719,105 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
                       const isTeam = (p as any).is_team;
                       const members = teamMembersMap[p.id] || [];
                       return (
-                      <TableRow key={p.id}>
-                        <TableCell className="font-medium">
-                          {p.nome_completo}
-                          {isTeam && (
-                            <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-xs px-2 py-0.5">
-                              <Users className="h-3 w-3" /> Dupla
-                            </span>
-                          )}
-                          {p.eliminado && <Badge variant="destructive" className="ml-2">Eliminado por W.O</Badge>}
-                          {isTeam && members.length > 0 && (() => {
-                            const captain = members.find(m => m.is_captain);
-                            return (
-                              <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
-                                <div>
-                                  {members.map(m => (
-                                    <span key={m.position}>
-                                      {m.member_nome}
-                                      {m.is_captain && (
-                                        <Crown className="inline h-3 w-3 ml-1 -mt-0.5 text-amber-500" aria-label="Capitão" />
-                                      )}
-                                      {m.position === 1 ? " & " : ""}
-                                    </span>
-                                  ))}
-                                </div>
-                                {captain && (
-                                  <div className="text-foreground/80">
-                                    <span className="font-medium">Capitão:</span> {captain.member_nome}
-                                    {captain.member_email ? ` • ${captain.member_email}` : ""}
-                                    {captain.member_whatsapp ? ` • ${captain.member_whatsapp}` : ""}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })()}
-                        </TableCell>
-                        <TableCell>
-                          {isTeam
-                            ? (members.map(m => m.member_nick).filter(Boolean).join(" / ") || p.nick_playroom || "—")
-                            : (p.nick_playroom || "—")}
-                        </TableCell>
-                        <TableCell>
-                          {isTeam
-                            ? (() => {
-                                const cap = members.find(m => m.is_captain);
-                                return cap?.member_whatsapp || members.map(m => m.member_whatsapp).filter(Boolean).join(" / ") || "—";
-                              })()
-                            : (p.whatsapp || "—")}
-                        </TableCell>
-                        <TableCell className="max-w-[200px] truncate">{p.preferencia_horarios || "—"}</TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm" aria-label={`Opções de ${p.nome_completo}`}>
-                                Opções <MoreHorizontal className="h-4 w-4 ml-1" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="bg-popover z-50">
-                              <DropdownMenuItem onClick={() => openEdit(p)}>
-                                <Pencil className="h-4 w-4 mr-2" /> Editar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => onScheduleMatch?.(p.id)}>
-                                <CalendarPlus className="h-4 w-4 mr-2" /> Agendar partida
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => toggleEliminado(p)}>
-                                {p.eliminado ? (
-                                  <><RotateCcw className="h-4 w-4 mr-2" /> Reverter eliminação</>
-                                ) : (
-                                  <><Ban className="h-4 w-4 mr-2" /> Marcar como eliminado por W.O</>
-                                )}
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => setDeletePlayer(p)}
-                                className="text-destructive focus:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" /> Remover
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
+                        <TableRow key={p.id}>
+                          <TableCell>{renderNameCell(p)}</TableCell>
+                          <TableCell>
+                            {isTeam
+                              ? (members.map(m => m.member_nick).filter(Boolean).join(" / ") || p.nick_playroom || "—")
+                              : (p.nick_playroom || "—")}
+                          </TableCell>
+                          <TableCell>
+                            {isTeam
+                              ? (() => {
+                                  const cap = members.find(m => m.is_captain);
+                                  return cap?.member_email || members.map(m => m.member_email).filter(Boolean).join(" / ") || "—";
+                                })()
+                              : (p.email || "—")}
+                          </TableCell>
+                          <TableCell>
+                            {isTeam
+                              ? (() => {
+                                  const cap = members.find(m => m.is_captain);
+                                  return cap?.member_whatsapp || members.map(m => m.member_whatsapp).filter(Boolean).join(" / ") || "—";
+                                })()
+                              : (p.whatsapp || "—")}
+                          </TableCell>
+                          <TableCell>{p.grupo || "—"}</TableCell>
+                          <TableCell className="max-w-[200px] truncate">{p.preferencia_horarios || "—"}</TableCell>
+                          <TableCell className="max-w-[200px] truncate">{p.comentario || "—"}</TableCell>
+                          <TableCell className="text-right">{renderActions(p)}</TableCell>
+                        </TableRow>
                       );
                     })}
                   </TableBody>
                 </Table>
+              </div>
+            );
+
+            const renderList = (list: Player[]) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {list.map(p => {
+                  const isTeam = (p as any).is_team;
+                  const members = teamMembersMap[p.id] || [];
+                  return (
+                    <Card key={p.id} className="bg-background">
+                      <CardContent className="p-4 space-y-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            {renderNameCell(p)}
+                          </div>
+                          <div className="shrink-0">{renderActions(p)}</div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4 text-sm">
+                          <div>
+                            <span className="text-xs text-muted-foreground block">Nick</span>
+                            <span className="truncate block">
+                              {isTeam
+                                ? (members.map(m => m.member_nick).filter(Boolean).join(" / ") || p.nick_playroom || "—")
+                                : (p.nick_playroom || "—")}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-xs text-muted-foreground block">E-mail</span>
+                            <span className="truncate block">
+                              {isTeam
+                                ? (() => {
+                                    const cap = members.find(m => m.is_captain);
+                                    return cap?.member_email || members.map(m => m.member_email).filter(Boolean).join(" / ") || "—";
+                                  })()
+                                : (p.email || "—")}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-xs text-muted-foreground block">WhatsApp</span>
+                            <span className="truncate block">
+                              {isTeam
+                                ? (() => {
+                                    const cap = members.find(m => m.is_captain);
+                                    return cap?.member_whatsapp || members.map(m => m.member_whatsapp).filter(Boolean).join(" / ") || "—";
+                                  })()
+                                : (p.whatsapp || "—")}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-xs text-muted-foreground block">Grupo</span>
+                            <span>{p.grupo || "—"}</span>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <span className="text-xs text-muted-foreground block">Horários</span>
+                            <span>{p.preferencia_horarios || "—"}</span>
+                          </div>
+                          {p.comentario && (
+                            <div className="sm:col-span-2">
+                              <span className="text-xs text-muted-foreground block">Comentário</span>
+                              <span className="text-sm">{p.comentario}</span>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             );
 
@@ -734,13 +826,13 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
                 {sortedGroups.map(g => (
                   <div key={g}>
                     <h2 className="text-xl font-bold mb-3">Grupo {g}</h2>
-                    {renderTable(grouped.get(g)!)}
+                    {viewMode === "table" ? renderTable(grouped.get(g)!) : renderList(grouped.get(g)!)}
                   </div>
                 ))}
                 {ungrouped.length > 0 && (
                   <div>
                     {sortedGroups.length > 0 && <h2 className="text-xl font-bold mb-3">Sem grupo</h2>}
-                    {renderTable(ungrouped)}
+                    {viewMode === "table" ? renderTable(ungrouped) : renderList(ungrouped)}
                   </div>
                 )}
               </>

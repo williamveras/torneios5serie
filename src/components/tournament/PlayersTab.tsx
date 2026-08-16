@@ -425,6 +425,7 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
     return [
       { key: "nick", label: "Nick no Playroom", get: (p) => p.nick_playroom || "" },
       { key: "nome", label: "Nome completo", get: (p) => p.nome_completo || "" },
+      { key: "email", label: "E-mail", get: (p) => p.email || "" },
       { key: "whatsapp", label: "WhatsApp", get: (p) => p.whatsapp || "" },
       { key: "grupo", label: "Grupo", get: (p) => p.grupo || "" },
       { key: "horarios", label: "Preferência de horários", get: (p) => p.preferencia_horarios || "" },

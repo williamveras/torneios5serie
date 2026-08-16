@@ -498,6 +498,7 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
           <Button variant="outline" onClick={() => fileRef.current?.click()}>
             <Upload className="h-4 w-4 mr-1" /> Importar Planilha
           </Button>
+          <ViewModeToggle value={viewMode} onChange={setViewMode} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" disabled={players.length === 0}>

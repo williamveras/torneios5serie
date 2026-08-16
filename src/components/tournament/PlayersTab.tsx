@@ -92,6 +92,7 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
   const [exportOpen, setExportOpen] = useState(false);
   const [exportFormat, setExportFormat] = useState<"xlsx" | "txt">("xlsx");
   const [exportFields, setExportFields] = useState<Record<string, boolean>>({});
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
 
 
   const fetchPlayers = async () => {

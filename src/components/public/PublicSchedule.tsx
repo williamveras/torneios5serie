@@ -534,6 +534,8 @@ export default function PublicSchedule({ schedules, players, matchups, results =
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground">{description}</p>
 
+      {totalItems > 0 && orderToggle}
+
       {totalItems === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
@@ -555,6 +557,8 @@ export default function PublicSchedule({ schedules, players, matchups, results =
                   Nenhum confronto pendente nesta rodada.
                 </CardContent>
               </Card>
+            ) : orderMode === "group" ? (
+              viewMode === "table" ? renderByGroupTable(items) : renderByGroupList(items)
             ) : viewMode === "table" ? (
               renderRoundTable(items)
             ) : (

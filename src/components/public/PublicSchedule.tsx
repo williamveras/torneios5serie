@@ -64,6 +64,7 @@ const todaySaoPauloISO = () => {
 };
 
 export default function PublicSchedule({ schedules, players, matchups, results = [], phaseStatuses = [], numeroRodadas = null, viewMode = "list" }: Props) {
+  const [orderMode, setOrderMode] = useState<"time" | "group">("time");
   const playerMap = useMemo(() => {
     const m = new Map<string, PlayerLite>();
     players.forEach(p => m.set(p.id, p));

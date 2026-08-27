@@ -40,7 +40,7 @@ const formatDate = (iso: string) => {
     const [y, m, d] = iso.split("-");
     const dt = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10), 12, 0, 0);
     const weekday = WEEKDAYS[dt.getDay()];
-    return `${weekday}, ${d}/${m}/${y}`;
+    return `${weekday}, ${d}/${m}`;
   } catch { return iso; }
 };
 
@@ -426,8 +426,9 @@ export default function PublicSchedule({ schedules, players, matchups, results =
                   <div className={`text-sm font-medium tabular-nums mt-1 ${scrollLine}`}>
                     <span className="public-line-content">
                       <CalendarDays className="inline h-3.5 w-3.5 align-[-2px]" />{" "}
-                      {keepTogether(s.data_partida ? formatDate(s.data_partida) : "Sem data definida")}{" "}
-                      <Clock className="inline h-3.5 w-3.5 align-[-2px] ml-2" />{" "}
+                      {keepTogether(s.data_partida ? formatDate(s.data_partida) : "Sem data definida")}
+                      {"\u00A0\u00B7\u00A0"}
+                      <Clock className="inline h-3.5 w-3.5 align-[-2px]" />{" "}
                       {keepTogether(s.horario ? s.horario.slice(0, 5) : (s.observacao || "A definir"))}
                     </span>
                   </div>

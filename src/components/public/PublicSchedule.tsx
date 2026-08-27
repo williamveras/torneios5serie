@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CalendarDays, Clock } from "lucide-react";
+import { CalendarDays, Clock, Layers, ListOrdered } from "lucide-react";
 import type { ViewMode } from "./ViewModeToggle";
 import type { Tables } from "@/integrations/supabase/types";
 import { computeCurrentRound } from "@/lib/rounds";
@@ -63,6 +64,7 @@ const todaySaoPauloISO = () => {
 };
 
 export default function PublicSchedule({ schedules, players, matchups, results = [], phaseStatuses = [], numeroRodadas = null, viewMode = "list" }: Props) {
+  const [orderMode, setOrderMode] = useState<"time" | "group">("time");
   const playerMap = useMemo(() => {
     const m = new Map<string, PlayerLite>();
     players.forEach(p => m.set(p.id, p));
@@ -349,6 +351,114 @@ export default function PublicSchedule({ schedules, players, matchups, results =
   // ===== Group phase rendering (existing) =====
   const totalItems = visibleSchedulesByRound.reduce((acc, r) => acc + r.items.length, 0);
 
+  const groupByGroup = (items: Schedule[]) => {
+    const map = new Map<string, Schedule[]>();
+    const sorted = [...items].sort((a, b) => {
+      if (a.grupo !== b.grupo) return a.grupo.localeCompare(b.grupo, undefined, { numeric: true });
+      const da = a.data_partida || "9999-12-31";
+      const db = b.data_partida || "9999-12-31";
+      if (da !== db) return da.localeCompare(db);
+      return (a.horario || "99:99").localeCompare(b.horario || "99:99");
+    });
+    for (const s of sorted) {
+      const arr = map.get(s.grupo) || [];
+      arr.push(s);
+      map.set(s.grupo, arr);
+    }
+    return Array.from(map.entries());
+  };
+
+  const renderByGroupTable = (items: Schedule[]) => (
+    <Card>
+      <CardContent className="pt-4">
+        <div className="rounded-md border overflow-x-auto">
+          <Table className="min-w-max">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="whitespace-nowrap">Grupo</TableHead>
+                <TableHead className="whitespace-nowrap">Confronto</TableHead>
+                <TableHead className="whitespace-nowrap">Data</TableHead>
+                <TableHead className="whitespace-nowrap">Horário</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {groupByGroup(items).flatMap(([grupo, rows]) =>
+                rows.map((s, idx) => (
+                  <TableRow key={s.id}>
+                    <TableCell className="whitespace-nowrap">{idx === 0 ? formatGroupLabel(grupo) : ""}</TableCell>
+                    <TableCell className={`font-medium ${noWrapText}`}>
+                      {displayName(playerMap.get(s.player1_id))} x {displayName(playerMap.get(s.player2_id))}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {s.data_partida ? formatDate(s.data_partida) : "Sem data definida"}
+                    </TableCell>
+                    <TableCell className="tabular-nums whitespace-nowrap">
+                      {s.horario ? s.horario.slice(0, 5) : (s.observacao || "A definir")}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const renderByGroupList = (items: Schedule[]) => (
+    <div className="space-y-4">
+      {groupByGroup(items).map(([grupo, rows]) => (
+        <Card key={grupo}>
+          <CardContent className="pt-4">
+            <h3 className="font-semibold mb-3 flex items-center gap-2">
+              <Layers className="h-4 w-4" /> {formatGroupLabel(grupo)}
+            </h3>
+            <div className="space-y-2">
+              {rows.map(s => (
+                <div key={s.id} className={`rounded-md border bg-muted/30 min-w-0 overflow-hidden ${compactCardPadding}`}>
+                  <h3 className={`text-base sm:text-lg font-semibold ${scrollLine}`}>
+                    <span className="public-line-content">
+                      <span>{keepTogether(displayName(playerMap.get(s.player1_id)))}</span>{" "}
+                      <span className="text-muted-foreground font-normal">x</span>{" "}
+                      <span>{keepTogether(displayName(playerMap.get(s.player2_id)))}</span>
+                    </span>
+                  </h3>
+                  <div className={`text-sm font-medium tabular-nums mt-1 ${scrollLine}`}>
+                    <span className="public-line-content">
+                      <CalendarDays className="inline h-3.5 w-3.5 align-[-2px]" />{" "}
+                      {keepTogether(s.data_partida ? formatDate(s.data_partida) : "Sem data definida")}{" "}
+                      <Clock className="inline h-3.5 w-3.5 align-[-2px] ml-2" />{" "}
+                      {keepTogether(s.horario ? s.horario.slice(0, 5) : (s.observacao || "A definir"))}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+
+  const orderToggle = (
+    <div className="flex flex-wrap gap-2">
+      <Button
+        variant={orderMode === "time" ? "default" : "outline"}
+        size="sm"
+        onClick={() => setOrderMode("time")}
+      >
+        <ListOrdered className="h-4 w-4 mr-1" /> Visualizar jogos por ordem de horários
+      </Button>
+      <Button
+        variant={orderMode === "group" ? "default" : "outline"}
+        size="sm"
+        onClick={() => setOrderMode("group")}
+      >
+        <Layers className="h-4 w-4 mr-1" /> Visualizar jogos por ordem de grupo
+      </Button>
+    </div>
+  );
+
   const renderRoundTable = (items: Schedule[]) => (
     <Card>
       <CardContent className="pt-4">
@@ -424,6 +534,8 @@ export default function PublicSchedule({ schedules, players, matchups, results =
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground">{description}</p>
 
+      {totalItems > 0 && orderToggle}
+
       {totalItems === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
@@ -445,6 +557,8 @@ export default function PublicSchedule({ schedules, players, matchups, results =
                   Nenhum confronto pendente nesta rodada.
                 </CardContent>
               </Card>
+            ) : orderMode === "group" ? (
+              viewMode === "table" ? renderByGroupTable(items) : renderByGroupList(items)
             ) : viewMode === "table" ? (
               renderRoundTable(items)
             ) : (

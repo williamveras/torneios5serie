@@ -189,9 +189,13 @@ export default function QualifiersView({ qualifiers, viewMode = "list", playerMe
             rows={byes}
           />
         )}
-        <GroupedSection
+        <Section
           title="Jogadores que irão para a repescagem"
           rows={qualifiers.playoff}
+          usePos="overall"
+          playerMesaMap={playerMesaMap}
+          playerMap={playerMap}
+          teamMembers={teamMembers}
         />
       </div>
     );

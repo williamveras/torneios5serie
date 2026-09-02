@@ -519,6 +519,7 @@ export type Database = {
       }
       tournaments: {
         Row: {
+          bye_rank_position: number | null
           campeao_id: string | null
           created_at: string
           created_by: string
@@ -540,6 +541,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          bye_rank_position?: number | null
           campeao_id?: string | null
           created_at?: string
           created_by: string
@@ -561,6 +563,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          bye_rank_position?: number | null
           campeao_id?: string | null
           created_at?: string
           created_by?: string

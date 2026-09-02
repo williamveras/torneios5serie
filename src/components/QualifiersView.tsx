@@ -154,7 +154,7 @@ export default function QualifiersView({ qualifiers, viewMode = "list", playerMe
       .sort((a, b) => naturalGroupSort(a.grupo, b.grupo))
       .map((r, i) => ({ ...r, position: i + 1 }));
 
-    const GroupedSection = ({ title, rows }: { title: string; rows: QualifierRow[] }) => {
+    const GroupedSection = ({ title, rows, hidePosition }: { title: string; rows: QualifierRow[]; hidePosition?: boolean }) => {
       const gs = [...new Set(rows.map(r => r.grupo))].sort(naturalGroupSort);
       return (
         <section className="space-y-4">
@@ -169,6 +169,7 @@ export default function QualifiersView({ qualifiers, viewMode = "list", playerMe
               playerMesaMap={playerMesaMap}
               playerMap={playerMap}
               teamMembers={teamMembers}
+              hidePosition={hidePosition}
             />
           ))}
         </section>
@@ -180,6 +181,7 @@ export default function QualifiersView({ qualifiers, viewMode = "list", playerMe
         <GroupedSection
           title="Classificados diretos para a segunda fase — Primeiros colocados de cada grupo:"
           rows={winners}
+          hidePosition
         />
         {byes.length > 0 && (
           <GroupedSection

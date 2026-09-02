@@ -151,39 +151,48 @@ export default function QualifiersView({ qualifiers, viewMode = "list", playerMe
       .slice()
       .sort((a, b) => naturalGroupSort(a.grupo, b.grupo))
       .map((r, i) => ({ ...r, position: i + 1 }));
+
+    const GroupedSection = ({ title, rows }: { title: string; rows: QualifierRow[] }) => {
+      const gs = [...new Set(rows.map(r => r.grupo))].sort(naturalGroupSort);
+      return (
+        <section className="space-y-4">
+          <h3 className="font-semibold text-lg">{title}</h3>
+          {gs.map(g => (
+            <Section
+              key={g}
+              small
+              title={g ? `Grupo ${g}` : "Sem grupo"}
+              rows={rows.filter(r => r.grupo === g)}
+              usePos="overall"
+              playerMesaMap={playerMesaMap}
+              playerMap={playerMap}
+              teamMembers={teamMembers}
+            />
+          ))}
+        </section>
+      );
+    };
+
     return (
       <div className="space-y-6">
-        <Section
+        <GroupedSection
           title="Classificados diretos para a segunda fase — Primeiros colocados de cada grupo:"
           rows={winners}
-          usePos="overall"
-          showGroup
-          playerMesaMap={playerMesaMap}
-          playerMap={playerMap}
-          teamMembers={teamMembers}
         />
         {byes.length > 0 && (
-          <Section
+          <GroupedSection
             title={`Classificados diretos para a segunda fase — ${byes.length === 7 ? "sete" : byes.length} melhores ${qualifiers.nextSlotPosition}º colocados do ranking geral:`}
             rows={byes}
-            usePos="overall"
-            showGroup
-            playerMesaMap={playerMesaMap}
-            playerMap={playerMap}
-            teamMembers={teamMembers}
           />
         )}
-        <Section
+        <GroupedSection
           title="Jogadores que irão para a repescagem"
           rows={qualifiers.playoff}
-          usePos="overall"
-          playerMesaMap={playerMesaMap}
-          playerMap={playerMap}
-          teamMembers={teamMembers}
         />
       </div>
     );
   }
+
 
   return (
     <div className="space-y-6">

@@ -44,20 +44,26 @@ export function computeQualifiers(
   const hasGroups = results.some(r => !!r.grupo && r.grupo.trim() !== "");
   if (!hasGroups) {
     const rows = computeStandings(results, getPlayerName, getPlayerNick, { lowerWins });
+    const eligible = rows.filter(r => r.penalidades !== "Eliminado por W.O");
+    const wo = rows.filter(r => r.penalidades === "Eliminado por W.O");
     return {
-      direct: rows.map(r => ({ ...r, grupo: "", groupPosition: r.position })),
+      direct: eligible.map((r, i) => ({ ...r, position: i + 1, grupo: "", groupPosition: i + 1 })),
       repescagem: [],
       playoff: [],
-      notQualified: [],
+      notQualified: wo.map((r, i) => ({ ...r, grupo: "", groupPosition: eligible.length + i + 1 })),
       hasGroups: false,
     };
   }
+
 
   const groups = [...new Set(results.filter(r => r.grupo).map(r => r.grupo))].sort(naturalGroupSort);
 
   const direct: QualifierRow[] = [];
   const extras: QualifierRow[] = []; // não-diretos, para ranking cross-grupo
   const rest: QualifierRow[] = [];
+
+  // Jogadores eliminados por W.O nunca se classificam.
+  const isWO = (r: StandingRow) => r.penalidades === "Eliminado por W.O";
 
   for (const g of groups) {
     const rows = computeStandings(
@@ -66,12 +72,20 @@ export function computeQualifiers(
       getPlayerNick,
       { lowerWins },
     );
-    rows.forEach(r => {
-      const q: QualifierRow = { ...r, grupo: g, groupPosition: r.position };
-      if (r.position <= directPerGroup) direct.push(q);
+    // Reposiciona ignorando os eliminados por W.O, para que as vagas
+    // sejam preenchidas apenas por quem continua no torneio.
+    const eligible = rows.filter(r => !isWO(r));
+    const woRows = rows.filter(isWO);
+    eligible.forEach((r, i) => {
+      const q: QualifierRow = { ...r, position: i + 1, grupo: g, groupPosition: i + 1 };
+      if (i + 1 <= directPerGroup) direct.push(q);
       else extras.push(q);
     });
+    woRows.forEach((r, i) => {
+      rest.push({ ...r, grupo: g, groupPosition: eligible.length + i + 1 });
+    });
   }
+
 
   // Sort extras cross-group by tie-break (sem confronto direto — só intra-grupo)
   extras.sort((a, b) => {
@@ -106,7 +120,7 @@ export function computeQualifiers(
     const remainingSlot = nextSlot.slice(repescagemTotal);
     notQualified = [...remainingSlot, ...others];
   }
-  rest.length = 0;
+  notQualified = [...notQualified, ...rest];
 
   // Re-position direct list across groups for display (1..N)
   direct.forEach((r, i) => { r.position = i + 1; });

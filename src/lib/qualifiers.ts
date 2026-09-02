@@ -36,6 +36,8 @@ export function computeQualifiers(
     playoffSize?: number;
     /** Posição de grupo usada para o ranking dos "melhores Xº colocados". */
     byePosition?: number;
+    /** Quantos melhores "byePosition"-ésimos passam direto (sem repescagem). */
+    byeTotal?: number;
   } = {},
 ): QualifiersResult {
   const directPerGroup = opts.directPerGroup ?? 5;
@@ -43,6 +45,7 @@ export function computeQualifiers(
   const lowerWins = !!opts.lowerWins;
   const mode = opts.mode ?? "ranking";
   const playoffSize = Math.max(0, opts.playoffSize ?? 0);
+  const byeTotal = Math.max(0, opts.byeTotal ?? 0);
   const byePosition = opts.byePosition && opts.byePosition > 0 ? opts.byePosition : directPerGroup + 1;
 
 

@@ -66,6 +66,7 @@ export function computeQualifiers(
 
   const direct: QualifierRow[] = [];
   const extras: QualifierRow[] = []; // não-diretos, para ranking cross-grupo
+  const all: QualifierRow[] = [];    // todos os elegíveis, com posição de grupo
   const rest: QualifierRow[] = [];
 
   // Jogadores eliminados por W.O nunca se classificam.
@@ -84,6 +85,7 @@ export function computeQualifiers(
     const woRows = rows.filter(isWO);
     eligible.forEach((r, i) => {
       const q: QualifierRow = { ...r, position: i + 1, grupo: g, groupPosition: i + 1 };
+      all.push(q);
       if (i + 1 <= directPerGroup) direct.push(q);
       else extras.push(q);
     });
@@ -92,39 +94,40 @@ export function computeQualifiers(
     });
   }
 
-
-  // Sort extras cross-group by tie-break (sem confronto direto — só intra-grupo)
-  extras.sort((a, b) => {
+  // Tie-break cross-grupo (sem confronto direto — só intra-grupo)
+  const crossSort = (a: QualifierRow, b: QualifierRow) => {
     if (a.pontosJogo !== b.pontosJogo) return b.pontosJogo - a.pontosJogo;
     if (a.pontosMesa !== b.pontosMesa) {
       return lowerWins ? a.pontosMesa - b.pontosMesa : b.pontosMesa - a.pontosMesa;
     }
     if (a.hasPenalty !== b.hasPenalty) return a.hasPenalty ? 1 : -1;
     return 0;
-  });
+  };
+  extras.sort(crossSort);
 
   let repescagem: QualifierRow[] = [];
   let playoff: QualifierRow[] = [];
   let notQualified: QualifierRow[] = [];
 
   if (mode === "playoff") {
-    // Modo fase extra: apenas os que ficaram exatamente na posição (N+1) do grupo
-    // concorrem às vagas de repescagem por ranking geral. Os "repescagemTotal"
-    // melhores passam (listados à parte, sem entrar na lista dos diretos);
-    // os "playoffSize" seguintes disputam a fase extra e o resto está eliminado.
-    const nextSlot = extras.filter(r => r.groupPosition === directPerGroup + 1);
-    const others = extras.filter(r => r.groupPosition !== directPerGroup + 1);
-    repescagem = nextSlot.slice(0, repescagemTotal).map((r, i) => ({ ...r, position: i + 1 }));
-    const afterDirect = [...nextSlot.slice(repescagemTotal), ...others];
-    playoff = afterDirect.slice(0, playoffSize).map((r, i) => ({ ...r, position: i + 1 }));
-    notQualified = afterDirect.slice(playoffSize).map(r => ({ ...r }));
+    // Modo fase extra: os melhores "byePosition"-ésimos colocados do ranking geral
+    // ganham vaga direta (lista à parte) e todo o restante disputa a Repescagem.
+    const byeCandidates = all.filter(r => r.groupPosition === byePosition).sort(crossSort);
+    repescagem = byeCandidates.slice(0, repescagemTotal).map((r, i) => ({ ...r, position: i + 1 }));
+    const byeIds = new Set(repescagem.map(r => r.playerId));
+    const pool = [
+      ...byeCandidates.slice(repescagemTotal).filter(r => r.groupPosition > directPerGroup),
+      ...extras.filter(r => r.groupPosition !== byePosition),
+    ].sort(crossSort).filter(r => !byeIds.has(r.playerId));
+    playoff = (playoffSize > 0 ? pool.slice(0, playoffSize) : pool).map((r, i) => ({ ...r, position: i + 1 }));
+    notQualified = playoffSize > 0 ? pool.slice(playoffSize).map(r => ({ ...r })) : [];
   } else {
 
     // Modo ranking (padrão atual): melhores (N+1)-ésimos passam direto via repescagem.
     // Apenas jogadores exatamente na posição (directPerGroup + 1) contam — os demais
     // grupos-abaixo entram em notQualified.
-    const nextSlot = extras.filter(r => r.groupPosition === directPerGroup + 1);
-    const others = extras.filter(r => r.groupPosition !== directPerGroup + 1);
+    const nextSlot = extras.filter(r => r.groupPosition === byePosition);
+    const others = extras.filter(r => r.groupPosition !== byePosition);
     repescagem = nextSlot.slice(0, repescagemTotal).map((r, i) => ({ ...r, position: i + 1 }));
     const remainingSlot = nextSlot.slice(repescagemTotal);
     notQualified = [...remainingSlot, ...others];
@@ -134,7 +137,8 @@ export function computeQualifiers(
   // Re-position direct list across groups for display (1..N)
   direct.forEach((r, i) => { r.position = i + 1; });
 
-  return { direct, repescagem, playoff, notQualified, hasGroups: true, nextSlotPosition: directPerGroup + 1 };
+  return { direct, repescagem, playoff, notQualified, hasGroups: true, nextSlotPosition: byePosition };
+
 }
 
 export function nextPhaseName(currentFase: string, mainFases?: string[] | null): string {

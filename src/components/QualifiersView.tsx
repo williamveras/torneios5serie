@@ -86,7 +86,7 @@ function TableSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembe
   );
 }
 
-function ListSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembers }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number>; playerMap?: Map<string, PlayerLike>; teamMembers: TeamMembersMap }) {
+function ListSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembers, showGroup }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number>; playerMap?: Map<string, PlayerLike>; teamMembers: TeamMembersMap; showGroup?: boolean }) {
   return (
     <section>
       <h3 className="font-semibold text-lg mb-2">{title}</h3>
@@ -95,7 +95,8 @@ function ListSection({ title, rows, usePos, playerMesaMap, playerMap, teamMember
           const pos = usePos === "group" ? s.groupPosition : s.position;
           const baseName = formatTeamWithMembers(s.nick || s.playerName, playerMap?.get(s.playerId), teamMembers);
           const mesa = playerMesaMap?.get(s.playerId);
-          const displayName = mesa ? `${baseName}, mesa ${mesa}` : baseName;
+          const withMesa = mesa ? `${baseName}, mesa ${mesa}` : baseName;
+          const displayName = showGroup && s.grupo ? `${withMesa} — Grupo ${s.grupo}` : withMesa;
           return (
             <li
               key={`${s.grupo}-${s.playerId}`}

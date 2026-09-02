@@ -148,7 +148,7 @@ export default function QualifiersView({ qualifiers, viewMode = "list", playerMe
       })}
       {qualifiers.repescagem.length > 0 && (
         <Section
-          title="Repescagem — melhores 6º colocados"
+          title={`Repescagem — melhores ${qualifiers.nextSlotPosition}º colocados`}
           rows={qualifiers.repescagem}
           usePos="overall"
           playerMesaMap={playerMesaMap}

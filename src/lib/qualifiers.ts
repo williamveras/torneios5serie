@@ -15,6 +15,7 @@ export interface QualifiersResult {
   playoff: QualifierRow[];       // duplas que disputam a Repescagem (modo playoff)
   notQualified: QualifierRow[];  // todo o restante
   hasGroups: boolean;
+  nextSlotPosition: number;      // posição de grupo que disputa a repescagem (N+1)
 }
 
 const naturalGroupSort = (a: string, b: string) => {
@@ -52,6 +53,7 @@ export function computeQualifiers(
       playoff: [],
       notQualified: wo.map((r, i) => ({ ...r, grupo: "", groupPosition: eligible.length + i + 1 })),
       hasGroups: false,
+      nextSlotPosition: directPerGroup + 1,
     };
   }
 
@@ -102,15 +104,18 @@ export function computeQualifiers(
   let notQualified: QualifierRow[] = [];
 
   if (mode === "playoff") {
-    // Modo fase extra: os "repescagemTotal" melhores dos extras vão DIRETO,
-    // depois os "playoffSize" seguintes disputam a Repescagem (mata-mata),
-    // e o resto está eliminado.
-    const directExtras = extras.slice(0, repescagemTotal).map((r, i) => ({ ...r, position: direct.length + i + 1 }));
-    direct.push(...directExtras);
-    const afterDirect = extras.slice(repescagemTotal);
+    // Modo fase extra: apenas os que ficaram exatamente na posição (N+1) do grupo
+    // concorrem às vagas de repescagem por ranking geral. Os "repescagemTotal"
+    // melhores passam (listados à parte, sem entrar na lista dos diretos);
+    // os "playoffSize" seguintes disputam a fase extra e o resto está eliminado.
+    const nextSlot = extras.filter(r => r.groupPosition === directPerGroup + 1);
+    const others = extras.filter(r => r.groupPosition !== directPerGroup + 1);
+    repescagem = nextSlot.slice(0, repescagemTotal).map((r, i) => ({ ...r, position: i + 1 }));
+    const afterDirect = [...nextSlot.slice(repescagemTotal), ...others];
     playoff = afterDirect.slice(0, playoffSize).map((r, i) => ({ ...r, position: i + 1 }));
     notQualified = afterDirect.slice(playoffSize).map(r => ({ ...r }));
   } else {
+
     // Modo ranking (padrão atual): melhores (N+1)-ésimos passam direto via repescagem.
     // Apenas jogadores exatamente na posição (directPerGroup + 1) contam — os demais
     // grupos-abaixo entram em notQualified.
@@ -125,7 +130,7 @@ export function computeQualifiers(
   // Re-position direct list across groups for display (1..N)
   direct.forEach((r, i) => { r.position = i + 1; });
 
-  return { direct, repescagem, playoff, notQualified, hasGroups: true };
+  return { direct, repescagem, playoff, notQualified, hasGroups: true, nextSlotPosition: directPerGroup + 1 };
 }
 
 export function nextPhaseName(currentFase: string, mainFases?: string[] | null): string {

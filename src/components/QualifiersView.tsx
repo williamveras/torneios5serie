@@ -86,7 +86,7 @@ function TableSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembe
   );
 }
 
-function ListSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembers, showGroup, small }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number>; playerMap?: Map<string, PlayerLike>; teamMembers: TeamMembersMap; showGroup?: boolean; small?: boolean }) {
+function ListSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembers, showGroup, small, hidePosition }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number>; playerMap?: Map<string, PlayerLike>; teamMembers: TeamMembersMap; showGroup?: boolean; small?: boolean; hidePosition?: boolean }) {
   return (
     <section>
       <h3 className={`font-semibold mb-2 ${small ? "text-base text-muted-foreground" : "text-lg"}`}>{title}</h3>
@@ -102,9 +102,11 @@ function ListSection({ title, rows, usePos, playerMesaMap, playerMap, teamMember
               key={`${s.grupo}-${s.playerId}`}
               className={`rounded-md border bg-background flex items-start gap-3 min-w-0 overflow-hidden ${compactCardPadding} ${s.hasPenalty ? "bg-destructive/5" : ""}`}
             >
-              <div className="font-bold tabular-nums text-lg min-w-[2.5rem]" aria-label={`Posição ${pos}`}>
-                {pos}º
-              </div>
+              {!hidePosition && (
+                <div className="font-bold tabular-nums text-lg min-w-[2.5rem]" aria-label={`Posição ${pos}`}>
+                  {pos}º
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <p className={`font-medium ${scrollLine}`}><span className="public-line-content">{keepTogether(displayName)}</span></p>
                 <p className={`text-sm mt-0.5 ${scrollLine}`}>

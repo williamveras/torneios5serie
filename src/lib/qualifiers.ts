@@ -109,19 +109,38 @@ export function computeQualifiers(
   let playoff: QualifierRow[] = [];
   let notQualified: QualifierRow[] = [];
 
-  if (mode === "playoff") {
-    // Modo fase extra: os melhores "byePosition"-ésimos colocados do ranking geral
-    // ganham vaga direta (lista à parte) e todo o restante disputa a Repescagem.
-    const byeCandidates = all.filter(r => r.groupPosition === byePosition).sort(crossSort);
-    repescagem = byeCandidates.slice(0, repescagemTotal).map((r, i) => ({ ...r, position: i + 1 }));
-    const byeIds = new Set(repescagem.map(r => r.playerId));
-    const pool = [
-      ...byeCandidates.slice(repescagemTotal).filter(r => r.groupPosition > directPerGroup),
-      ...extras.filter(r => r.groupPosition !== byePosition),
-    ].sort(crossSort).filter(r => !byeIds.has(r.playerId));
-    playoff = (playoffSize > 0 ? pool.slice(0, playoffSize) : pool).map((r, i) => ({ ...r, position: i + 1 }));
-    notQualified = playoffSize > 0 ? pool.slice(playoffSize).map(r => ({ ...r })) : [];
+  if (mode === "playoff" && byeTotal > 0 && opts.byePosition) {
+    // Regulamento tipo "1000 Milhas": o total de classificados é
+    // (directPerGroup por grupo) + (repescagemTotal melhores (N+1)-ésimos).
+    // Dentro desse conjunto, passam direto os 1ºs de cada grupo e os
+    // "byeTotal" melhores "byePosition"-ésimos; todos os demais disputam a
+    // fase extra de Repescagem.
+    const extraQualified = extras.filter(r => r.groupPosition === directPerGroup + 1).slice(0, repescagemTotal);
+    const qualifiedPool = [...direct, ...extraQualified];
+    repescagem = qualifiedPool
+      .filter(r => r.groupPosition === byePosition)
+      .sort(crossSort)
+      .slice(0, byeTotal)
+      .map((r, i) => ({ ...r, position: i + 1 }));
+    const autoIds = new Set(repescagem.map(r => r.playerId));
+    qualifiedPool.filter(r => r.groupPosition === 1).forEach(r => autoIds.add(r.playerId));
+    playoff = qualifiedPool
+      .filter(r => !autoIds.has(r.playerId))
+      .sort(crossSort)
+      .map((r, i) => ({ ...r, position: i + 1 }));
+    const inPool = new Set(qualifiedPool.map(r => r.playerId));
+    notQualified = extras.filter(r => !inPool.has(r.playerId)).map(r => ({ ...r }));
+  } else if (mode === "playoff") {
+    // Modo fase extra simples: os melhores "byePosition"-ésimos passam direto
+    // e os "playoffSize" seguintes disputam a Repescagem.
+    const nextSlot = extras.filter(r => r.groupPosition === byePosition);
+    const others = extras.filter(r => r.groupPosition !== byePosition);
+    repescagem = nextSlot.slice(0, repescagemTotal).map((r, i) => ({ ...r, position: i + 1 }));
+    const afterDirect = [...nextSlot.slice(repescagemTotal), ...others].sort(crossSort);
+    playoff = (playoffSize > 0 ? afterDirect.slice(0, playoffSize) : afterDirect).map((r, i) => ({ ...r, position: i + 1 }));
+    notQualified = playoffSize > 0 ? afterDirect.slice(playoffSize).map(r => ({ ...r })) : [];
   } else {
+
 
     // Modo ranking (padrão atual): melhores (N+1)-ésimos passam direto via repescagem.
     // Apenas jogadores exatamente na posição (directPerGroup + 1) contam — os demais

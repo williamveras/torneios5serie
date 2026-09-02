@@ -148,7 +148,7 @@ export default function QualifiersView({ qualifiers, viewMode = "list", playerMe
       })}
       {qualifiers.repescagem.length > 0 && (
         <Section
-          title={`Repescagem — melhores ${qualifiers.nextSlotPosition}º colocados`}
+          title={`Melhores ${qualifiers.nextSlotPosition}º colocados (classificados)`}
           rows={qualifiers.repescagem}
           usePos="overall"
           playerMesaMap={playerMesaMap}
@@ -158,7 +158,7 @@ export default function QualifiersView({ qualifiers, viewMode = "list", playerMe
       )}
       {qualifiers.playoff.length > 0 && (
         <Section
-          title="Vão para a Repescagem (mata-mata)"
+          title="Jogadores que irão para a repescagem"
           rows={qualifiers.playoff}
           usePos="overall"
           playerMesaMap={playerMesaMap}
@@ -166,6 +166,7 @@ export default function QualifiersView({ qualifiers, viewMode = "list", playerMe
           teamMembers={teamMembers}
         />
       )}
+
     </div>
   );
 }

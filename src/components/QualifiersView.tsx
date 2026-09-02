@@ -65,7 +65,8 @@ function TableSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembe
               const pos = usePos === "group" ? s.groupPosition : s.position;
               const baseName = formatTeamWithMembers(s.nick || s.playerName, playerMap?.get(s.playerId), teamMembers);
               const mesa = playerMesaMap?.get(s.playerId);
-              const displayName = mesa ? `${baseName}, mesa ${mesa}` : baseName;
+              const withMesa = mesa ? `${baseName}, mesa ${mesa}` : baseName;
+              const displayName = showGroup && s.grupo ? `${withMesa} — Grupo ${s.grupo}` : withMesa;
               return (
                 <TableRow key={`${s.grupo}-${s.playerId}`} className={s.hasPenalty ? "bg-destructive/5" : ""}>
                   <TableCell className="font-bold tabular-nums">{pos}º</TableCell>

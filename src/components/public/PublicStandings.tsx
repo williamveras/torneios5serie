@@ -423,7 +423,7 @@ export default function PublicStandings({ results, players, teamMembers = {}, ph
       ) : showQualifiers ? (
         <div className="space-y-6">
           <div className="space-y-4">
-            <h2 className="text-xl font-bold">Classificados para a {nextFase === "Final" ? "grande final e disputa de terceiro" : nextFase}</h2>
+            <h2 className="text-xl font-bold">Classificados para a {nextFase === "Final" ? "grande final e disputa de terceiro" : nextFase === "Repescagem" ? "segunda fase e repescagem" : nextFase}</h2>
             <QualifiersView qualifiers={qualifiersToShow} viewMode={viewMode} playerMesaMap={nextPhaseMesaMap.size > 0 ? nextPhaseMesaMap : playerMesaMap} players={players} teamMembers={teamMembers} />
           </div>
           <Accordion type="single" collapsible className="rounded-md border bg-background px-4">

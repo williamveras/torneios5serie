@@ -59,6 +59,9 @@ export function computeQualifiers(
   const extras: QualifierRow[] = []; // não-diretos, para ranking cross-grupo
   const rest: QualifierRow[] = [];
 
+  // Jogadores eliminados por W.O nunca se classificam.
+  const isWO = (r: StandingRow) => r.penalidades === "Eliminado por W.O";
+
   for (const g of groups) {
     const rows = computeStandings(
       results.filter(r => r.grupo === g),
@@ -66,12 +69,20 @@ export function computeQualifiers(
       getPlayerNick,
       { lowerWins },
     );
-    rows.forEach(r => {
-      const q: QualifierRow = { ...r, grupo: g, groupPosition: r.position };
-      if (r.position <= directPerGroup) direct.push(q);
+    // Reposiciona ignorando os eliminados por W.O, para que as vagas
+    // sejam preenchidas apenas por quem continua no torneio.
+    const eligible = rows.filter(r => !isWO(r));
+    const woRows = rows.filter(isWO);
+    eligible.forEach((r, i) => {
+      const q: QualifierRow = { ...r, position: i + 1, grupo: g, groupPosition: i + 1 };
+      if (i + 1 <= directPerGroup) direct.push(q);
       else extras.push(q);
     });
+    woRows.forEach((r, i) => {
+      rest.push({ ...r, grupo: g, groupPosition: eligible.length + i + 1 });
+    });
   }
+
 
   // Sort extras cross-group by tie-break (sem confronto direto — só intra-grupo)
   extras.sort((a, b) => {

@@ -34,6 +34,8 @@ export function computeQualifiers(
     lowerWins?: boolean;
     mode?: "ranking" | "playoff";
     playoffSize?: number;
+    /** Posição de grupo usada para o ranking dos "melhores Xº colocados". */
+    byePosition?: number;
   } = {},
 ): QualifiersResult {
   const directPerGroup = opts.directPerGroup ?? 5;
@@ -41,6 +43,8 @@ export function computeQualifiers(
   const lowerWins = !!opts.lowerWins;
   const mode = opts.mode ?? "ranking";
   const playoffSize = Math.max(0, opts.playoffSize ?? 0);
+  const byePosition = opts.byePosition && opts.byePosition > 0 ? opts.byePosition : directPerGroup + 1;
+
 
   const hasGroups = results.some(r => !!r.grupo && r.grupo.trim() !== "");
   if (!hasGroups) {

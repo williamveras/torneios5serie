@@ -45,7 +45,7 @@ const formatTeamWithMembers = (
   return `${baseName} (${labels.join(" x ")})`;
 };
 
-function TableSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembers, showGroup, small }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number>; playerMap?: Map<string, PlayerLike>; teamMembers: TeamMembersMap; showGroup?: boolean; small?: boolean }) {
+function TableSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembers, showGroup, small, hidePosition }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number>; playerMap?: Map<string, PlayerLike>; teamMembers: TeamMembersMap; showGroup?: boolean; small?: boolean; hidePosition?: boolean }) {
   return (
     <section>
       <h3 className={`font-semibold mb-2 ${small ? "text-base text-muted-foreground" : "text-lg"}`}>{title}</h3>
@@ -53,7 +53,7 @@ function TableSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembe
         <Table className="min-w-max">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-12">#</TableHead>
+              {!hidePosition && <TableHead className="w-12">#</TableHead>}
               <TableHead>Jogador</TableHead>
               <TableHead className="text-right whitespace-nowrap">Pts. vitória</TableHead>
               <TableHead className="text-right whitespace-nowrap">Pts. mesa</TableHead>
@@ -69,7 +69,7 @@ function TableSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembe
               const displayName = showGroup && s.grupo ? `${withMesa} — Grupo ${s.grupo}` : withMesa;
               return (
                 <TableRow key={`${s.grupo}-${s.playerId}`} className={s.hasPenalty ? "bg-destructive/5" : ""}>
-                  <TableCell className="font-bold tabular-nums">{pos}º</TableCell>
+                  {!hidePosition && <TableCell className="font-bold tabular-nums">{pos}º</TableCell>}
                   <TableCell className={`font-medium ${noWrapText}`}>{displayName}</TableCell>
                   <TableCell className={`text-right tabular-nums ${noWrapText}`}>{s.pontosJogo}</TableCell>
                   <TableCell className={`text-right tabular-nums ${noWrapText}`}>{s.pontosMesa}</TableCell>
@@ -86,7 +86,7 @@ function TableSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembe
   );
 }
 
-function ListSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembers, showGroup, small }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number>; playerMap?: Map<string, PlayerLike>; teamMembers: TeamMembersMap; showGroup?: boolean; small?: boolean }) {
+function ListSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembers, showGroup, small, hidePosition }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number>; playerMap?: Map<string, PlayerLike>; teamMembers: TeamMembersMap; showGroup?: boolean; small?: boolean; hidePosition?: boolean }) {
   return (
     <section>
       <h3 className={`font-semibold mb-2 ${small ? "text-base text-muted-foreground" : "text-lg"}`}>{title}</h3>
@@ -102,9 +102,11 @@ function ListSection({ title, rows, usePos, playerMesaMap, playerMap, teamMember
               key={`${s.grupo}-${s.playerId}`}
               className={`rounded-md border bg-background flex items-start gap-3 min-w-0 overflow-hidden ${compactCardPadding} ${s.hasPenalty ? "bg-destructive/5" : ""}`}
             >
-              <div className="font-bold tabular-nums text-lg min-w-[2.5rem]" aria-label={`Posição ${pos}`}>
-                {pos}º
-              </div>
+              {!hidePosition && (
+                <div className="font-bold tabular-nums text-lg min-w-[2.5rem]" aria-label={`Posição ${pos}`}>
+                  {pos}º
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <p className={`font-medium ${scrollLine}`}><span className="public-line-content">{keepTogether(displayName)}</span></p>
                 <p className={`text-sm mt-0.5 ${scrollLine}`}>
@@ -152,7 +154,7 @@ export default function QualifiersView({ qualifiers, viewMode = "list", playerMe
       .sort((a, b) => naturalGroupSort(a.grupo, b.grupo))
       .map((r, i) => ({ ...r, position: i + 1 }));
 
-    const GroupedSection = ({ title, rows }: { title: string; rows: QualifierRow[] }) => {
+    const GroupedSection = ({ title, rows, hidePosition }: { title: string; rows: QualifierRow[]; hidePosition?: boolean }) => {
       const gs = [...new Set(rows.map(r => r.grupo))].sort(naturalGroupSort);
       return (
         <section className="space-y-4">
@@ -167,6 +169,7 @@ export default function QualifiersView({ qualifiers, viewMode = "list", playerMe
               playerMesaMap={playerMesaMap}
               playerMap={playerMap}
               teamMembers={teamMembers}
+              hidePosition={hidePosition}
             />
           ))}
         </section>
@@ -178,6 +181,7 @@ export default function QualifiersView({ qualifiers, viewMode = "list", playerMe
         <GroupedSection
           title="Classificados diretos para a segunda fase — Primeiros colocados de cada grupo:"
           rows={winners}
+          hidePosition
         />
         {byes.length > 0 && (
           <GroupedSection

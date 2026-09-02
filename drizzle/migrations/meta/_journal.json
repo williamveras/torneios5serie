@@ -15,6 +15,13 @@
       "when": 1788369592427,
       "tag": "0001_add_bye_rank_total",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788387903214,
+      "tag": "0002_add_h2h_before_mesa",
+      "breakpoints": true
     }
   ]
 }

@@ -298,6 +298,7 @@ export default function PublicTournament() {
                   phaseStatuses={phaseStatuses}
                   viewMode={standingsView}
                   lowerWins={(tournament as any)?.lower_score_wins === true}
+                  h2hFirst={(tournament as any)?.h2h_before_mesa === true}
                   qualifierOpts={(() => {
                     const td = tournament as any;
                     const opts: { directPerGroup?: number; repescagemTotal?: number; mode?: "ranking" | "playoff"; playoffSize?: number; byePosition?: number; byeTotal?: number } = {};

@@ -32,6 +32,8 @@ export function computeQualifiers(
     directPerGroup?: number;
     repescagemTotal?: number;
     lowerWins?: boolean;
+    /** Quando true, o confronto direto vira o 2º critério de desempate (antes dos pontos de mesa). */
+    h2hFirst?: boolean;
     mode?: "ranking" | "playoff";
     playoffSize?: number;
     /** Posição de grupo usada para o ranking dos "melhores Xº colocados". */
@@ -43,6 +45,7 @@ export function computeQualifiers(
   const directPerGroup = opts.directPerGroup ?? 5;
   const repescagemTotal = opts.repescagemTotal ?? 18;
   const lowerWins = !!opts.lowerWins;
+  const h2hFirst = !!opts.h2hFirst;
   const mode = opts.mode ?? "ranking";
   const playoffSize = Math.max(0, opts.playoffSize ?? 0);
   const byeTotal = Math.max(0, opts.byeTotal ?? 0);
@@ -51,7 +54,7 @@ export function computeQualifiers(
 
   const hasGroups = results.some(r => !!r.grupo && r.grupo.trim() !== "");
   if (!hasGroups) {
-    const rows = computeStandings(results, getPlayerName, getPlayerNick, { lowerWins });
+    const rows = computeStandings(results, getPlayerName, getPlayerNick, { lowerWins, h2hFirst });
     const eligible = rows.filter(r => r.penalidades !== "Eliminado por W.O");
     const wo = rows.filter(r => r.penalidades === "Eliminado por W.O");
     return {
@@ -80,7 +83,7 @@ export function computeQualifiers(
       results.filter(r => r.grupo === g),
       getPlayerName,
       getPlayerNick,
-      { lowerWins },
+      { lowerWins, h2hFirst },
     );
     // Reposiciona ignorando os eliminados por W.O, para que as vagas
     // sejam preenchidas apenas por quem continua no torneio.

@@ -41,6 +41,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
   const [maxParticipants, setMaxParticipants] = useState<string>("");
   const [lowerScoreWins, setLowerScoreWins] = useState<boolean>(false);
   const [eliminationOnly, setEliminationOnly] = useState<boolean>(false);
+  const [h2hBeforeMesa, setH2hBeforeMesa] = useState<boolean>(false);
 
 
   const [totalInscritos, setTotalInscritos] = useState(0);
@@ -71,6 +72,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
         setMaxParticipants(anyT.max_participants?.toString() ?? "");
         setLowerScoreWins(anyT.lower_score_wins === true);
         setEliminationOnly(anyT.elimination_only === true);
+        setH2hBeforeMesa(anyT.h2h_before_mesa === true);
 
       }
       const players = (pr.data as { grupo: string | null }[] | null) ?? [];
@@ -163,6 +165,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
         max_participants: mx,
         lower_score_wins: lowerScoreWins,
         elimination_only: eliminationOnly,
+        h2h_before_mesa: h2hBeforeMesa,
       })
       .eq("id", tournamentId);
     setSaving(false);
@@ -268,6 +271,23 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                 </Select>
                 <p className="text-xs text-muted-foreground">
                   Define como interpretar os pontos de mesa para determinar o vencedor e o desempate. Quando "menor vence", o importador de resultados também passa a marcar como vencedor o de menor pontuação.
+                </p>
+              </div>
+
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="tsd-desempate">Ordem dos critérios de desempate</Label>
+                <Select
+                  value={h2hBeforeMesa ? "h2h" : "mesa"}
+                  onValueChange={(v) => setH2hBeforeMesa(v === "h2h")}
+                >
+                  <SelectTrigger id="tsd-desempate"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mesa">Pontos de vitória → Pontos de mesa → Confronto direto (padrão)</SelectItem>
+                    <SelectItem value="h2h">Pontos de vitória → Confronto direto → Pontos de mesa</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Define a ordem dos critérios usados para desempatar a classificação quando há empate em pontos de vitória.
                 </p>
               </div>
             </div>

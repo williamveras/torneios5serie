@@ -45,7 +45,7 @@ const formatTeamWithMembers = (
   return `${baseName} (${labels.join(" x ")})`;
 };
 
-function TableSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembers }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number>; playerMap?: Map<string, PlayerLike>; teamMembers: TeamMembersMap }) {
+function TableSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembers, showGroup }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number>; playerMap?: Map<string, PlayerLike>; teamMembers: TeamMembersMap; showGroup?: boolean }) {
   return (
     <section>
       <h3 className="font-semibold text-lg mb-2">{title}</h3>

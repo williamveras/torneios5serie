@@ -140,6 +140,51 @@ export default function QualifiersView({ qualifiers, viewMode = "list", playerMe
 
   const groups = [...new Set(qualifiers.direct.map(r => r.grupo))].sort(naturalGroupSort);
 
+  // Formato "1000 Milhas": há fase extra de repescagem — mostra apenas os
+  // primeiros de cada grupo, depois os melhores Nº colocados, depois a repescagem.
+  if (qualifiers.playoff.length > 0) {
+    const winners = qualifiers.direct
+      .filter(r => r.groupPosition === 1)
+      .sort((a, b) => naturalGroupSort(a.grupo, b.grupo))
+      .map((r, i) => ({ ...r, position: i + 1 }));
+    const byes = qualifiers.repescagem
+      .slice()
+      .sort((a, b) => naturalGroupSort(a.grupo, b.grupo))
+      .map((r, i) => ({ ...r, position: i + 1 }));
+    return (
+      <div className="space-y-6">
+        <Section
+          title="Classificados diretos para a segunda fase — Primeiros colocados de cada grupo:"
+          rows={winners}
+          usePos="overall"
+          showGroup
+          playerMesaMap={playerMesaMap}
+          playerMap={playerMap}
+          teamMembers={teamMembers}
+        />
+        {byes.length > 0 && (
+          <Section
+            title={`Classificados diretos para a segunda fase — ${byes.length === 7 ? "sete" : byes.length} melhores ${qualifiers.nextSlotPosition}º colocados do ranking geral:`}
+            rows={byes}
+            usePos="overall"
+            showGroup
+            playerMesaMap={playerMesaMap}
+            playerMap={playerMap}
+            teamMembers={teamMembers}
+          />
+        )}
+        <Section
+          title="Jogadores que irão para a repescagem"
+          rows={qualifiers.playoff}
+          usePos="overall"
+          playerMesaMap={playerMesaMap}
+          playerMap={playerMap}
+          teamMembers={teamMembers}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {groups.map(g => {
@@ -158,17 +203,6 @@ export default function QualifiersView({ qualifiers, viewMode = "list", playerMe
           teamMembers={teamMembers}
         />
       )}
-      {qualifiers.playoff.length > 0 && (
-        <Section
-          title="Jogadores que irão para a repescagem"
-          rows={qualifiers.playoff}
-          usePos="overall"
-          playerMesaMap={playerMesaMap}
-          playerMap={playerMap}
-          teamMembers={teamMembers}
-        />
-      )}
-
     </div>
   );
 }

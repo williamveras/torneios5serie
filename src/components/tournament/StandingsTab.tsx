@@ -45,7 +45,7 @@ export default function StandingsTab({ tournamentId }: Props) {
   const [matchups, setMatchups] = useState<Tables<"matchups">[]>([]);
   const [numeroRodadas, setNumeroRodadas] = useState<number | null>(null);
   const [campeaoId, setCampeaoId] = useState<string | null>(null);
-  const [qualifierOpts, setQualifierOpts] = useState<{ directPerGroup?: number; repescagemTotal?: number; mode?: "ranking" | "playoff"; playoffSize?: number; byePosition?: number }>({});
+  const [qualifierOpts, setQualifierOpts] = useState<{ directPerGroup?: number; repescagemTotal?: number; mode?: "ranking" | "playoff"; playoffSize?: number; byePosition?: number; byeTotal?: number }>({});
   const [lowerWins, setLowerWins] = useState<boolean>(false);
 
   const loadPhaseStatuses = () => {
@@ -69,13 +69,14 @@ export default function StandingsTab({ tournamentId }: Props) {
         setNumeroRodadas(td.numero_rodadas ?? null);
         setCampeaoId(td.campeao_id ?? null);
         setLowerWins(td.lower_score_wins === true);
-        const opts: { directPerGroup?: number; repescagemTotal?: number; mode?: "ranking" | "playoff"; playoffSize?: number; byePosition?: number } = {};
+        const opts: { directPerGroup?: number; repescagemTotal?: number; mode?: "ranking" | "playoff"; playoffSize?: number; byePosition?: number; byeTotal?: number } = {};
         if (td.direct_per_group != null) opts.directPerGroup = td.direct_per_group;
         if (td.repescagem_enabled === false) opts.repescagemTotal = 0;
         else if (td.repescagem_total != null) opts.repescagemTotal = td.repescagem_total;
         opts.mode = (td.repescagem_mode as any) ?? "ranking";
         if (td.repescagem_playoff_size != null) opts.playoffSize = td.repescagem_playoff_size;
         if (td.bye_rank_position != null) opts.byePosition = td.bye_rank_position;
+        if (td.bye_rank_total != null) opts.byeTotal = td.bye_rank_total;
         setQualifierOpts(opts);
       }
     });

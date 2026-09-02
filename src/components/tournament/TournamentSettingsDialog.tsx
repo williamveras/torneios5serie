@@ -36,6 +36,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
   const [repescagemMode, setRepescagemMode] = useState<"ranking" | "playoff">("ranking");
   const [repescagemPlayoffSize, setRepescagemPlayoffSize] = useState<string>("");
   const [byeRankPosition, setByeRankPosition] = useState<string>("");
+  const [byeRankTotal, setByeRankTotal] = useState<string>("");
   const [modalidade, setModalidade] = useState<"individual" | "duplas">("individual");
   const [maxParticipants, setMaxParticipants] = useState<string>("");
   const [lowerScoreWins, setLowerScoreWins] = useState<boolean>(false);
@@ -65,6 +66,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
         setRepescagemMode((anyT.repescagem_mode as any) ?? "ranking");
         setRepescagemPlayoffSize(anyT.repescagem_playoff_size?.toString() ?? "");
         setByeRankPosition(anyT.bye_rank_position?.toString() ?? "");
+        setByeRankTotal(anyT.bye_rank_total?.toString() ?? "");
         setModalidade((anyT.modalidade as "individual" | "duplas") ?? "individual");
         setMaxParticipants(anyT.max_participants?.toString() ?? "");
         setLowerScoreWins(anyT.lower_score_wins === true);
@@ -152,6 +154,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
         repescagem_total: rt,
         repescagem_mode: repescagemMode,
         bye_rank_position: byeRankPosition.trim() ? parseInt(byeRankPosition, 10) : null,
+        bye_rank_total: byeRankTotal.trim() ? parseInt(byeRankTotal, 10) : null,
         repescagem_playoff_size:
           repescagemMode === "playoff" && repescagemPlayoffSize.trim()
             ? parseInt(repescagemPlayoffSize, 10)
@@ -370,6 +373,22 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                     />
                     <p className="text-xs text-muted-foreground">
                       Ex.: 2 para listar "os melhores segundos colocados do ranking geral".
+                    </p>
+                  </div>
+                )}
+                {repescagemEnabled && (
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label htmlFor="tsd-bye-total">Quantos desses passam direto (sem repescagem)</Label>
+                    <Input
+                      id="tsd-bye-total"
+                      type="number"
+                      min={0}
+                      value={byeRankTotal}
+                      onChange={e => setByeRankTotal(e.target.value)}
+                      placeholder="Ex: 7"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Os 1ºs de cada grupo também passam direto. Todos os demais classificados vão para a Repescagem.
                     </p>
                   </div>
                 )}

@@ -1,0 +1,2 @@
+ALTER TABLE public.tournaments ADD COLUMN IF NOT EXISTS bye_rank_total integer;
+UPDATE public.tournaments SET bye_rank_position = 2, bye_rank_total = 7, repescagem_total = 21 WHERE id = 'b21eec68-3681-4a37-9740-6dbb8703f61e';

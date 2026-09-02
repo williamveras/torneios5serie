@@ -8,6 +8,13 @@
       "when": 1788369486981,
       "tag": "0000_add_bye_rank_position",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788369592427,
+      "tag": "0001_add_bye_rank_total",
+      "breakpoints": true
     }
   ]
 }

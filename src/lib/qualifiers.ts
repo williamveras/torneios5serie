@@ -15,6 +15,7 @@ export interface QualifiersResult {
   playoff: QualifierRow[];       // duplas que disputam a Repescagem (modo playoff)
   notQualified: QualifierRow[];  // todo o restante
   hasGroups: boolean;
+  nextSlotPosition: number;      // posição de grupo que disputa a repescagem (N+1)
 }
 
 const naturalGroupSort = (a: string, b: string) => {
@@ -52,6 +53,7 @@ export function computeQualifiers(
       playoff: [],
       notQualified: wo.map((r, i) => ({ ...r, grupo: "", groupPosition: eligible.length + i + 1 })),
       hasGroups: false,
+      nextSlotPosition: directPerGroup + 1,
     };
   }
 
@@ -128,7 +130,7 @@ export function computeQualifiers(
   // Re-position direct list across groups for display (1..N)
   direct.forEach((r, i) => { r.position = i + 1; });
 
-  return { direct, repescagem, playoff, notQualified, hasGroups: true };
+  return { direct, repescagem, playoff, notQualified, hasGroups: true, nextSlotPosition: directPerGroup + 1 };
 }
 
 export function nextPhaseName(currentFase: string, mainFases?: string[] | null): string {

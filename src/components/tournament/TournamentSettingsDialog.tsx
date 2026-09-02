@@ -35,6 +35,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
   const [repescagemTotal, setRepescagemTotal] = useState<string>("");
   const [repescagemMode, setRepescagemMode] = useState<"ranking" | "playoff">("ranking");
   const [repescagemPlayoffSize, setRepescagemPlayoffSize] = useState<string>("");
+  const [byeRankPosition, setByeRankPosition] = useState<string>("");
   const [modalidade, setModalidade] = useState<"individual" | "duplas">("individual");
   const [maxParticipants, setMaxParticipants] = useState<string>("");
   const [lowerScoreWins, setLowerScoreWins] = useState<boolean>(false);
@@ -63,6 +64,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
         setRepescagemTotal(anyT.repescagem_total?.toString() ?? "");
         setRepescagemMode((anyT.repescagem_mode as any) ?? "ranking");
         setRepescagemPlayoffSize(anyT.repescagem_playoff_size?.toString() ?? "");
+        setByeRankPosition(anyT.bye_rank_position?.toString() ?? "");
         setModalidade((anyT.modalidade as "individual" | "duplas") ?? "individual");
         setMaxParticipants(anyT.max_participants?.toString() ?? "");
         setLowerScoreWins(anyT.lower_score_wins === true);
@@ -149,6 +151,7 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
         repescagem_enabled: repescagemEnabled,
         repescagem_total: rt,
         repescagem_mode: repescagemMode,
+        bye_rank_position: byeRankPosition.trim() ? parseInt(byeRankPosition, 10) : null,
         repescagem_playoff_size:
           repescagemMode === "playoff" && repescagemPlayoffSize.trim()
             ? parseInt(repescagemPlayoffSize, 10)
@@ -352,6 +355,22 @@ export default function TournamentSettingsDialog({ open, onOpenChange, tournamen
                       onChange={e => setRepescagemTotal(e.target.value)}
                       placeholder="Padrão: 18"
                     />
+                  </div>
+                )}
+                {repescagemEnabled && (
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label htmlFor="tsd-bye-pos">Posição de grupo usada nesse ranking</Label>
+                    <Input
+                      id="tsd-bye-pos"
+                      type="number"
+                      min={1}
+                      value={byeRankPosition}
+                      onChange={e => setByeRankPosition(e.target.value)}
+                      placeholder={`Padrão: ${(parseInt(directPerGroup, 10) || 5) + 1}`}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Ex.: 2 para listar "os melhores segundos colocados do ranking geral".
+                    </p>
                   </div>
                 )}
               </div>

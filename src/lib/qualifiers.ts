@@ -44,14 +44,17 @@ export function computeQualifiers(
   const hasGroups = results.some(r => !!r.grupo && r.grupo.trim() !== "");
   if (!hasGroups) {
     const rows = computeStandings(results, getPlayerName, getPlayerNick, { lowerWins });
+    const eligible = rows.filter(r => r.penalidades !== "Eliminado por W.O");
+    const wo = rows.filter(r => r.penalidades === "Eliminado por W.O");
     return {
-      direct: rows.map(r => ({ ...r, grupo: "", groupPosition: r.position })),
+      direct: eligible.map((r, i) => ({ ...r, position: i + 1, grupo: "", groupPosition: i + 1 })),
       repescagem: [],
       playoff: [],
-      notQualified: [],
+      notQualified: wo.map((r, i) => ({ ...r, grupo: "", groupPosition: eligible.length + i + 1 })),
       hasGroups: false,
     };
   }
+
 
   const groups = [...new Set(results.filter(r => r.grupo).map(r => r.grupo))].sort(naturalGroupSort);
 

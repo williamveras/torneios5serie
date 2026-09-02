@@ -1,0 +1,1 @@
+ALTER TABLE public.tournaments ADD COLUMN h2h_before_mesa boolean NOT NULL DEFAULT false;

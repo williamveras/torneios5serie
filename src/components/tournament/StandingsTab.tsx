@@ -47,6 +47,7 @@ export default function StandingsTab({ tournamentId }: Props) {
   const [campeaoId, setCampeaoId] = useState<string | null>(null);
   const [qualifierOpts, setQualifierOpts] = useState<{ directPerGroup?: number; repescagemTotal?: number; mode?: "ranking" | "playoff"; playoffSize?: number; byePosition?: number; byeTotal?: number }>({});
   const [lowerWins, setLowerWins] = useState<boolean>(false);
+  const [h2hFirst, setH2hFirst] = useState<boolean>(false);
 
   const loadPhaseStatuses = () => {
     supabase.from("phase_status").select("*").eq("tournament_id", tournamentId).then(({ data }) => {
@@ -69,6 +70,7 @@ export default function StandingsTab({ tournamentId }: Props) {
         setNumeroRodadas(td.numero_rodadas ?? null);
         setCampeaoId(td.campeao_id ?? null);
         setLowerWins(td.lower_score_wins === true);
+        setH2hFirst(td.h2h_before_mesa === true);
         const opts: { directPerGroup?: number; repescagemTotal?: number; mode?: "ranking" | "playoff"; playoffSize?: number; byePosition?: number; byeTotal?: number } = {};
         if (td.direct_per_group != null) opts.directPerGroup = td.direct_per_group;
         if (td.repescagem_enabled === false) opts.repescagemTotal = 0;
@@ -201,7 +203,7 @@ export default function StandingsTab({ tournamentId }: Props) {
       const p = players.find(pp => pp.id === id);
       return p ? getPlayerNickForStandings(p as any) : "";
     };
-    const q = computeQualifiers(groupResults, nameOf, nickOf, { ...qualifierOpts, lowerWins });
+    const q = computeQualifiers(groupResults, nameOf, nickOf, { ...qualifierOpts, lowerWins, h2hFirst });
     const classifiedIds = new Set([...q.direct, ...q.repescagem, ...q.playoff].map(r => r.playerId));
     // Só considera jogadores que tiveram participação na Fase de Grupos
     const playedInGroups = new Set(groupResults.map(r => r.player_id));
@@ -301,7 +303,7 @@ export default function StandingsTab({ tournamentId }: Props) {
     if (!hasAnyGroup) {
       return [{
         grupo: "",
-        rows: computeStandings(filteredByFase, getPlayerName, getPlayerNick, { lowerWins }),
+        rows: computeStandings(filteredByFase, getPlayerName, getPlayerNick, { lowerWins, h2hFirst }),
       }];
     }
     return groups.map(g => ({
@@ -310,7 +312,7 @@ export default function StandingsTab({ tournamentId }: Props) {
         filteredByFase.filter(r => r.grupo === g),
         getPlayerName,
         getPlayerNick,
-        { lowerWins },
+        { lowerWins, h2hFirst },
       ),
     }));
   }, [filteredByFase, groups, hasAnyGroup, players, lowerWins]);
@@ -318,7 +320,7 @@ export default function StandingsTab({ tournamentId }: Props) {
   const totalRows = sections.reduce((acc, s) => acc + s.rows.length, 0);
 
   const qualifiers = useMemo(
-    () => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins }),
+    () => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins, h2hFirst }),
     [filteredByFase, players, qualifierOpts, lowerWins],
   );
   const nextFase = nextPhaseName(selectedFase);
@@ -356,7 +358,7 @@ export default function StandingsTab({ tournamentId }: Props) {
     const winnersResults = filteredByFase
       .filter(r => qualifiedIds.has(r.player_id))
       .map(r => ({ ...r, grupo: "" })) as MatchResult[];
-    return computeQualifiers(winnersResults, getPlayerName, getPlayerNick, { lowerWins });
+    return computeQualifiers(winnersResults, getPlayerName, getPlayerNick, { lowerWins, h2hFirst });
   }, [matchups, filteredByFase, selectedFase, isGroupsPhase, players, lowerWins]);
 
   const showQualifiers = isConcluded && !!nextFase && totalRows > 0 && (
@@ -374,7 +376,7 @@ export default function StandingsTab({ tournamentId }: Props) {
     [results],
   );
   const grupoQualifiers = useMemo(
-    () => computeQualifiers(grupoResults, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins }),
+    () => computeQualifiers(grupoResults, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins, h2hFirst }),
     [grupoResults, players, qualifierOpts, lowerWins],
   );
   const classifiedCount = grupoQualifiers.hasGroups

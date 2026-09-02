@@ -17,9 +17,10 @@ export function computeStandings(
   results: MatchResult[],
   getPlayerName: (id: string) => string,
   getPlayerNick: (id: string) => string,
-  opts: { lowerWins?: boolean } = {},
+  opts: { lowerWins?: boolean; h2hFirst?: boolean } = {},
 ): StandingRow[] {
   const lowerWins = !!opts.lowerWins;
+  const h2hFirst = !!opts.h2hFirst;
   const agg = new Map<string, { pontosJogo: number; pontosMesa: number; penalties: string[] }>();
   for (const r of results) {
     const prev = agg.get(r.player_id) || { pontosJogo: 0, pontosMesa: 0, penalties: [] };
@@ -73,17 +74,23 @@ export function computeStandings(
   rows.sort((a, b) => {
     // 1º critério: pontos de vitória (desc) — sempre 3/0, independente da regra.
     if (a.pontosJogo !== b.pontosJogo) return b.pontosJogo - a.pontosJogo;
-    // 2º critério: pontos de mesa — direção depende da regra do torneio
+    // Confronto direto (head-to-head): por padrão é o último critério; quando o
+    // torneio ativa `h2hFirst` (ex.: 1000 Milhas), passa a ser o 2º critério,
+    // logo após os pontos de vitória e antes dos pontos de mesa.
+    const h2hWinner = h2h.get(`${a.playerId}|${b.playerId}`);
+    if (h2hFirst && h2hWinner) {
+      return h2hWinner === a.playerId ? -1 : 1;
+    }
+    // Pontos de mesa — direção depende da regra do torneio
     // (desc por padrão; asc quando menor pontuação vence, ex.: dominó).
     if (a.pontosMesa !== b.pontosMesa) {
       return lowerWins ? a.pontosMesa - b.pontosMesa : b.pontosMesa - a.pontosMesa;
     }
-    // 3º critério: quem não tem penalidades fica na frente
+    // Quem não tem penalidades fica na frente
     if (a.hasPenalty !== b.hasPenalty) return a.hasPenalty ? 1 : -1;
-    // 4º critério: confronto direto (head-to-head) — vencedor à frente
-    const winner = h2h.get(`${a.playerId}|${b.playerId}`);
-    if (winner === a.playerId) return -1;
-    if (winner === b.playerId) return 1;
+    if (!h2hFirst && h2hWinner) {
+      return h2hWinner === a.playerId ? -1 : 1;
+    }
     return 0;
   });
   rows.forEach((r, i) => { r.position = i + 1; });

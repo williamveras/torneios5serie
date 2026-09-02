@@ -58,6 +58,7 @@ interface Props {
   viewMode?: ViewMode;
   qualifierOpts?: { directPerGroup?: number; repescagemTotal?: number; mode?: "ranking" | "playoff"; playoffSize?: number; byePosition?: number; byeTotal?: number };
   lowerWins?: boolean;
+  h2hFirst?: boolean;
 }
 
 
@@ -74,7 +75,7 @@ const compactCardPadding = "p-3 min-[360px]:p-4";
 const keepTogether = (text: string | number) =>
   String(text).replace(/ /g, "\u00A0").replace(/-/g, "\u2011");
 
-export default function PublicStandings({ results, players, teamMembers = {}, phaseStatuses, matchups = [], viewMode = "list", qualifierOpts = {}, lowerWins = false }: Props) {
+export default function PublicStandings({ results, players, teamMembers = {}, phaseStatuses, matchups = [], viewMode = "list", qualifierOpts = {}, lowerWins = false, h2hFirst = false }: Props) {
   // Default fase: latest concluded phase (so the public view follows the tournament progression).
   const latestConcludedFase = useMemo(() => {
     for (let i = FASES.length - 1; i >= 0; i--) {
@@ -145,7 +146,7 @@ export default function PublicStandings({ results, players, teamMembers = {}, ph
     if (!hasAnyGroup) {
       return [{
         grupo: "",
-        rows: computeStandings(filteredByFase, getPlayerName, getPlayerNick, { lowerWins }),
+        rows: computeStandings(filteredByFase, getPlayerName, getPlayerNick, { lowerWins, h2hFirst }),
       }];
     }
     return groups.map(g => ({
@@ -154,7 +155,7 @@ export default function PublicStandings({ results, players, teamMembers = {}, ph
         filteredByFase.filter(r => r.grupo === g),
         getPlayerName,
         getPlayerNick,
-        { lowerWins },
+        { lowerWins, h2hFirst },
       ),
     }));
   }, [filteredByFase, groups, hasAnyGroup, players, lowerWins]);
@@ -166,7 +167,7 @@ export default function PublicStandings({ results, players, teamMembers = {}, ph
   const isConcluded = phaseStatus === "concluida";
 
   const qualifiers = useMemo(
-    () => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins }),
+    () => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins, h2hFirst }),
     [filteredByFase, players, qualifierOpts, lowerWins],
   );
   const nextFase = nextPhaseName(selectedFase);
@@ -222,7 +223,7 @@ export default function PublicStandings({ results, players, teamMembers = {}, ph
       .filter(r => qualifiedIds.has(r.player_id))
       // Compute as a flat list, ignoring any synthetic `grupo` on elimination results.
       .map(r => ({ ...r, grupo: "" })) as MatchResult[];
-    return computeQualifiers(winnersResults, getPlayerName, getPlayerNick, { lowerWins });
+    return computeQualifiers(winnersResults, getPlayerName, getPlayerNick, { lowerWins, h2hFirst });
   }, [matchups, filteredByFase, selectedFase, isGroupsPhase, players, lowerWins]);
 
   const showQualifiers = isConcluded && !!nextFase && totalRows > 0 && (
@@ -238,7 +239,7 @@ export default function PublicStandings({ results, players, teamMembers = {}, ph
     [results],
   );
   const grupoQualifiers = useMemo(
-    () => computeQualifiers(grupoResults, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins }),
+    () => computeQualifiers(grupoResults, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins, h2hFirst }),
     [grupoResults, players, qualifierOpts, lowerWins],
   );
   const classifiedCount = grupoQualifiers.hasGroups

@@ -205,8 +205,12 @@ export default function PublicTournament() {
     if (phaseStatuses.find(p => p.fase === f)?.status === "concluida") { latestConcluded = f; break; }
   }
   const nextFaseLabel = latestConcluded ? nextPhaseName(latestConcluded, mainFases) : "";
-  const nextFaseDisplay = nextFaseLabel === "Final" ? "grande final e disputa de terceiro" : nextFaseLabel;
-  const standingsTabLabel = latestConcluded && nextFaseLabel ? `Classificados (${nextFaseDisplay})` : "Classificação";
+  const nextFaseDisplay = nextFaseLabel === "Final"
+    ? "grande final e disputa de terceiro"
+    : nextFaseLabel === "Repescagem"
+      ? "segunda fase e repescagem"
+      : nextFaseLabel;
+  const standingsTabLabel = latestConcluded && nextFaseLabel ? `Classificados para a ${nextFaseDisplay}` : "Classificação";
 
   // Sorteio tab: mostra a fase pública ativa quando houver confrontos sorteados
   // ou um sorteio agendado pendente para ela.

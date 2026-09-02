@@ -45,7 +45,7 @@ const formatTeamWithMembers = (
   return `${baseName} (${labels.join(" x ")})`;
 };
 
-function TableSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembers, showGroup, small }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number>; playerMap?: Map<string, PlayerLike>; teamMembers: TeamMembersMap; showGroup?: boolean; small?: boolean }) {
+function TableSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembers, showGroup, small, hidePosition }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number>; playerMap?: Map<string, PlayerLike>; teamMembers: TeamMembersMap; showGroup?: boolean; small?: boolean; hidePosition?: boolean }) {
   return (
     <section>
       <h3 className={`font-semibold mb-2 ${small ? "text-base text-muted-foreground" : "text-lg"}`}>{title}</h3>
@@ -53,7 +53,7 @@ function TableSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembe
         <Table className="min-w-max">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-12">#</TableHead>
+              {!hidePosition && <TableHead className="w-12">#</TableHead>}
               <TableHead>Jogador</TableHead>
               <TableHead className="text-right whitespace-nowrap">Pts. vitória</TableHead>
               <TableHead className="text-right whitespace-nowrap">Pts. mesa</TableHead>
@@ -69,7 +69,7 @@ function TableSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembe
               const displayName = showGroup && s.grupo ? `${withMesa} — Grupo ${s.grupo}` : withMesa;
               return (
                 <TableRow key={`${s.grupo}-${s.playerId}`} className={s.hasPenalty ? "bg-destructive/5" : ""}>
-                  <TableCell className="font-bold tabular-nums">{pos}º</TableCell>
+                  {!hidePosition && <TableCell className="font-bold tabular-nums">{pos}º</TableCell>}
                   <TableCell className={`font-medium ${noWrapText}`}>{displayName}</TableCell>
                   <TableCell className={`text-right tabular-nums ${noWrapText}`}>{s.pontosJogo}</TableCell>
                   <TableCell className={`text-right tabular-nums ${noWrapText}`}>{s.pontosMesa}</TableCell>

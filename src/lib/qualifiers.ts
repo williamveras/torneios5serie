@@ -117,7 +117,7 @@ export function computeQualifiers(
     const remainingSlot = nextSlot.slice(repescagemTotal);
     notQualified = [...remainingSlot, ...others];
   }
-  rest.length = 0;
+  notQualified = [...notQualified, ...rest];
 
   // Re-position direct list across groups for display (1..N)
   direct.forEach((r, i) => { r.position = i + 1; });

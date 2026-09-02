@@ -45,10 +45,10 @@ const formatTeamWithMembers = (
   return `${baseName} (${labels.join(" x ")})`;
 };
 
-function TableSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembers, showGroup }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number>; playerMap?: Map<string, PlayerLike>; teamMembers: TeamMembersMap; showGroup?: boolean }) {
+function TableSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembers, showGroup, small }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number>; playerMap?: Map<string, PlayerLike>; teamMembers: TeamMembersMap; showGroup?: boolean; small?: boolean }) {
   return (
     <section>
-      <h3 className="font-semibold text-lg mb-2">{title}</h3>
+      <h3 className={`font-semibold mb-2 ${small ? "text-base text-muted-foreground" : "text-lg"}`}>{title}</h3>
       <div className="rounded-md border overflow-x-auto">
         <Table className="min-w-max">
           <TableHeader>
@@ -86,10 +86,10 @@ function TableSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembe
   );
 }
 
-function ListSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembers, showGroup }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number>; playerMap?: Map<string, PlayerLike>; teamMembers: TeamMembersMap; showGroup?: boolean }) {
+function ListSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembers, showGroup, small }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number>; playerMap?: Map<string, PlayerLike>; teamMembers: TeamMembersMap; showGroup?: boolean; small?: boolean }) {
   return (
     <section>
-      <h3 className="font-semibold text-lg mb-2">{title}</h3>
+      <h3 className={`font-semibold mb-2 ${small ? "text-base text-muted-foreground" : "text-lg"}`}>{title}</h3>
       <ol className="space-y-2" aria-label="Classificados">
         {rows.map(s => {
           const pos = usePos === "group" ? s.groupPosition : s.position;

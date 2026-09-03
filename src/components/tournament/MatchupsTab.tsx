@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
-import { getPlayerDisplayName } from "@/lib/playerDisplay";
+import { useEffect, useMemo, useState } from "react";
+import { getPlayerDisplayName, getPlayerNickForStandings } from "@/lib/playerDisplay";
+import { fetchAllMatchResults } from "@/lib/fetchAll";
+import { computeQualifiers } from "@/lib/qualifiers";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -81,6 +83,10 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
   const [matchups, setMatchups] = useState<Matchup[]>([]);
   const [scheduledDraws, setScheduledDraws] = useState<ScheduledDraw[]>([]);
   const [phaseStatuses, setPhaseStatuses] = useState<Array<{ fase: string; status: string }>>([]);
+  const [groupResults, setGroupResults] = useState<any[]>([]);
+  const [qualifierOpts, setQualifierOpts] = useState<any>({});
+  const [lowerWins, setLowerWins] = useState(false);
+  const [h2hFirst, setH2hFirst] = useState(false);
   const [fase, setFase] = useState<Fase>("Fase de Grupos");
   const [userPickedFase, setUserPickedFase] = useState(false);
   const [mode, setMode] = useState<Mode>("por_grupo");
@@ -108,7 +114,30 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
     fetchScheduledDraws();
     fetchPhaseStatuses();
     fetchSchedules();
+    fetchQualifierContext();
   }, [tournamentId]);
+
+  async function fetchQualifierContext() {
+    const [res, t] = await Promise.all([
+      fetchAllMatchResults(tournamentId),
+      supabase.from("tournaments").select("*").eq("id", tournamentId).maybeSingle(),
+    ]);
+    setGroupResults((res || []).filter((r: any) => r.fase === "Fase de Grupos"));
+    const td = t.data as any;
+    if (td) {
+      setLowerWins(td.lower_score_wins === true);
+      setH2hFirst(td.h2h_before_mesa === true);
+      const opts: any = {};
+      if (td.direct_per_group != null) opts.directPerGroup = td.direct_per_group;
+      if (td.repescagem_enabled === false) opts.repescagemTotal = 0;
+      else if (td.repescagem_total != null) opts.repescagemTotal = td.repescagem_total;
+      opts.mode = (td.repescagem_mode as any) ?? "ranking";
+      if (td.repescagem_playoff_size != null) opts.playoffSize = td.repescagem_playoff_size;
+      if (td.bye_rank_position != null) opts.byePosition = td.bye_rank_position;
+      if (td.bye_rank_total != null) opts.byeTotal = td.bye_rank_total;
+      setQualifierOpts(opts);
+    }
+  }
 
   useEffect(() => {
     if (userPickedFase) return;
@@ -223,6 +252,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
       scheduled_at: when.toISOString(),
       created_by: user?.id ?? null,
       rodada: rodadaNum,
+      player_pool: fase === "Repescagem" && repescagemPool.length > 1 ? repescagemPool.map((p) => p.id) : null,
     } as any);
     setSchedulingDraw(false);
     if (error) {
@@ -253,12 +283,29 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
     return getPlayerDisplayName(p, "—");
   }
 
+  // Pool exato da Repescagem: apenas quem caiu na fase extra na classificação.
+  const repescagemPool = useMemo(() => {
+    if (groupResults.length === 0) return [] as Player[];
+    const nameOf = (id: string) => getPlayerDisplayName(players.find((p) => p.id === id) as any, "—");
+    const nickOf = (id: string) => getPlayerNickForStandings(players.find((p) => p.id === id) as any);
+    const q = computeQualifiers(groupResults, nameOf, nickOf, { ...qualifierOpts, lowerWins, h2hFirst });
+    const ids = new Set(q.playoff.map((r) => r.playerId));
+    return players.filter((p) => ids.has(p.id) && !p.eliminado);
+  }, [groupResults, players, qualifierOpts, lowerWins, h2hFirst]);
+
   const hasGroups = players.some((p) => p.grupo);
   const canPorGrupo = fase === "Fase de Grupos" && hasGroups;
 
   function generate() {
     // Apenas jogadores que ainda continuam no torneio (não eliminados)
-    const activePlayers = players.filter((p) => !p.eliminado);
+    let activePlayers = players.filter((p) => !p.eliminado);
+    if (fase === "Repescagem") {
+      if (repescagemPool.length < 2) {
+        toast.error("Não há participantes na repescagem segundo a classificação da fase de grupos.");
+        return;
+      }
+      activePlayers = repescagemPool;
+    }
     if (activePlayers.length < 2) {
       toast.error("É necessário ter pelo menos 2 jogadores ativos (não eliminados).");
       return;
@@ -597,6 +644,14 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
               </RadioGroup>
             </div>
           </div>
+
+          {fase === "Repescagem" && (
+            <p className="text-xs text-muted-foreground">
+              {repescagemPool.length > 1
+                ? `O sorteio usará apenas os ${repescagemPool.length} participantes da repescagem (conforme a aba Classificados).`
+                : "Nenhum participante de repescagem identificado na classificação da fase de grupos."}
+            </p>
+          )}
 
           {mode === "por_grupo" && !hasGroups && (
             <p className="text-xs text-destructive">

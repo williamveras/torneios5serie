@@ -645,6 +645,14 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
             </div>
           </div>
 
+          {fase === "Repescagem" && (
+            <p className="text-xs text-muted-foreground">
+              {repescagemPool.length > 1
+                ? `O sorteio usará apenas os ${repescagemPool.length} participantes da repescagem (conforme a aba Classificados).`
+                : "Nenhum participante de repescagem identificado na classificação da fase de grupos."}
+            </p>
+          )}
+
           {mode === "por_grupo" && !hasGroups && (
             <p className="text-xs text-destructive">
               Nenhum grupo definido. Vá em Participantes → Sortear Grupos antes de gerar.

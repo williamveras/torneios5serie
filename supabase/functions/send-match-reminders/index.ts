@@ -196,7 +196,8 @@ Deno.serve(async (req) => {
         .eq("id", sched.player2_id)
         .maybeSingle();
 
-      const tournamentUrl = `${PUBLIC_BASE}/p/${sched.tournament_id}`;
+      const cfg = await getOrgEmailConfig(sched.tournament_id);
+      const tournamentUrl = `${cfg.baseUrl}/p/${sched.tournament_id}`;
       const whenStr = `${sched.data_partida?.split("-").reverse().join("/")} às ${String(sched.horario).slice(0, 5)}`;
 
       for (const [side, other] of [[p1, p2], [p2, p1]] as const) {

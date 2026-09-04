@@ -28,6 +28,7 @@ interface Props {
   phaseStatuses?: PhaseStatus[];
   numeroRodadas?: number | null;
   viewMode?: ViewMode;
+  mainFases?: string[] | null;
 }
 
 import { getPlayerDisplayName } from "@/lib/playerDisplay";

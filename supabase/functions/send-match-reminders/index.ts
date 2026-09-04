@@ -85,8 +85,9 @@ function buildHtml(params: {
   tournamentName: string;
   when: string;
   tournamentUrl: string;
+  brand: string;
 }) {
-  const { playerName, opponentName, tournamentName, when, tournamentUrl } = params;
+  const { playerName, opponentName, tournamentName, when, tournamentUrl, brand } = params;
   return `<!doctype html><html><body style="font-family:Arial,sans-serif;background:#ffffff;color:#111;padding:24px">
     <div style="max-width:520px;margin:0 auto;border:1px solid #eee;border-radius:8px;padding:24px">
       <h2 style="margin:0 0 12px">Lembrete de partida</h2>

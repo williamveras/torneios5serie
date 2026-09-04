@@ -18,6 +18,7 @@ import { ptBR } from "date-fns/locale";
 import type { Tables } from "@/integrations/supabase/types";
 import { computeCurrentRound } from "@/lib/rounds";
 import { getActivePublicPhase, isGroupPhase } from "@/lib/phase";
+import { useMainFases } from "@/hooks/useMainFases";
 
 
 // Parse "DD/MM" or "DD/MM/YYYY" to "YYYY-MM-DD". Returns null if invalid.
@@ -83,6 +84,8 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
   const [results, setResults] = useState<{ player_id: string; rodada: number; fase: string | null }[]>([]);
   const [numeroRodadas, setNumeroRodadas] = useState<number | null>(null);
   const [phaseStatuses, setPhaseStatuses] = useState<{ fase: string; status: string }[]>([]);
+
+  const mainFases = useMainFases(tournamentId);
 
   const [grupo, setGrupo] = useState("");
 
@@ -210,7 +213,7 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
   }
 
   // Active phase (used to scope form defaults, import dialog, and listing)
-  const activePhase = getActivePublicPhase(phaseStatuses);
+  const activePhase = getActivePublicPhase(phaseStatuses, mainFases ?? undefined);
   const inGroupPhase = isGroupPhase(activePhase);
 
   // Auto-fill grupo based on selected player (group phase) or fase (mata-mata)

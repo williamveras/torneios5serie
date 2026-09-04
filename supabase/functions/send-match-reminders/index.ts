@@ -98,7 +98,7 @@ function buildHtml(params: {
         <strong>Horário:</strong> ${when}
       </p>
       <p><a href="${tournamentUrl}" style="display:inline-block;background:#111;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none">Ver torneio</a></p>
-      <p style="color:#666;font-size:12px;margin-top:24px">Torneios Quinta Série</p>
+      <p style="color:#666;font-size:12px;margin-top:24px">${brand}</p>
     </div>
   </body></html>`;
 }

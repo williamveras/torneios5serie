@@ -318,7 +318,7 @@ export default function PublicTournament() {
                 <div className="flex justify-end mb-3">
                   <ViewModeToggle value={scheduleView} onChange={setScheduleView} />
                 </div>
-                <PublicSchedule schedules={schedules} players={players} matchups={matchups} results={results} phaseStatuses={phaseStatuses} numeroRodadas={(tournament as any).numero_rodadas ?? null} viewMode={scheduleView} />
+                <PublicSchedule schedules={schedules} players={players} matchups={matchups} results={results} phaseStatuses={phaseStatuses} numeroRodadas={(tournament as any).numero_rodadas ?? null} viewMode={scheduleView} mainFases={mainFases} />
               </TabsContent>
               {showGroupsTab && (
                 <TabsContent value="groups">

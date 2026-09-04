@@ -28,6 +28,7 @@ interface Props {
   phaseStatuses?: PhaseStatus[];
   numeroRodadas?: number | null;
   viewMode?: ViewMode;
+  mainFases?: string[] | null;
 }
 
 import { getPlayerDisplayName } from "@/lib/playerDisplay";
@@ -63,7 +64,7 @@ const todaySaoPauloISO = () => {
   return fmt.format(new Date());
 };
 
-export default function PublicSchedule({ schedules, players, matchups, results = [], phaseStatuses = [], numeroRodadas = null, viewMode = "list" }: Props) {
+export default function PublicSchedule({ schedules, players, matchups, results = [], phaseStatuses = [], numeroRodadas = null, viewMode = "list", mainFases = null }: Props) {
   const [orderMode, setOrderMode] = useState<"time" | "group">("time");
   const playerMap = useMemo(() => {
     const m = new Map<string, PlayerLite>();
@@ -71,7 +72,7 @@ export default function PublicSchedule({ schedules, players, matchups, results =
     return m;
   }, [players]);
 
-  const activeFase = useMemo(() => getActivePublicPhase(phaseStatuses), [phaseStatuses]);
+  const activeFase = useMemo(() => getActivePublicPhase(phaseStatuses, mainFases), [phaseStatuses, mainFases]);
   const isGroup = isGroupPhase(activeFase);
 
   // === Non-group phase: render by Mesa ===

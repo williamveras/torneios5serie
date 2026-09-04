@@ -258,24 +258,36 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          email_from_email: string | null
+          email_from_name: string | null
           id: string
           nome: string
+          public_base_url: string | null
+          resend_secret_name: string | null
           slug: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           created_by?: string | null
+          email_from_email?: string | null
+          email_from_name?: string | null
           id?: string
           nome: string
+          public_base_url?: string | null
+          resend_secret_name?: string | null
           slug?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
           created_by?: string | null
+          email_from_email?: string | null
+          email_from_name?: string | null
           id?: string
           nome?: string
+          public_base_url?: string | null
+          resend_secret_name?: string | null
           slug?: string | null
           updated_at?: string
         }

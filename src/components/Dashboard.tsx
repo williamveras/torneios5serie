@@ -3,13 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrganizations, createOrganization } from "@/hooks/useOrganizations";
 import OrganizationMembersDialog from "@/components/OrganizationMembersDialog";
+import OrganizationEmailDialog from "@/components/OrganizationEmailDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trophy, Plus, Calendar, LogOut, Users, Building2, UserCog } from "lucide-react";
+import { Trophy, Plus, Calendar, LogOut, Users, Building2, UserCog, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -36,6 +37,7 @@ export default function Dashboard() {
   const [newOrgName, setNewOrgName] = useState("");
   const [creatingOrg, setCreatingOrg] = useState(false);
   const [membersOpen, setMembersOpen] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
 
   const fetchTournaments = async () => {
     if (!activeOrgId) { setTournaments([]); return; }
@@ -161,12 +163,25 @@ export default function Dashboard() {
               <UserCog className="h-4 w-4 mr-1" /> Membros
             </Button>
           )}
+          {activeOrg && (
+            <Button variant="outline" size="sm" onClick={() => setEmailOpen(true)}>
+              <Mail className="h-4 w-4 mr-1" /> E-mails
+            </Button>
+          )}
         </div>
 
         {activeOrg && (
           <OrganizationMembersDialog
             open={membersOpen}
             onOpenChange={setMembersOpen}
+            org={activeOrg}
+          />
+        )}
+
+        {activeOrg && (
+          <OrganizationEmailDialog
+            open={emailOpen}
+            onOpenChange={setEmailOpen}
             org={activeOrg}
           />
         )}

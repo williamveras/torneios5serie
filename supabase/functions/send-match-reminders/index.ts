@@ -8,8 +8,50 @@ const corsHeaders = {
 };
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const FROM = "Torneios Quinta Série <comunicacoes@5serie.net>";
-const PUBLIC_BASE = Deno.env.get("PUBLIC_APP_URL") ?? "https://torneios.5serie.net";
+const DEFAULT_FROM = "Torneios Quinta Série <comunicacoes@5serie.net>";
+const DEFAULT_BASE = Deno.env.get("PUBLIC_APP_URL") ?? "https://torneios.5serie.net";
+
+interface OrgEmailConfig {
+  from: string;
+  brand: string;
+  baseUrl: string;
+  apiKey: string;
+}
+
+const orgCache = new Map<string, OrgEmailConfig>();
+
+async function getOrgEmailConfig(tournamentId: string): Promise<OrgEmailConfig> {
+  if (orgCache.has(tournamentId)) return orgCache.get(tournamentId)!;
+  const fallback: OrgEmailConfig = {
+    from: DEFAULT_FROM,
+    brand: "Torneios Quinta Série",
+    baseUrl: DEFAULT_BASE,
+    apiKey: RESEND_API_KEY ?? "",
+  };
+  const { data: t } = await supabase
+    .from("tournaments")
+    .select("organization_id")
+    .eq("id", tournamentId)
+    .maybeSingle();
+  if (t?.organization_id) {
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("nome, email_from_name, email_from_email, resend_secret_name, public_base_url")
+      .eq("id", t.organization_id)
+      .maybeSingle();
+    if (org) {
+      const brand = (org as any).email_from_name || org.nome || fallback.brand;
+      const address = (org as any).email_from_email;
+      const secretName = (org as any).resend_secret_name;
+      fallback.brand = brand;
+      fallback.from = address ? `${brand} <${address}>` : DEFAULT_FROM;
+      fallback.baseUrl = (org as any).public_base_url || DEFAULT_BASE;
+      if (secretName) fallback.apiKey = Deno.env.get(secretName) ?? fallback.apiKey;
+    }
+  }
+  orgCache.set(tournamentId, fallback);
+  return fallback;
+}
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,

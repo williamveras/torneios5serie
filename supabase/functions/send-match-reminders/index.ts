@@ -219,8 +219,9 @@ Deno.serve(async (req) => {
             tournamentName: tournament?.nome ?? "Torneio",
             when: whenStr,
             tournamentUrl,
+            brand: cfg.brand,
           });
-          await sendEmail(r.email, `Sua partida começa em 3h — ${tournament?.nome ?? ""}`, html);
+          await sendEmail(cfg, r.email, `Sua partida começa em 3h — ${tournament?.nome ?? ""}`, html);
           await supabase.from("match_reminders_sent").insert({
             schedule_id: sched.id,
             player_id: r.playerId,

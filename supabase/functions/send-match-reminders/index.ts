@@ -44,7 +44,8 @@ async function getOrgEmailConfig(tournamentId: string): Promise<OrgEmailConfig> 
       const address = (org as any).email_from_email;
       const secretName = (org as any).resend_secret_name;
       fallback.brand = brand;
-      fallback.from = address ? `${brand} <${address}>` : DEFAULT_FROM;
+      const defaultAddress = DEFAULT_FROM.replace(/^.*</, "").replace(">", "");
+      fallback.from = `${brand} <${address || defaultAddress}>`;
       fallback.baseUrl = (org as any).public_base_url || DEFAULT_BASE;
       if (secretName) fallback.apiKey = Deno.env.get(secretName) ?? fallback.apiKey;
     }

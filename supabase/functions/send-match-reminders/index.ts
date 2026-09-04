@@ -64,14 +64,14 @@ interface Recipient {
   playerId: string; // id em match_reminders_sent (player ou team_member)
 }
 
-async function sendEmail(to: string, subject: string, html: string) {
+async function sendEmail(cfg: OrgEmailConfig, to: string, subject: string, html: string) {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${RESEND_API_KEY}`,
+      Authorization: `Bearer ${cfg.apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ from: FROM, to: [to], subject, html }),
+    body: JSON.stringify({ from: cfg.from, to: [to], subject, html }),
   });
   if (!res.ok) {
     const body = await res.text();

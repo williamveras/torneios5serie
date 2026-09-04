@@ -8,8 +8,51 @@ const corsHeaders = {
 };
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const FROM = "Torneios Quinta Série <comunicacoes@5serie.net>";
-const PUBLIC_BASE = Deno.env.get("PUBLIC_APP_URL") ?? "https://torneios.5serie.net";
+const DEFAULT_FROM = "Torneios Quinta Série <comunicacoes@5serie.net>";
+const DEFAULT_BASE = Deno.env.get("PUBLIC_APP_URL") ?? "https://torneios.5serie.net";
+
+interface OrgEmailConfig {
+  from: string;
+  brand: string;
+  baseUrl: string;
+  apiKey: string;
+}
+
+const orgCache = new Map<string, OrgEmailConfig>();
+
+async function getOrgEmailConfig(tournamentId: string): Promise<OrgEmailConfig> {
+  if (orgCache.has(tournamentId)) return orgCache.get(tournamentId)!;
+  const fallback: OrgEmailConfig = {
+    from: DEFAULT_FROM,
+    brand: "Torneios Quinta Série",
+    baseUrl: DEFAULT_BASE,
+    apiKey: RESEND_API_KEY ?? "",
+  };
+  const { data: t } = await supabase
+    .from("tournaments")
+    .select("organization_id")
+    .eq("id", tournamentId)
+    .maybeSingle();
+  if (t?.organization_id) {
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("nome, email_from_name, email_from_email, resend_secret_name, public_base_url")
+      .eq("id", t.organization_id)
+      .maybeSingle();
+    if (org) {
+      const brand = (org as any).email_from_name || org.nome || fallback.brand;
+      const address = (org as any).email_from_email;
+      const secretName = (org as any).resend_secret_name;
+      fallback.brand = brand;
+      const defaultAddress = DEFAULT_FROM.replace(/^.*</, "").replace(">", "");
+      fallback.from = `${brand} <${address || defaultAddress}>`;
+      fallback.baseUrl = (org as any).public_base_url || DEFAULT_BASE;
+      if (secretName) fallback.apiKey = Deno.env.get(secretName) ?? fallback.apiKey;
+    }
+  }
+  orgCache.set(tournamentId, fallback);
+  return fallback;
+}
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -22,14 +65,14 @@ interface Recipient {
   playerId: string; // id em match_reminders_sent (player ou team_member)
 }
 
-async function sendEmail(to: string, subject: string, html: string) {
+async function sendEmail(cfg: OrgEmailConfig, to: string, subject: string, html: string) {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${RESEND_API_KEY}`,
+      Authorization: `Bearer ${cfg.apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ from: FROM, to: [to], subject, html }),
+    body: JSON.stringify({ from: cfg.from, to: [to], subject, html }),
   });
   if (!res.ok) {
     const body = await res.text();
@@ -43,8 +86,9 @@ function buildHtml(params: {
   tournamentName: string;
   when: string;
   tournamentUrl: string;
+  brand: string;
 }) {
-  const { playerName, opponentName, tournamentName, when, tournamentUrl } = params;
+  const { playerName, opponentName, tournamentName, when, tournamentUrl, brand } = params;
   return `<!doctype html><html><body style="font-family:Arial,sans-serif;background:#ffffff;color:#111;padding:24px">
     <div style="max-width:520px;margin:0 auto;border:1px solid #eee;border-radius:8px;padding:24px">
       <h2 style="margin:0 0 12px">Lembrete de partida</h2>
@@ -55,7 +99,7 @@ function buildHtml(params: {
         <strong>Horário:</strong> ${when}
       </p>
       <p><a href="${tournamentUrl}" style="display:inline-block;background:#111;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none">Ver torneio</a></p>
-      <p style="color:#666;font-size:12px;margin-top:24px">Torneios Quinta Série</p>
+      <p style="color:#666;font-size:12px;margin-top:24px">${brand}</p>
     </div>
   </body></html>`;
 }
@@ -153,7 +197,8 @@ Deno.serve(async (req) => {
         .eq("id", sched.player2_id)
         .maybeSingle();
 
-      const tournamentUrl = `${PUBLIC_BASE}/p/${sched.tournament_id}`;
+      const cfg = await getOrgEmailConfig(sched.tournament_id);
+      const tournamentUrl = `${cfg.baseUrl}/p/${sched.tournament_id}`;
       const whenStr = `${sched.data_partida?.split("-").reverse().join("/")} às ${String(sched.horario).slice(0, 5)}`;
 
       for (const [side, other] of [[p1, p2], [p2, p1]] as const) {
@@ -175,8 +220,9 @@ Deno.serve(async (req) => {
             tournamentName: tournament?.nome ?? "Torneio",
             when: whenStr,
             tournamentUrl,
+            brand: cfg.brand,
           });
-          await sendEmail(r.email, `Sua partida começa em 3h — ${tournament?.nome ?? ""}`, html);
+          await sendEmail(cfg, r.email, `Sua partida começa em 3h — ${tournament?.nome ?? ""}`, html);
           await supabase.from("match_reminders_sent").insert({
             schedule_id: sched.id,
             player_id: r.playerId,

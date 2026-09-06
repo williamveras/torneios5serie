@@ -196,7 +196,13 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
 
       const { error } = await supabase.from("match_results").insert(toInsert);
       if (error) failed++;
-      else inserted++;
+      else {
+        inserted++;
+        const desistentes = toInsert.filter(r => r.penalidades === "Desistente").map(r => r.player_id);
+        if (desistentes.length > 0) {
+          await supabase.from("players").update({ eliminado: true }).in("id", desistentes);
+        }
+      }
     }
 
     setSaving(false);

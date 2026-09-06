@@ -195,6 +195,11 @@ export default function ResultsTab({ tournamentId }: Props) {
     if (error) {
       toast.error("Erro ao salvar resultados");
     } else {
+      const desistentes = toInsert.filter(r => r.penalidades === "Desistente").map(r => r.player_id);
+      if (desistentes.length > 0) {
+        await supabase.from("players").update({ eliminado: true }).in("id", desistentes);
+        toast.info(isDuplas ? "Dupla marcada como desistente e fora do torneio." : "Participante marcado como desistente e fora do torneio.");
+      }
       toast.success("Resultados registrados!");
       setResults([emptyResult()]);
       setGrupo("");

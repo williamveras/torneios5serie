@@ -463,24 +463,8 @@ export default function PublicSchedule({ schedules, players, matchups, results =
     </div>
   );
 
-  const orderToggle = (
-    <div className="flex flex-wrap gap-2">
-      <Button
-        variant={orderMode === "time" ? "default" : "outline"}
-        size="sm"
-        onClick={() => setOrderMode("time")}
-      >
-        <ListOrdered className="h-4 w-4 mr-1" /> Visualizar jogos por ordem de horários
-      </Button>
-      <Button
-        variant={orderMode === "group" ? "default" : "outline"}
-        size="sm"
-        onClick={() => setOrderMode("group")}
-      >
-        <Layers className="h-4 w-4 mr-1" /> Visualizar jogos por ordem de grupo
-      </Button>
-    </div>
-  );
+
+
 
   const renderRoundTable = (items: Schedule[]) => (
     <Card>

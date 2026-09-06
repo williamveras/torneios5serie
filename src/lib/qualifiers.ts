@@ -2,6 +2,13 @@ import type { Tables } from "@/integrations/supabase/types";
 import { computeStandings, type StandingRow } from "./standings";
 import { FASES } from "./constants";
 
+// Participantes fora do torneio: eliminados por W.O. ou desistentes.
+export function isOutOfTournament(penalidades: string | null | undefined): boolean {
+  const p = (penalidades || "").toLowerCase();
+  return p.includes("eliminado por w.o") || p.includes("desistente");
+}
+
+
 type MatchResult = Tables<"match_results">;
 
 export interface QualifierRow extends StandingRow {
@@ -55,8 +62,8 @@ export function computeQualifiers(
   const hasGroups = results.some(r => !!r.grupo && r.grupo.trim() !== "");
   if (!hasGroups) {
     const rows = computeStandings(results, getPlayerName, getPlayerNick, { lowerWins, h2hFirst });
-    const eligible = rows.filter(r => r.penalidades !== "Eliminado por W.O");
-    const wo = rows.filter(r => r.penalidades === "Eliminado por W.O");
+    const eligible = rows.filter(r => !isOutOfTournament(r.penalidades));
+    const wo = rows.filter(r => isOutOfTournament(r.penalidades));
     return {
       direct: eligible.map((r, i) => ({ ...r, position: i + 1, grupo: "", groupPosition: i + 1 })),
       repescagem: [],
@@ -76,7 +83,7 @@ export function computeQualifiers(
   const rest: QualifierRow[] = [];
 
   // Jogadores eliminados por W.O nunca se classificam.
-  const isWO = (r: StandingRow) => r.penalidades === "Eliminado por W.O";
+  const isWO = (r: StandingRow) => isOutOfTournament(r.penalidades);
 
   for (const g of groups) {
     const rows = computeStandings(

@@ -221,7 +221,28 @@ export default function PublicSchedule({ schedules, players, matchups, results =
         ? "Confrontos da final e disputa de terceiro."
         : `Confrontos da ${activeFase}.`);
 
+  const orderToggle = (
+    <div className="flex flex-wrap gap-2">
+      <Button
+        variant={orderMode === "time" ? "default" : "outline"}
+        size="sm"
+        onClick={() => setOrderMode("time")}
+      >
+        <ListOrdered className="h-4 w-4 mr-1" /> Visualizar jogos por ordem de horários
+      </Button>
+      <Button
+        variant={orderMode === "group" ? "default" : "outline"}
+        size="sm"
+        onClick={() => setOrderMode("group")}
+      >
+        <Layers className="h-4 w-4 mr-1" />{" "}
+        {isGroup ? "Visualizar jogos por ordem de grupo" : "Visualizar jogos por ordem de mesa"}
+      </Button>
+    </div>
+  );
+
   // ===== Elimination (non-group) rendering =====
+
   if (!isGroup) {
     if (eliminationItems.length === 0) {
       return (
@@ -259,9 +280,101 @@ export default function PublicSchedule({ schedules, players, matchups, results =
         }),
       ] as const);
 
+    const mesaSorted = [...eliminationItems].sort((a, b) => {
+      if (a.fase !== b.fase) return a.fase === SIDE_FASE_3RD ? 1 : -1;
+      return a.mesa - b.mesa;
+    });
+
+    if (orderMode === "group") {
+      return (
+        <div className="space-y-6">
+          <p className="text-sm text-muted-foreground">{description}</p>
+          {orderToggle}
+          {viewMode === "table" ? (
+            <Card>
+              <CardContent className="pt-4">
+                <div className="rounded-md border overflow-x-auto">
+                  <Table className="min-w-max">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="whitespace-nowrap">Mesa</TableHead>
+                        <TableHead className="whitespace-nowrap">Confronto</TableHead>
+                        <TableHead className="whitespace-nowrap">Data</TableHead>
+                        <TableHead className="whitespace-nowrap">Horário</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {mesaSorted.map(it => (
+                        <TableRow key={`m-${it.fase}-${it.mesa}-${it.player1_id}`}>
+                          <TableCell className="whitespace-nowrap tabular-nums">
+                            Mesa {it.mesa}
+                            {it.fase === SIDE_FASE_3RD && (
+                              <span className="ml-2 text-xs text-amber-700 dark:text-amber-300">(3º lugar)</span>
+                            )}
+                          </TableCell>
+                          <TableCell className={`font-medium ${noWrapText}`}>
+                            {displayName(playerMap.get(it.player1_id))} x {displayName(playerMap.get(it.player2_id))}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {it.schedule?.data_partida ? formatDate(it.schedule.data_partida) : "Sem data definida"}
+                          </TableCell>
+                          <TableCell className="tabular-nums whitespace-nowrap">
+                            {it.schedule?.horario ? it.schedule.horario.slice(0, 5) : (it.schedule?.observacao || "A definir")}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {mesaSorted.map(it => (
+                <Card key={`ml-${it.fase}-${it.mesa}-${it.player1_id}`}>
+                  <CardContent className="pt-4">
+                    <h3 className="font-semibold mb-3 flex items-center gap-2">
+                      <Layers className="h-4 w-4" /> Mesa {it.mesa}
+                      {it.fase === SIDE_FASE_3RD && (
+                        <span className="text-xs font-medium text-amber-700 dark:text-amber-300">— Disputa de 3º Lugar</span>
+                      )}
+                    </h3>
+                    <div className={`rounded-md border bg-muted/30 min-w-0 overflow-hidden ${compactCardPadding}`}>
+                      <h3 className={`text-base sm:text-lg font-semibold ${scrollLine}`}>
+                        <span className="public-line-content">
+                          <span>{keepTogether(displayName(playerMap.get(it.player1_id)))}</span>{" "}
+                          <span className="text-muted-foreground font-normal">x</span>{" "}
+                          <span>{keepTogether(displayName(playerMap.get(it.player2_id)))}</span>
+                          {it.fase === "Final" && (
+                            <span className="ml-2 text-xs font-semibold text-amber-700 dark:text-amber-300">— grande final!</span>
+                          )}
+                        </span>
+                      </h3>
+                      <div className={`text-sm font-medium tabular-nums mt-1 ${scrollLine}`}>
+                        <span className="public-line-content">
+                          {keepTogether(it.schedule?.data_partida ? formatDate(it.schedule.data_partida) : "Sem data definida")}
+                          {"\u00A0\u00B7\u00A0"}
+                          <Clock className="inline h-3.5 w-3.5 align-[-2px]" />{" "}
+                          {keepTogether(it.schedule?.horario ? it.schedule.horario.slice(0, 5) : (it.schedule?.observacao || "A definir"))}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-6">
         <p className="text-sm text-muted-foreground">{description}</p>
+
+        {orderToggle}
+
+
 
         {viewMode === "table" ? (
           <Card>
@@ -442,24 +555,8 @@ export default function PublicSchedule({ schedules, players, matchups, results =
     </div>
   );
 
-  const orderToggle = (
-    <div className="flex flex-wrap gap-2">
-      <Button
-        variant={orderMode === "time" ? "default" : "outline"}
-        size="sm"
-        onClick={() => setOrderMode("time")}
-      >
-        <ListOrdered className="h-4 w-4 mr-1" /> Visualizar jogos por ordem de horários
-      </Button>
-      <Button
-        variant={orderMode === "group" ? "default" : "outline"}
-        size="sm"
-        onClick={() => setOrderMode("group")}
-      >
-        <Layers className="h-4 w-4 mr-1" /> Visualizar jogos por ordem de grupo
-      </Button>
-    </div>
-  );
+
+
 
   const renderRoundTable = (items: Schedule[]) => (
     <Card>

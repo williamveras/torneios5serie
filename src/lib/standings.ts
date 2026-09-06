@@ -64,6 +64,8 @@ export function computeStandings(
       pontosMesa: data.pontosMesa,
       penalidades: data.penalties.includes("Eliminado por W.O")
         ? "Eliminado por W.O"
+        : data.penalties.includes("Desistente")
+        ? "Desistente"
         : data.penalties.length > 0
           ? Array.from(new Set(data.penalties)).join("; ")
           : "Sem penalidades",

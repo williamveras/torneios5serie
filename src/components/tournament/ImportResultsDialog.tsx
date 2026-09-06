@@ -17,7 +17,7 @@ import type { Tables } from "@/integrations/supabase/types";
 
 type Player = Tables<"players">;
 
-const PENALIDADE_OPCOES = ["Sem penalidades", "W.O", "Eliminado por W.O", "Digitação na mesa", "Outra"] as const;
+const PENALIDADE_OPCOES = ["Sem penalidades", "W.O", "Eliminado por W.O", "Desistente", "Digitação na mesa", "Outra"] as const;
 
 interface BlockState {
   parsed: ParsedResult;
@@ -196,7 +196,13 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
 
       const { error } = await supabase.from("match_results").insert(toInsert);
       if (error) failed++;
-      else inserted++;
+      else {
+        inserted++;
+        const desistentes = toInsert.filter(r => r.penalidades === "Desistente").map(r => r.player_id);
+        if (desistentes.length > 0) {
+          await supabase.from("players").update({ eliminado: true }).in("id", desistentes);
+        }
+      }
     }
 
     setSaving(false);

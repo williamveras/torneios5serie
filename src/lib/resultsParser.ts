@@ -184,11 +184,27 @@ export function parseResultsText(
     .map((l) => l.replace(/^pontua[cç][oõ]es?\s*:?\s*/i, "").trim())
     .filter((l) => l.length > 0);
 
-  interface RawBlock { lines: string[]; data?: string; horario?: string }
+  interface RawBlock { lines: string[]; data?: string; horario?: string; desist?: string[] }
   const blocks: RawBlock[] = [];
   let current: RawBlock = { lines: [] };
 
   for (const line of lines) {
+    // Desistência: "Fulano desistente." / "Fulano: 12 (desistente)" / "Fulano desistiu".
+    if (/desist/i.test(line)) {
+      const cleaned = line
+        .replace(/[([]?\s*desist\w*\s*[)\]]?/i, " ")
+        .replace(/\s{2,}/g, " ")
+        .trim();
+      const sc = parseScoreLine(cleaned);
+      if (sc) {
+        current.desist = [...(current.desist || []), sc.name];
+        current.lines.push(cleaned);
+        continue;
+      }
+      const nameOnly = cleaned.replace(/^[-•*\s]+/, "").replace(/[:\-–.\s]+$/, "").trim();
+      if (nameOnly) current.desist = [...(current.desist || []), nameOnly];
+      continue;
+    }
     // Primeiro tenta detectar data/horário — evita que "17:30." seja
     // interpretado como score (nome=17, valor=30).
     const d = extractDate(line);
@@ -329,6 +345,22 @@ export function parseResultsText(
       else if (s1 === 0 && s0 > 0) { woIdx = 1; winnerIdx = 0; }
     }
 
+    // Desistências identificadas no bloco
+    const desistIdx = new Set<number>();
+    for (const dn of block.desist || []) {
+      if (!dn) continue;
+      let idx = resolved.findIndex((r) => norm(r.raw) === norm(dn));
+      if (idx < 0) {
+        const c = candidatesFor(dn, players, teamTokens);
+        if (c.length === 1) idx = resolved.findIndex((r) => r.player?.id === c[0].id);
+      }
+      if (idx >= 0) desistIdx.add(idx);
+    }
+    if (desistIdx.size === 1 && resolved.length === 2) {
+      const di = Array.from(desistIdx)[0];
+      winnerIdx = di === 0 ? 1 : 0;
+    }
+
     const grupo = resolved.find((r) => r.player?.grupo)?.player?.grupo || undefined;
 
     results.push({
@@ -338,7 +370,7 @@ export function parseResultsText(
         playerName: r.player ? (r.player.is_team ? r.player.nome_completo : (r.player.nick_playroom || r.player.nome_completo)) : r.raw,
         pontosMesa: r.score,
         pontosJogo: winnerIdx === i ? 3 : 0,
-        penalidade: woIdx === i ? "W.O" : undefined,
+        penalidade: desistIdx.has(i) ? "Desistente" : woIdx === i ? "W.O" : undefined,
       })),
       winnerRawName: winnerLine,
       grupo: grupo || undefined,

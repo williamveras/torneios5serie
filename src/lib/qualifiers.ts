@@ -55,8 +55,8 @@ export function computeQualifiers(
   const hasGroups = results.some(r => !!r.grupo && r.grupo.trim() !== "");
   if (!hasGroups) {
     const rows = computeStandings(results, getPlayerName, getPlayerNick, { lowerWins, h2hFirst });
-    const eligible = rows.filter(r => r.penalidades !== "Eliminado por W.O");
-    const wo = rows.filter(r => r.penalidades === "Eliminado por W.O");
+    const eligible = rows.filter(r => !isOutOfTournament(r.penalidades));
+    const wo = rows.filter(r => isOutOfTournament(r.penalidades));
     return {
       direct: eligible.map((r, i) => ({ ...r, position: i + 1, grupo: "", groupPosition: i + 1 })),
       repescagem: [],
@@ -76,7 +76,7 @@ export function computeQualifiers(
   const rest: QualifierRow[] = [];
 
   // Jogadores eliminados por W.O nunca se classificam.
-  const isWO = (r: StandingRow) => r.penalidades === "Eliminado por W.O";
+  const isWO = (r: StandingRow) => isOutOfTournament(r.penalidades);
 
   for (const g of groups) {
     const rows = computeStandings(

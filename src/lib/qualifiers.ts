@@ -2,6 +2,13 @@ import type { Tables } from "@/integrations/supabase/types";
 import { computeStandings, type StandingRow } from "./standings";
 import { FASES } from "./constants";
 
+// Participantes fora do torneio: eliminados por W.O. ou desistentes.
+export function isOutOfTournament(penalidades: string | null | undefined): boolean {
+  const p = (penalidades || "").toLowerCase();
+  return p.includes("eliminado por w.o") || p.includes("desistente");
+}
+
+
 type MatchResult = Tables<"match_results">;
 
 export interface QualifierRow extends StandingRow {

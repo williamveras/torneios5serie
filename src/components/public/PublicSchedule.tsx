@@ -221,7 +221,28 @@ export default function PublicSchedule({ schedules, players, matchups, results =
         ? "Confrontos da final e disputa de terceiro."
         : `Confrontos da ${activeFase}.`);
 
+  const orderToggle = (
+    <div className="flex flex-wrap gap-2">
+      <Button
+        variant={orderMode === "time" ? "default" : "outline"}
+        size="sm"
+        onClick={() => setOrderMode("time")}
+      >
+        <ListOrdered className="h-4 w-4 mr-1" /> Visualizar jogos por ordem de horários
+      </Button>
+      <Button
+        variant={orderMode === "group" ? "default" : "outline"}
+        size="sm"
+        onClick={() => setOrderMode("group")}
+      >
+        <Layers className="h-4 w-4 mr-1" />{" "}
+        {isGroup ? "Visualizar jogos por ordem de grupo" : "Visualizar jogos por ordem de mesa"}
+      </Button>
+    </div>
+  );
+
   // ===== Elimination (non-group) rendering =====
+
   if (!isGroup) {
     if (eliminationItems.length === 0) {
       return (

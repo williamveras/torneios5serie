@@ -450,7 +450,10 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
     const fields = getExportFields().filter(f => exportFields[f.key]);
     if (fields.length === 0) { toast.error("Selecione ao menos um campo"); return; }
 
-    const sortedPlayers = [...players].sort((a, b) => {
+    const activePlayers = players.filter(p => !p.eliminado);
+    if (activePlayers.length === 0) { toast.info("Nenhum participante ativo para exportar"); return; }
+
+    const sortedPlayers = [...activePlayers].sort((a, b) => {
       const ga = a.grupo ? Number(a.grupo) : Infinity;
       const gb = b.grupo ? Number(b.grupo) : Infinity;
       if (ga !== gb) return ga - gb;
@@ -999,7 +1002,7 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
           <DialogHeader>
             <DialogTitle>Exportar participantes</DialogTitle>
             <DialogDescription>
-              Selecione os campos que deseja incluir na exportação.
+              Somente participantes que continuam no torneio (eliminados e desistentes são excluídos automaticamente). Selecione os campos que deseja incluir.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">

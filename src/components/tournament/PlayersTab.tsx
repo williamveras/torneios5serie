@@ -1002,7 +1002,7 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
           <DialogHeader>
             <DialogTitle>Exportar participantes</DialogTitle>
             <DialogDescription>
-              Selecione os campos que deseja incluir na exportação.
+              Somente participantes que continuam no torneio (eliminados e desistentes são excluídos automaticamente). Selecione os campos que deseja incluir.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">

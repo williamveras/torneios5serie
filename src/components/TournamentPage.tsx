@@ -29,6 +29,7 @@ export default function TournamentPage({ tournament, onBack }: Props) {
   const [activeTab, setActiveTab] = useState("players");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const mainFases = useMainFases(tournament.id);
+  useAutoClosePhases(tournament.id);
   const { label: standingsLabel } = useStandingsTabLabel(tournament.id, undefined, mainFases);
   const [prefillPlayerId, setPrefillPlayerId] = useState<string | null>(null);
   const [prefillPlayer2Id, setPrefillPlayer2Id] = useState<string | null>(null);

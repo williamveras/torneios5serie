@@ -126,7 +126,7 @@ function ListSection({ title, rows, usePos, playerMesaMap, playerMap, teamMember
   );
 }
 
-export default function QualifiersView({ qualifiers, viewMode = "list", playerMesaMap, players, teamMembers = {} }: Props) {
+export default function QualifiersView({ qualifiers, viewMode = "list", playerMesaMap, players, teamMembers = {}, repescagemWinners = [] }: Props) {
   const Section = viewMode === "table" ? TableSection : ListSection;
   const playerMap = (() => {
     const m = new Map<string, PlayerLike>();

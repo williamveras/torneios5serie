@@ -335,6 +335,18 @@ export default function StandingsTab({ tournamentId }: Props) {
   );
   const qualifiersToShow = isGroupsPhase ? qualifiers : (elimWinnersQualifiers ?? qualifiers);
 
+  // Vencedores da fase extra de Repescagem — entram na lista de classificados
+  // da Fase de Grupos junto com quem já havia passado direto.
+  const repescagemWinners = useMemo(() => {
+    if (!isGroupsPhase) return [];
+    const ids = computePhaseWinnerIds(matchups as any, results as any, "Repescagem", lowerWins);
+    if (ids.size === 0) return [];
+    const rows = results
+      .filter(r => (r.fase || "Fase de Grupos") === "Repescagem" && ids.has(r.player_id))
+      .map(r => ({ ...r, grupo: "" })) as MatchResult[];
+    return computeQualifiers(rows, getPlayerName, getPlayerNick, { lowerWins, h2hFirst }).direct;
+  }, [matchups, results, isGroupsPhase, players, lowerWins, h2hFirst]);
+
   // === Projeção automática das fases eliminatórias ===
   // Conta classificados saídos da Fase de Grupos (usando a regra configurada
   // do torneio, ou o padrão histórico 5+18 quando vazia).

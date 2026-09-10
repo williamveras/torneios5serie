@@ -18,6 +18,8 @@ interface Props {
   playerMesaMap?: Map<string, number>;
   players?: PlayerLike[];
   teamMembers?: TeamMembersMap;
+  /** Vencedores da fase extra de Repescagem (quando já disputada). */
+  repescagemWinners?: QualifierRow[];
 }
 
 const noWrapText = "public-nowrap";

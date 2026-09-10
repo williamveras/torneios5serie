@@ -191,8 +191,18 @@ export default function QualifiersView({ qualifiers, viewMode = "list", playerMe
             rows={byes}
           />
         )}
+        {repescagemWinners.length > 0 && (
+          <Section
+            title="Classificados da repescagem para a segunda fase:"
+            rows={repescagemWinners}
+            usePos="overall"
+            playerMesaMap={playerMesaMap}
+            playerMap={playerMap}
+            teamMembers={teamMembers}
+          />
+        )}
         <Section
-          title="Jogadores que irão para a repescagem"
+          title={repescagemWinners.length > 0 ? "Jogadores que disputaram a repescagem" : "Jogadores que irão para a repescagem"}
           rows={qualifiers.playoff}
           usePos="overall"
           playerMesaMap={playerMesaMap}

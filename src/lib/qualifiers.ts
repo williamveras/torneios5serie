@@ -183,3 +183,32 @@ export function nextPhaseName(currentFase: string, mainFases?: string[] | null):
   if (i < 0 || i === main.length - 1) return "";
   return main[i + 1];
 }
+
+/**
+ * IDs dos vencedores dos confrontos de uma fase eliminatória (ex.: "Repescagem").
+ * Critério: maior pontos_jogo; empate → pontos de mesa (respeitando lowerWins).
+ */
+export function computePhaseWinnerIds(
+  matchups: { fase: string | null; player1_id: string; player2_id: string }[],
+  results: { fase: string | null; player_id: string; pontos_jogo: number; pontos_mesa: number }[],
+  fase: string,
+  lowerWins = false,
+): Set<string> {
+  const ids = new Set<string>();
+  const byPlayer = new Map<string, { pontos_jogo: number; pontos_mesa: number }>();
+  results.filter(r => (r.fase || "Fase de Grupos") === fase).forEach(r => byPlayer.set(r.player_id, r));
+  for (const m of matchups.filter(m => (m.fase || "Fase de Grupos") === fase)) {
+    const r1 = byPlayer.get(m.player1_id);
+    const r2 = byPlayer.get(m.player2_id);
+    if (!r1 || !r2) continue;
+    let w: string | null = null;
+    if (r1.pontos_jogo > r2.pontos_jogo) w = m.player1_id;
+    else if (r2.pontos_jogo > r1.pontos_jogo) w = m.player2_id;
+    else if (r1.pontos_mesa !== r2.pontos_mesa) {
+      if (lowerWins) w = r1.pontos_mesa < r2.pontos_mesa ? m.player1_id : m.player2_id;
+      else w = r1.pontos_mesa > r2.pontos_mesa ? m.player1_id : m.player2_id;
+    }
+    if (w) ids.add(w);
+  }
+  return ids;
+}

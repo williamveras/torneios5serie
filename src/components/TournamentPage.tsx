@@ -16,6 +16,7 @@ import ExportTab from "./tournament/ExportTab";
 import TournamentSettingsDialog from "./tournament/TournamentSettingsDialog";
 import { useStandingsTabLabel } from "@/hooks/useStandingsTabLabel";
 import { useMainFases } from "@/hooks/useMainFases";
+import { useAutoClosePhases } from "@/hooks/useAutoClosePhases";
 
 type Tournament = Tables<"tournaments">;
 

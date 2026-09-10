@@ -10,7 +10,7 @@ import { AlertTriangle, CheckCircle2, BarChart3, Download } from "lucide-react";
 import * as XLSX from "xlsx";
 import { FASES, isSideFase } from "@/lib/constants";
 import { computeStandings } from "@/lib/standings";
-import { computeQualifiers, nextPhaseName } from "@/lib/qualifiers";
+import { computeQualifiers, nextPhaseName, computePhaseWinnerIds } from "@/lib/qualifiers";
 import { projectPhases } from "@/lib/phaseProjection";
 import PhaseRoadmap from "@/components/PhaseRoadmap";
 import QualifiersView from "@/components/QualifiersView";

@@ -233,6 +233,18 @@ export default function PublicStandings({ results, players, teamMembers = {}, ph
   );
   const qualifiersToShow = isGroupsPhase ? qualifiers : (elimWinnersQualifiers ?? qualifiers);
 
+  // Vencedores da fase extra de Repescagem — listados junto aos classificados
+  // diretos da Fase de Grupos.
+  const repescagemWinners = useMemo(() => {
+    if (!isGroupsPhase) return [];
+    const ids = computePhaseWinnerIds(matchups as any, results as any, "Repescagem", lowerWins);
+    if (ids.size === 0) return [];
+    const rows = results
+      .filter(r => (r.fase || "Fase de Grupos") === "Repescagem" && ids.has(r.player_id))
+      .map(r => ({ ...r, grupo: "" })) as MatchResult[];
+    return computeQualifiers(rows, getPlayerName, getPlayerNick, { lowerWins, h2hFirst }).direct;
+  }, [matchups, results, isGroupsPhase, players, lowerWins, h2hFirst]);
+
   // Projeção de fases eliminatórias (visível na fase de grupos para mostrar o roadmap completo).
   const grupoResults = useMemo(
     () => results.filter(r => (r.fase || "Fase de Grupos") === "Fase de Grupos"),

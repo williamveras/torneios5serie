@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { FASES, isSideFase } from "@/lib/constants";
 import { computeStandings } from "@/lib/standings";
-import { computeQualifiers, nextPhaseName } from "@/lib/qualifiers";
+import { computeQualifiers, nextPhaseName, computePhaseWinnerIds } from "@/lib/qualifiers";
 import QualifiersView from "@/components/QualifiersView";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { computeCurrentRound } from "@/lib/rounds";

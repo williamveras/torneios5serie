@@ -18,6 +18,8 @@ interface Props {
   playerMesaMap?: Map<string, number>;
   players?: PlayerLike[];
   teamMembers?: TeamMembersMap;
+  /** Vencedores da fase extra de Repescagem (quando já disputada). */
+  repescagemWinners?: QualifierRow[];
 }
 
 const noWrapText = "public-nowrap";
@@ -124,7 +126,7 @@ function ListSection({ title, rows, usePos, playerMesaMap, playerMap, teamMember
   );
 }
 
-export default function QualifiersView({ qualifiers, viewMode = "list", playerMesaMap, players, teamMembers = {} }: Props) {
+export default function QualifiersView({ qualifiers, viewMode = "list", playerMesaMap, players, teamMembers = {}, repescagemWinners = [] }: Props) {
   const Section = viewMode === "table" ? TableSection : ListSection;
   const playerMap = (() => {
     const m = new Map<string, PlayerLike>();
@@ -189,8 +191,18 @@ export default function QualifiersView({ qualifiers, viewMode = "list", playerMe
             rows={byes}
           />
         )}
+        {repescagemWinners.length > 0 && (
+          <Section
+            title="Classificados da repescagem para a segunda fase:"
+            rows={repescagemWinners}
+            usePos="overall"
+            playerMesaMap={playerMesaMap}
+            playerMap={playerMap}
+            teamMembers={teamMembers}
+          />
+        )}
         <Section
-          title="Jogadores que irão para a repescagem"
+          title={repescagemWinners.length > 0 ? "Jogadores que disputaram a repescagem" : "Jogadores que irão para a repescagem"}
           rows={qualifiers.playoff}
           usePos="overall"
           playerMesaMap={playerMesaMap}

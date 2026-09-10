@@ -10,7 +10,7 @@ import { AlertTriangle, CheckCircle2, BarChart3, Download } from "lucide-react";
 import * as XLSX from "xlsx";
 import { FASES, isSideFase } from "@/lib/constants";
 import { computeStandings } from "@/lib/standings";
-import { computeQualifiers, nextPhaseName } from "@/lib/qualifiers";
+import { computeQualifiers, nextPhaseName, computePhaseWinnerIds } from "@/lib/qualifiers";
 import { projectPhases } from "@/lib/phaseProjection";
 import PhaseRoadmap from "@/components/PhaseRoadmap";
 import QualifiersView from "@/components/QualifiersView";
@@ -233,6 +233,18 @@ export default function PublicStandings({ results, players, teamMembers = {}, ph
   );
   const qualifiersToShow = isGroupsPhase ? qualifiers : (elimWinnersQualifiers ?? qualifiers);
 
+  // Vencedores da fase extra de Repescagem — listados junto aos classificados
+  // diretos da Fase de Grupos.
+  const repescagemWinners = useMemo(() => {
+    if (!isGroupsPhase) return [];
+    const ids = computePhaseWinnerIds(matchups as any, results as any, "Repescagem", lowerWins);
+    if (ids.size === 0) return [];
+    const rows = results
+      .filter(r => (r.fase || "Fase de Grupos") === "Repescagem" && ids.has(r.player_id))
+      .map(r => ({ ...r, grupo: "" })) as MatchResult[];
+    return computeQualifiers(rows, getPlayerName, getPlayerNick, { lowerWins, h2hFirst }).direct;
+  }, [matchups, results, isGroupsPhase, players, lowerWins, h2hFirst]);
+
   // Projeção de fases eliminatórias (visível na fase de grupos para mostrar o roadmap completo).
   const grupoResults = useMemo(
     () => results.filter(r => (r.fase || "Fase de Grupos") === "Fase de Grupos"),
@@ -425,7 +437,7 @@ export default function PublicStandings({ results, players, teamMembers = {}, ph
         <div className="space-y-6">
           <div className="space-y-4">
             <h2 className="text-xl font-bold">Classificados para a {nextFase === "Final" ? "grande final e disputa de terceiro" : nextFase === "Repescagem" ? "segunda fase e repescagem" : nextFase}</h2>
-            <QualifiersView qualifiers={qualifiersToShow} viewMode={viewMode} playerMesaMap={nextPhaseMesaMap.size > 0 ? nextPhaseMesaMap : playerMesaMap} players={players} teamMembers={teamMembers} />
+            <QualifiersView qualifiers={qualifiersToShow} viewMode={viewMode} playerMesaMap={nextPhaseMesaMap.size > 0 ? nextPhaseMesaMap : playerMesaMap} players={players} teamMembers={teamMembers} repescagemWinners={repescagemWinners} />
           </div>
           <Accordion type="single" collapsible className="rounded-md border bg-background px-4">
             <AccordionItem value="full-list" className="border-b-0">

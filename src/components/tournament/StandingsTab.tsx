@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { FASES, isSideFase } from "@/lib/constants";
 import { computeStandings } from "@/lib/standings";
-import { computeQualifiers, nextPhaseName } from "@/lib/qualifiers";
+import { computeQualifiers, nextPhaseName, computePhaseWinnerIds } from "@/lib/qualifiers";
 import QualifiersView from "@/components/QualifiersView";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { computeCurrentRound } from "@/lib/rounds";
@@ -334,6 +334,18 @@ export default function StandingsTab({ tournamentId }: Props) {
       : (elimWinnersQualifiers !== null && elimWinnersQualifiers.direct.length > 0)
   );
   const qualifiersToShow = isGroupsPhase ? qualifiers : (elimWinnersQualifiers ?? qualifiers);
+
+  // Vencedores da fase extra de Repescagem — entram na lista de classificados
+  // da Fase de Grupos junto com quem já havia passado direto.
+  const repescagemWinners = useMemo(() => {
+    if (!isGroupsPhase) return [];
+    const ids = computePhaseWinnerIds(matchups as any, results as any, "Repescagem", lowerWins);
+    if (ids.size === 0) return [];
+    const rows = results
+      .filter(r => (r.fase || "Fase de Grupos") === "Repescagem" && ids.has(r.player_id))
+      .map(r => ({ ...r, grupo: "" })) as MatchResult[];
+    return computeQualifiers(rows, getPlayerName, getPlayerNick, { lowerWins, h2hFirst }).direct;
+  }, [matchups, results, isGroupsPhase, players, lowerWins, h2hFirst]);
 
   // === Projeção automática das fases eliminatórias ===
   // Conta classificados saídos da Fase de Grupos (usando a regra configurada
@@ -677,7 +689,7 @@ export default function StandingsTab({ tournamentId }: Props) {
               <div className="space-y-6">
                 <div className="space-y-4">
                   <h2 className="text-xl font-bold">Classificados para a {nextFase === "Final" ? "grande final e disputa de terceiro" : nextFase === "Repescagem" ? "segunda fase e repescagem" : nextFase}</h2>
-                  <QualifiersView qualifiers={qualifiersToShow} />
+                  <QualifiersView qualifiers={qualifiersToShow} repescagemWinners={repescagemWinners} />
                 </div>
                 <Accordion type="single" collapsible className="rounded-md border bg-background px-4">
                   <AccordionItem value="full-list" className="border-b-0">

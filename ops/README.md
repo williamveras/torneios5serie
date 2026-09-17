@@ -18,3 +18,5 @@ docker exec supabase-db psql -U postgres -d postgres -c 'SELECT jobname, active 
 ```
 
 O script `ops/backup.sh` gera um dump diário do banco em `/root/torneios-backups` e conserva 14 dias quando `torneios-backup.timer` está ativo. Guarde também uma cópia fora da VPS para recuperar dados caso a máquina inteira seja perdida.
+
+Para publicar o mesmo frontend em outras organizações, mantenha `.env.production` com a URL da API e a chave pública locais e um `site-config.json` próprio fora do checkout. Após atualizar o código com `git pull --ff-only`, execute `sh ops/deploy-frontend.sh /etc/torneios/site-config.json`. O script instala dependências, compila em `dist-next`, copia a identidade da instalação para o build e guarda o `dist` anterior. A identidade no `public/site-config.json` do repositório não deve ser usada como configuração de outra VPS. O Nginx não precisa ser recarregado quando somente os arquivos do frontend mudam.

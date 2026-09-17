@@ -173,6 +173,15 @@ export function computeQualifiers(
 
 }
 
+/** Conta vagas da eliminatória principal sem duplicar os byes ou os jogadores
+ * que ainda precisam vencer a repescagem. */
+export function countMainQualifiers(qualifiers: QualifiersResult): number {
+  const playoffIds = new Set(qualifiers.playoff.map(p => p.playerId));
+  const directIds = new Set([...qualifiers.direct, ...qualifiers.repescagem]
+    .map(p => p.playerId).filter(id => !playoffIds.has(id)));
+  return directIds.size + Math.ceil(playoffIds.size / 2);
+}
+
 export function nextPhaseName(currentFase: string, mainFases?: string[] | null): string {
   // Caminho principal: usa projeção quando fornecida, senão a lista padrão
   // FASES (ignorando fases laterais como "Disputa de 3º Lugar").

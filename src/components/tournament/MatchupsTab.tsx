@@ -622,7 +622,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
               <Select value={fase} onValueChange={(v) => { setFase(v as Fase); setUserPickedFase(true); }}>
                 <SelectTrigger id="matchup-fase"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {FASES.map((f) => (
+                  {FASES.filter(f => !mainFases || mainFases.includes(f) || f === "Disputa de 3º Lugar" || matchups.some(m => m.fase === f)).map((f) => (
                     <SelectItem key={f} value={f}>{f}</SelectItem>
                   ))}
                 </SelectContent>

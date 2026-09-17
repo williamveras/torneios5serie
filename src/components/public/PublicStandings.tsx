@@ -10,7 +10,7 @@ import { AlertTriangle, CheckCircle2, BarChart3, Download } from "lucide-react";
 import * as XLSX from "xlsx";
 import { FASES, isSideFase } from "@/lib/constants";
 import { computeStandings } from "@/lib/standings";
-import { computeQualifiers, nextPhaseName, computePhaseWinnerIds } from "@/lib/qualifiers";
+import { computeQualifiers, countMainQualifiers, nextPhaseName, computePhaseWinnerIds } from "@/lib/qualifiers";
 import { projectPhases } from "@/lib/phaseProjection";
 import PhaseRoadmap from "@/components/PhaseRoadmap";
 import QualifiersView from "@/components/QualifiersView";
@@ -50,6 +50,7 @@ interface PlayerLite {
 }
 
 interface Props {
+  mainFases?: string[] | null;
   results: MatchResult[];
   players: PlayerLite[];
   teamMembers?: TeamMembersMap;
@@ -75,7 +76,7 @@ const compactCardPadding = "p-3 min-[360px]:p-4";
 const keepTogether = (text: string | number) =>
   String(text).replace(/ /g, "\u00A0").replace(/-/g, "\u2011");
 
-export default function PublicStandings({ results, players, teamMembers = {}, phaseStatuses, matchups = [], viewMode = "list", qualifierOpts = {}, lowerWins = false, h2hFirst = false }: Props) {
+export default function PublicStandings({ mainFases, results, players, teamMembers = {}, phaseStatuses, matchups = [], viewMode = "list", qualifierOpts = {}, lowerWins = false, h2hFirst = false }: Props) {
   // Default fase: latest concluded phase (so the public view follows the tournament progression).
   const latestConcludedFase = useMemo(() => {
     for (let i = FASES.length - 1; i >= 0; i--) {
@@ -170,7 +171,7 @@ export default function PublicStandings({ results, players, teamMembers = {}, ph
     () => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins, h2hFirst }),
     [filteredByFase, players, qualifierOpts, lowerWins],
   );
-  const nextFase = nextPhaseName(selectedFase);
+  const nextFase = nextPhaseName(selectedFase, mainFases);
 
   // Mesa lookup for the NEXT phase — used to annotate qualifiers with the mesa where they will play.
   const nextPhaseMesaMap = useMemo(() => {
@@ -254,9 +255,7 @@ export default function PublicStandings({ results, players, teamMembers = {}, ph
     () => computeQualifiers(grupoResults, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins, h2hFirst }),
     [grupoResults, players, qualifierOpts, lowerWins],
   );
-  const classifiedCount = grupoQualifiers.hasGroups
-    ? grupoQualifiers.direct.length + grupoQualifiers.repescagem.length
-    : grupoQualifiers.direct.length;
+  const classifiedCount = countMainQualifiers(grupoQualifiers);
   const projection = useMemo(() => projectPhases(classifiedCount), [classifiedCount]);
   const concludedFases = phaseStatuses.filter(p => p.status === "concluida").map(p => p.fase);
 

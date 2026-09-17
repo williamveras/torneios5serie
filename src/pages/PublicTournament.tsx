@@ -193,6 +193,8 @@ export default function PublicTournament() {
     totalParticipants: td.max_participants ?? players.length,
     repescagemMode: (td.repescagem_mode as any) ?? "ranking",
     repescagemPlayoffSize: td.repescagem_playoff_size ?? null,
+    byePosition: td.bye_rank_position ?? null,
+    byeTotal: td.bye_rank_total ?? null,
   });
   const mainList = mainFases && mainFases.length > 0
     ? mainFases
@@ -291,6 +293,7 @@ export default function PublicTournament() {
                   <ViewModeToggle value={standingsView} onChange={setStandingsView} />
                 </div>
                 <PublicStandings
+                  mainFases={mainFases}
                   results={results}
                   players={players}
                   teamMembers={teamMembers}

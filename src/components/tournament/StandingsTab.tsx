@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useMainFases } from "@/hooks/useMainFases";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllMatchResults } from "@/lib/fetchAll";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { FASES, isSideFase } from "@/lib/constants";
 import { computeStandings } from "@/lib/standings";
-import { computeQualifiers, nextPhaseName, computePhaseWinnerIds } from "@/lib/qualifiers";
+import { computeQualifiers, countMainQualifiers, nextPhaseName, computePhaseWinnerIds } from "@/lib/qualifiers";
 import QualifiersView from "@/components/QualifiersView";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { computeCurrentRound } from "@/lib/rounds";
@@ -38,6 +39,7 @@ const naturalGroupSort = (a: string, b: string) => {
 const hasGroup = (g: string | null | undefined) => !!g && g.trim() !== "";
 
 export default function StandingsTab({ tournamentId }: Props) {
+  const mainFases = useMainFases(tournamentId);
   const [results, setResults] = useState<MatchResult[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
   const [phaseStatuses, setPhaseStatuses] = useState<Tables<"phase_status">[]>([]);
@@ -290,7 +292,7 @@ export default function StandingsTab({ tournamentId }: Props) {
     () => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins, h2hFirst }),
     [filteredByFase, players, qualifierOpts, lowerWins],
   );
-  const nextFase = nextPhaseName(selectedFase);
+  const nextFase = nextPhaseName(selectedFase, mainFases);
   const isGroupsPhase = selectedFase === "Fase de Grupos";
 
   // Vencedores da fase eliminatória selecionada — formam a lista de classificados
@@ -358,9 +360,7 @@ export default function StandingsTab({ tournamentId }: Props) {
     () => computeQualifiers(grupoResults, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins, h2hFirst }),
     [grupoResults, players, qualifierOpts, lowerWins],
   );
-  const classifiedCount = grupoQualifiers.hasGroups
-    ? grupoQualifiers.direct.length + grupoQualifiers.repescagem.length
-    : grupoQualifiers.direct.length;
+  const classifiedCount = countMainQualifiers(grupoQualifiers);
   const projection = useMemo(() => projectPhases(classifiedCount), [classifiedCount]);
   const concludedFases = phaseStatuses.filter(p => p.status === "concluida").map(p => p.fase);
 

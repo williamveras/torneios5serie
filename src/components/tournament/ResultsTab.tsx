@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { getPlayerDisplayName } from "@/lib/playerDisplay";
 import { supabase } from "@/integrations/supabase/client";
+import { useMainFases } from "@/hooks/useMainFases";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +39,7 @@ const emptyResult = (): PlayerResult => ({
 interface Props { tournamentId: string; }
 
 export default function ResultsTab({ tournamentId }: Props) {
+  const mainFases = useMainFases(tournamentId);
   const { user } = useAuth();
   const [players, setPlayers] = useState<Player[]>([]);
   const [fase, setFase] = useState<string>("Fase de Grupos");
@@ -69,13 +71,13 @@ export default function ResultsTab({ tournamentId }: Props) {
       .then(({ data }) => { if (data) setPlayers(data); setPlayersLoaded(true); });
     supabase.from("phase_status").select("fase, status").eq("tournament_id", tournamentId)
       .then(({ data }) => {
-        const af = getActivePublicPhase((data || []) as any);
+        const af = getActivePublicPhase((data || []) as any, mainFases);
         setActiveFase(af);
         setFase(af);
       });
     supabase.from("tournaments").select("*").eq("id", tournamentId).maybeSingle()
       .then(({ data }) => { if (data) setLowerWins(((data as any).lower_score_wins) === true); setSettingsLoaded(true); });
-  }, [tournamentId]);
+  }, [tournamentId, mainFases]);
 
 
   const getPlayerGrupo = (playerId: string): string => {
@@ -237,7 +239,7 @@ export default function ResultsTab({ tournamentId }: Props) {
             <Select value={fase} onValueChange={setFase}>
               <SelectTrigger id="fase-select" aria-label="Fase"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {FASES.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                {FASES.filter(f => !mainFases || mainFases.includes(f) || f === "Disputa de 3º Lugar" || f === fase).map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

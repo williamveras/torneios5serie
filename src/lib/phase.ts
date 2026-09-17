@@ -18,6 +18,8 @@ export function buildMainFases(opts: {
   totalParticipants?: number | null;
   repescagemMode?: "ranking" | "playoff" | null;
   repescagemPlayoffSize?: number | null;
+  byePosition?: number | null;
+  byeTotal?: number | null;
 }): string[] | null {
   // Modo eliminação direta (sem Fase de Grupos): projeta a partir do número
   // total de participantes (planejado ou inscritos).
@@ -36,9 +38,17 @@ export function buildMainFases(opts: {
   const playoffSize = Math.max(0, opts.repescagemPlayoffSize ?? 0);
   // No modo playoff, os "rep" melhores extras passam direto E metade do
   // playoffSize se junta a eles como vencedores da Repescagem.
-  const total = isPlayoff
-    ? dpg * ng + rep + Math.floor(playoffSize / 2)
-    : dpg * ng + (rep > 0 ? rep : 0);
+  // No regulamento com byes, os primeiros de grupo e os melhores da
+  // posição configurada passam direto; os demais disputam a repescagem.
+  // Eles já pertencem ao conjunto dpg * ng + rep, não são vagas extras.
+  const hasByes = isPlayoff && (opts.byeTotal ?? 0) > 0 && (opts.byePosition ?? 0) > 0;
+  const pool = dpg * ng + rep;
+  const automatic = Math.min(pool, ng + (opts.byePosition === 1 ? 0 : (opts.byeTotal ?? 0)));
+  const total = hasByes
+    ? automatic + Math.ceil((pool - automatic) / 2)
+    : isPlayoff
+      ? pool + Math.ceil(playoffSize / 2)
+      : pool;
   const proj = projectPhases(total);
   if (proj.length === 0) return null;
   const base = ["Fase de Grupos", ...proj.map(p => p.fase)];

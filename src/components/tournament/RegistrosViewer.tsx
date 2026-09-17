@@ -1,3 +1,4 @@
+import { useMainFases } from "@/hooks/useMainFases";
 import { useEffect, useMemo, useState } from "react";
 import { getPlayerDisplayName } from "@/lib/playerDisplay";
 import { supabase } from "@/integrations/supabase/client";
@@ -73,6 +74,7 @@ interface Confronto {
 }
 
 export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Props) {
+  const mainFases = useMainFases(tournamentId);
   const [results, setResults] = useState<MatchResult[]>([]);
   const [players, setPlayers] = useState<Record<string, Player>>({});
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
@@ -469,7 +471,7 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
                   <Select value={editFase} onValueChange={setEditFase}>
                     <SelectTrigger id="edit-fase"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {FASES.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                      {FASES.filter(f => !mainFases || mainFases.includes(f) || f === "Disputa de 3º Lugar").map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>

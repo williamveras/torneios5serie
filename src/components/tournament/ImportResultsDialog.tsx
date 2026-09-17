@@ -1,3 +1,4 @@
+import { useMainFases } from "@/hooks/useMainFases";
 import { Fragment, useEffect, useState } from "react";
 import { getPlayerDisplayName } from "@/lib/playerDisplay";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +40,7 @@ interface Props {
 }
 
 export default function ImportResultsDialog({ open, onOpenChange, tournamentId, players, activeFase, lowerWins, refsReady = true, onImported }: Props) {
+  const mainFases = useMainFases(tournamentId);
 
   const { user } = useAuth();
   const [fase, setFase] = useState<string>(activeFase || "Fase de Grupos");
@@ -233,7 +235,7 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
               <Select value={fase} onValueChange={setFase}>
                 <SelectTrigger id="import-res-fase"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {FASES.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                  {FASES.filter(f => !mainFases || mainFases.includes(f) || f === "Disputa de 3º Lugar").map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

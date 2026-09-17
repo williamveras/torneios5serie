@@ -17,7 +17,7 @@ export function useMainFases(tournamentId: string): string[] | null {
       const [{ data: t }, { data: groupsData }, { count: playerCount }] = await Promise.all([
         supabase
           .from("tournaments")
-          .select("direct_per_group,repescagem_enabled,repescagem_total,elimination_only,max_participants,repescagem_mode,repescagem_playoff_size" as any)
+          .select("direct_per_group,repescagem_enabled,repescagem_total,elimination_only,max_participants,repescagem_mode,repescagem_playoff_size,bye_rank_position,bye_rank_total" as any)
           .eq("id", tournamentId)
           .maybeSingle(),
         supabase
@@ -47,6 +47,8 @@ export function useMainFases(tournamentId: string): string[] | null {
         totalParticipants,
         repescagemMode: (td.repescagem_mode as any) ?? "ranking",
         repescagemPlayoffSize: td.repescagem_playoff_size ?? null,
+    byePosition: td.bye_rank_position ?? null,
+    byeTotal: td.bye_rank_total ?? null,
       });
       setMainFases(fases);
     }

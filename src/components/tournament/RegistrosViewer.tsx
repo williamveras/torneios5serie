@@ -471,7 +471,7 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
                   <Select value={editFase} onValueChange={setEditFase}>
                     <SelectTrigger id="edit-fase"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {FASES.filter(f => !mainFases || mainFases.includes(f) || f === "Disputa de 3บ Lugar").map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                      {FASES.filter(f => !mainFases || mainFases.includes(f) || f === "Disputa de 3ยบ Lugar").map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>

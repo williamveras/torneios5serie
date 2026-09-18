@@ -104,7 +104,7 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
     }
 
     if (isFaseDeGrupos && (!rodada || isNaN(parseInt(rodada, 10)))) {
-      toast.error("Informe a rodada (n√∫mero).");
+      toast.error("Informe a rodada (n√¬∫mero).");
       return;
     }
     if (!text.trim()) {
@@ -235,7 +235,7 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
               <Select value={fase} onValueChange={setFase}>
                 <SelectTrigger id="import-res-fase"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {FASES.filter(f => !mainFases || mainFases.includes(f) || f === "Disputa de 3∫ Lugar").map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                  {FASES.filter(f => !mainFases || mainFases.includes(f) || f === "Disputa de 3¬∫ Lugar").map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

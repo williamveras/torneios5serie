@@ -104,7 +104,7 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
     }
 
     if (isFaseDeGrupos && (!rodada || isNaN(parseInt(rodada, 10)))) {
-      toast.error("Informe a rodada (n�ºmero).");
+      toast.error("Informe a rodada (número).");
       return;
     }
     if (!text.trim()) {

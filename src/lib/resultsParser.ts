@@ -156,7 +156,7 @@ function extractTime(line: string): string | undefined {
 export function parseResultsText(
   text: string,
   players: PlayerLite[],
-  opts: { lowerWins?: boolean; teamMembers?: TeamMemberLite[] } = {},
+  opts: { lowerWins?: boolean; teamMembers?: TeamMemberLite[]; requireSameGroup?: boolean } = {},
 ): ParsedResult[] {
   const lowerWins = !!opts.lowerWins;
 
@@ -268,7 +268,7 @@ export function parseResultsText(
           validPairs.push({ a, b, sameGroup });
         }
       }
-      const sameGroupPairs = validPairs.filter((p) => p.sameGroup);
+      const sameGroupPairs = opts.requireSameGroup === false ? [] : validPairs.filter((p) => p.sameGroup);
       if (sameGroupPairs.length === 1) {
         resolved[0].player = sameGroupPairs[0].a;
         resolved[1].player = sameGroupPairs[0].b;
@@ -280,7 +280,7 @@ export function parseResultsText(
         // Sem par no mesmo grupo - se há apenas um par possível, pega mas avisa
         resolved[0].player = validPairs[0].a;
         resolved[1].player = validPairs[0].b;
-        errors.push(
+        if (opts.requireSameGroup !== false) errors.push(
           `Jogadores "${cands[0].raw}" e "${cands[1].raw}" pertencem a grupos diferentes (${validPairs[0].a.grupo} e ${validPairs[0].b.grupo}).`
         );
       } else if (validPairs.length > 1) {

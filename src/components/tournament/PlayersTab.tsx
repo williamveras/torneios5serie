@@ -105,8 +105,8 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
     const teamIds = (pls || []).filter((p: any) => p.is_team).map((p: any) => p.id);
     if (teamIds.length > 0) {
       const { data: members } = await (supabase.from("team_members") as any)
-        .select("*")
-        .in("team_id", teamIds);
+        .select("*, players!inner(tournament_id)")
+        .eq("players.tournament_id", tournamentId);
       const map: Record<string, TeamMember[]> = {};
       (members || []).forEach((m: TeamMember) => {
         const tid = m.team_id!;

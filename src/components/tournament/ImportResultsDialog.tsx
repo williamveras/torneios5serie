@@ -51,6 +51,7 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
   const [matchups, setMatchups] = useState<MatchupLite[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMemberLite[]>([]);
   const [loadingRefs, setLoadingRefs] = useState(false);
+  const [refsError, setRefsError] = useState(false);
 
   const isFaseDeGrupos = isGroupPhase(fase);
   const hasTeams = players.some((p: any) => p.is_team);
@@ -63,8 +64,9 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
     if (!open) return;
     let cancelled = false;
     setLoadingRefs(true);
+    setRefsError(false);
 
-    const teamIds = players.filter((p: any) => p.is_team).map((p) => p.id);
+    const hasTeamPlayers = players.some(p => p.is_team);
 
     const matchupsPromise = supabase
       .from("matchups")
@@ -72,15 +74,21 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
       .eq("tournament_id", tournamentId)
       .order("created_at", { ascending: true });
 
-    const teamsPromise = teamIds.length > 0
+    const teamsPromise = hasTeamPlayers
       ? supabase
           .from("team_members")
-          .select("team_id, member_nome, member_nick")
-          .in("team_id", teamIds)
-      : Promise.resolve({ data: [] as TeamMemberLite[] });
+          .select("team_id, member_nome, member_nick, players!inner(tournament_id)")
+          .eq("players.tournament_id", tournamentId)
+      : Promise.resolve({ data: [] as TeamMemberLite[], error: null });
 
     Promise.all([matchupsPromise, teamsPromise]).then(([mRes, tRes]) => {
       if (cancelled) return;
+      if (mRes.error || tRes.error) {
+        setRefsError(true);
+        setLoadingRefs(false);
+        toast.error("Não foi possível carregar os confrontos ou membros das duplas. Feche e abra a importação para tentar novamente.");
+        return;
+      }
       if (mRes.data) setMatchups(mRes.data as any);
       setTeamMembers((tRes.data as TeamMemberLite[]) || []);
       setLoadingRefs(false);
@@ -98,7 +106,7 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
   }
 
   function handlePreview() {
-    if (loadingRefs || !refsReady || players.length === 0) {
+    if (refsError || loadingRefs || !refsReady || players.length === 0) {
       toast.error("Aguarde o carregamento dos participantes e das configurações do torneio antes de pré-visualizar.");
       return;
     }
@@ -111,7 +119,7 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
       toast.error("Cole o texto dos resultados.");
       return;
     }
-    const parsed = parseResultsText(text, players, { lowerWins: !!lowerWins, teamMembers });
+    const parsed = parseResultsText(text, players, { lowerWins: !!lowerWins, teamMembers, requireSameGroup: isFaseDeGrupos });
     if (parsed.length === 0) {
       toast.error("Nenhum resultado detectado no texto.");
       return;
@@ -155,6 +163,7 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
 
     const valid = blocks.filter(
       (b) =>
+        b.parsed.errors.length === 0 &&
         b.parsed.players.length === 2 &&
         b.parsed.players.every((pl) => pl.playerId) &&
         b.parsed.players.some((pl) => pl.pontosJogo === 3) &&
@@ -272,7 +281,7 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
 
           {!blocks ? (
             <div className="flex justify-end">
-              <Button onClick={handlePreview} disabled={loadingRefs || !refsReady || players.length === 0}>
+              <Button onClick={handlePreview} disabled={refsError || loadingRefs || !refsReady || players.length === 0}>
                 {loadingRefs && hasTeams ? "Carregando duplas..." : "Pré-visualizar"}
               </Button>
             </div>

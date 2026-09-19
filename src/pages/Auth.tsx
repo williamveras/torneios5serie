@@ -18,6 +18,8 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [params] = useSearchParams();
+  const invitation = params.get("invite");
+  const invitationPath = invitation && /^[0-9a-f-]{36}$/i.test(invitation) ? `/organization-invite?invite=${encodeURIComponent(invitation)}` : null;
   const [signupPending, setSignupPending] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,7 +29,7 @@ export default function Auth() {
     if (mode === "login") {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) toast.error(error.message);
-      else navigate(params.get("next") === "approvals" ? "/account-approvals" : "/admin");
+      else navigate(invitationPath || (params.get("next") === "approvals" ? "/account-approvals" : "/admin"));
     } else if (mode === "signup") {
       const { error } = await supabase.auth.signUp({
         email,

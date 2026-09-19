@@ -1,0 +1,8 @@
+[Unit]
+Description=Check tournament invitation email queue every minute
+[Timer]
+OnBootSec=45s
+OnUnitActiveSec=60s
+Unit=torneios-invites.service
+[Install]
+WantedBy=timers.target

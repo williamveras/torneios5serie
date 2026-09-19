@@ -31,6 +31,7 @@ export default function OrganizationMembersDialog({ open, onOpenChange, org }: P
   const [role, setRole] = useState<"admin" | "member">("member");
   const [adding, setAdding] = useState(false);
 
+  const [invites, setInvites] = useState<Array<{id:string;email:string;role:string;status:string;sent_at:string|null;attempts:number}>>([]);
   const canManage = org.role === "owner" || org.role === "admin";
 
   const fetch = async () => {
@@ -50,6 +51,11 @@ export default function OrganizationMembersDialog({ open, onOpenChange, org }: P
       profiles = Object.fromEntries((profs ?? []).map((p: any) => [p.user_id, p.nome]));
     }
     setMembers(rows.map((r) => ({ ...r, nome: profiles[r.user_id] ?? null })));
+    if (canManage) {
+      const {data: invitations,error} = await (supabase as any).rpc("list_organization_invites",{org:org.id});
+      if(error) toast.error("Não foi possível carregar os convites.");
+      else setInvites(invitations || []);
+    }
     setLoading(false);
   };
 
@@ -59,28 +65,25 @@ export default function OrganizationMembersDialog({ open, onOpenChange, org }: P
     e.preventDefault();
     if (!email.trim()) return;
     setAdding(true);
-    // find user by email via profiles requires email column — we don't have it. Use auth.users via RPC? Not available.
-    // Approach: look up profile.nome by email isn't possible. Use the email's user_id from auth via an edge function would be needed.
-    // Simpler: look in profiles table — but profiles has no email. We need an RPC. Fallback: ask user_id.
-    // For now, search profiles where nome equals input OR user_id equals UUID.
-    let targetUserId: string | null = null;
-    if (/^[0-9a-f-]{36}$/i.test(email.trim())) {
-      targetUserId = email.trim();
-    } else {
-      toast.error("Cole o ID do usuário (UUID). Em breve: convite por email.");
-      setAdding(false);
-      return;
-    }
-    const { error } = await supabase
-      .from("organization_members" as any)
-      .insert({ organization_id: org.id, user_id: targetUserId, role } as any);
+    const { error } = await (supabase as any).rpc("send_organization_invite", {
+      org: org.id, recipient: email.trim(), invited_role: role,
+    });
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success("Membro adicionado");
+      toast.success("Convite criado. O e-mail será enviado em instantes.");
       setEmail("");
       fetch();
     }
+    setAdding(false);
+  };
+
+  const handleInviteAction = async (id: string, action: "resend" | "revoke") => {
+    if (action === "revoke" && !confirm("Cancelar este convite?")) return;
+    setAdding(true);
+    const {error} = await (supabase as any).rpc("manage_organization_invite",{invitation:id,action});
+    if(error) toast.error(error.message);
+    else { toast.success(action === "resend" ? "Novo convite agendado; o link anterior foi cancelado." : "Convite cancelado."); await fetch(); }
     setAdding(false);
   };
 
@@ -108,14 +111,15 @@ export default function OrganizationMembersDialog({ open, onOpenChange, org }: P
         {canManage && (
           <form onSubmit={handleAdd} className="space-y-3 border-b pb-4">
             <div className="space-y-1">
-              <Label>Adicionar membro (ID do usuário)</Label>
+              <Label htmlFor="invite-email">Convidar por e-mail</Label>
               <Input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="UUID do usuário"
+                id="invite-email" type="email" required maxLength={254}
+                placeholder="pessoa@exemplo.com"
               />
               <p className="text-xs text-muted-foreground">
-                Peça ao usuário o ID dele (mostrado no perfil). Convite por e-mail virá em breve.
+                O convite vale por sete dias. O destinatário precisa aceitar com uma conta aprovada e com este mesmo e-mail.
               </p>
             </div>
             <div className="flex gap-2 items-end">
@@ -129,7 +133,7 @@ export default function OrganizationMembersDialog({ open, onOpenChange, org }: P
                   </SelectContent>
                 </Select>
               </div>
-              <Button type="submit" disabled={adding}>{adding ? "Adicionando..." : "Adicionar"}</Button>
+              <Button type="submit" disabled={adding}>{adding ? "Enviando..." : "Enviar convite"}</Button>
             </div>
           </form>
         )}
@@ -144,7 +148,7 @@ export default function OrganizationMembersDialog({ open, onOpenChange, org }: P
               <div key={m.id} className="flex items-center justify-between gap-2 py-1.5 border-b last:border-0">
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">{m.nome ?? "(sem nome)"}</p>
-                  <p className="text-xs text-muted-foreground truncate">{m.user_id}</p>
+
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {canManage && m.user_id !== user?.id ? (
@@ -170,11 +174,13 @@ export default function OrganizationMembersDialog({ open, onOpenChange, org }: P
           )}
         </div>
 
-        {user && (
-          <p className="text-xs text-muted-foreground border-t pt-3">
-            Seu ID de usuário: <code className="text-foreground">{user.id}</code>
-          </p>
-        )}
+        {canManage && invites.length > 0 && <section className="border-t pt-3 space-y-3 max-h-[30vh] overflow-y-auto">
+          <h3 className="font-semibold">Convites enviados</h3>
+          {invites.map(inv => <div key={inv.id} className="border rounded p-3 space-y-2">
+            <p className="break-all">{inv.email}</p><p className="text-xs text-muted-foreground">{inv.role === "admin" ? "Administrador" : "Membro"} — {inv.status === "accepted" ? "Aceito" : inv.status === "revoked" ? "Cancelado" : inv.status === "expired" ? "Expirado" : inv.sent_at ? "Aguardando aceite" : inv.attempts >= 10 ? "Falha no envio; tente reenviar" : "Envio agendado"}</p>
+            {(inv.status === "pending" || inv.status === "expired") && <div className="flex gap-2"><Button variant="outline" disabled={adding} onClick={() => handleInviteAction(inv.id,"resend")}>Reenviar</Button><Button variant="outline" disabled={adding} onClick={() => handleInviteAction(inv.id,"revoke")}>Cancelar convite</Button></div>}
+          </div>)}
+        </section>}
       </DialogContent>
     </Dialog>
   );

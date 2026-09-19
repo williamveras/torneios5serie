@@ -37,3 +37,11 @@ Instale `ops/approval_notifier.py` em `/opt/torneios-supabase/approval_notifier.
 A fila tem até 10 tentativas por mensagem, com intervalo crescente até uma hora. Consulte `journalctl -u torneios-approvals.service` e `account_security.mail_queue` para falhas persistentes. Como em outras filas SMTP, uma queda após o envio e antes da confirmação no banco pode resultar em reenvio. O identificador da mensagem é estável.
 
 Ao criar novas tabelas ou funções privilegiadas, mantenha a verificação de aprovação no banco. O cadastro público de participantes por links de inscrição continua independente das contas de administração.
+
+### Convites para organizações
+
+Aplique uma vez a migração `20260919121924_organization_email_invites.sql` no banco central, após backup. Os convites ficam no schema privado `account_security`, são vinculados ao e-mail e expiram em sete dias. Apenas donos e administradores aprovados da organização podem convidar, reenviar ou cancelar. O aceite exige conta aprovada e o mesmo e-mail; o convite não aprova cadastros automaticamente. Reenviar cancela o link anterior e gera outro, respeitando intervalo de um minuto e limite de 30 convites por organização por hora.
+
+Instale `organization_invite_notifier.py` ao lado de `approval_notifier.py` em `/opt/torneios-supabase/`, e as unidades `torneios-invites.service` e `torneios-invites.timer` em `/etc/systemd/system/`. Ative com `systemctl daemon-reload` e `systemctl enable --now torneios-invites.timer`. O envio usa Resend SMTP, a cada minuto, com até 10 tentativas. `--dry-run` informa a quantidade pronta sem enviar. Consulte `journalctl -u torneios-invites.service` em caso de falha.
+
+A inclusão direta de outra pessoa em `organization_members` foi removida da política de INSERT. A criação de uma organização ainda permite que seu criador se vincule como dono. O aceite do convite usa uma função restrita que verifica a conta, o e-mail, a validade e as permissões atuais de quem convidou. Vínculos existentes não podem trocar de organização ou usuário por UPDATE. O teste `ops/test-organization-invites.sql` usa uma transação com ROLLBACK e não envia e-mails.

@@ -24,3 +24,16 @@ Para publicar o mesmo frontend em outras organizações, mantenha `.env.producti
 ### E-mail de recuperação de senha
 
 O template em português fica em `public/auth-emails/recovery.html`. Após publicar o frontend na VPS central, execute `python3 ops/configure-auth-emails.py` nessa VPS para configurar o assunto e o template no Auth e os caminhos `/api/auth/v1/verify`. O script preserva uma cópia protegida da configuração anterior, mantém o Resend e reinicia somente o serviço Auth. O Nginx também encaminha o antigo `/auth/v1/verify` para o caminho correto, para compatibilidade com links já enviados que ainda sejam válidos.
+
+
+### Aprovação de novas contas
+
+A migração `20260919114002_account_approvals.sql` deve ser aplicada uma única vez no banco central, com backup anterior. Contas existentes são preservadas como aprovadas. Novas contas entram pendentes por trigger em `auth.users`; 13 tabelas do sistema têm uma política RLS restritiva que exige aprovação. As permissões das organizações continuam sendo exigidas.
+
+O responsável é a conta confirmada de `williamveras2010@gmail.com`, identificada pelo UUID na tabela privada `account_security.administrators`. Não use metadados editáveis do usuário para conceder essa permissão. A página `/account-approvals` exige login desse administrador, decisão explícita e confirmação. Decisões já concluídas não são alteradas pelo endpoint.
+
+Instale `ops/approval_notifier.py` em `/opt/torneios-supabase/approval_notifier.py` e os arquivos `torneios-approvals.service` e `.timer` em `/etc/systemd/system/`. Execute `systemctl daemon-reload` e `systemctl enable --now torneios-approvals.timer`. O serviço usa Resend SMTP e a configuração protegida já existente; o timer verifica a fila a cada minuto. `--dry-run` só informa a quantidade de notificações prontas.
+
+A fila tem até 10 tentativas por mensagem, com intervalo crescente até uma hora. Consulte `journalctl -u torneios-approvals.service` e `account_security.mail_queue` para falhas persistentes. Como em outras filas SMTP, uma queda após o envio e antes da confirmação no banco pode resultar em reenvio. O identificador da mensagem é estável.
+
+Ao criar novas tabelas ou funções privilegiadas, mantenha a verificação de aprovação no banco. O cadastro público de participantes por links de inscrição continua independente das contas de administração.

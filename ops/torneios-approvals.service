@@ -1,0 +1,8 @@
+[Unit]
+Description=Send tournament account approval notifications
+After=docker.service network-online.target
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/torneios-supabase/approval_notifier.py
+User=root
+UMask=0077

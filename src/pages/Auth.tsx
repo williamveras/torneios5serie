@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,8 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const [signupPending, setSignupPending] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +27,7 @@ export default function Auth() {
     if (mode === "login") {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) toast.error(error.message);
-      else navigate("/admin");
+      else navigate(params.get("next") === "approvals" ? "/account-approvals" : "/admin");
     } else if (mode === "signup") {
       const { error } = await supabase.auth.signUp({
         email,
@@ -36,7 +38,10 @@ export default function Auth() {
         },
       });
       if (error) toast.error(error.message);
-      else toast.success("Conta criada! Verifique seu email para confirmar.");
+      else {
+        await supabase.auth.signOut();
+        setSignupPending(true);
+      }
     } else {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
@@ -51,6 +56,8 @@ export default function Auth() {
   };
 
   const title = mode === "login" ? "Entrar" : mode === "signup" ? "Criar conta" : "Recuperar senha";
+
+  if (signupPending) return <main className="min-h-screen flex items-center justify-center p-6"><section className="max-w-md border rounded-xl p-6 space-y-4" role="status"><h1 className="text-xl font-semibold">Cadastro recebido</h1><p>Sua conta foi criada e está aguardando aprovação da administração. Você receberá um e-mail quando sua solicitação for analisada.</p><p>Se receber um e-mail de confirmação do endereço, siga as instruções nele também.</p><Button onClick={() => { setSignupPending(false); setMode("login"); }}>Voltar para o login</Button></section></main>;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">

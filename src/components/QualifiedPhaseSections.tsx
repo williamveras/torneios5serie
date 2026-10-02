@@ -15,7 +15,7 @@ export default function QualifiedPhaseSections({ nextFase, finalistIds, qualifie
     return <div className="space-y-6">{sections.map(({ title, rows }) => (
       <section key={title} className="space-y-4">
         <h2 className="text-xl font-bold">{title}</h2>
-        <QualifiersView {...props} qualifiers={{ ...qualifiers, direct: rows.map((row, i) => ({ ...row, position: i + 1 })), repescagem: [], playoff: [], notQualified: [] }} />
+        <QualifiersView {...props} hideHeading qualifiers={{ ...qualifiers, direct: rows.map((row, i) => ({ ...row, position: i + 1 })), repescagem: [], playoff: [], notQualified: [] }} />
       </section>
     ))}</div>;
   }

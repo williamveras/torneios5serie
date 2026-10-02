@@ -12,6 +12,7 @@ interface PlayerLike {
 type TeamMembersMap = Record<string, { nome: string; nick: string | null }[]>;
 
 interface Props {
+  hideHeading?: boolean;
   qualifiers: QualifiersResult;
   variant?: "admin" | "public";
   viewMode?: ViewMode;
@@ -50,7 +51,7 @@ const formatTeamWithMembers = (
 function TableSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembers, showGroup, small, hidePosition }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number>; playerMap?: Map<string, PlayerLike>; teamMembers: TeamMembersMap; showGroup?: boolean; small?: boolean; hidePosition?: boolean }) {
   return (
     <section>
-      <h3 className={`font-semibold mb-2 ${small ? "text-base text-muted-foreground" : "text-lg"}`}>{title}</h3>
+      {title && <h3 className={`font-semibold mb-2 ${small ? "text-base text-muted-foreground" : "text-lg"}`}>{title}</h3>}
       <div className="rounded-md border overflow-x-auto">
         <Table className="min-w-max">
           <TableHeader>
@@ -91,7 +92,7 @@ function TableSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembe
 function ListSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembers, showGroup, small, hidePosition }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number>; playerMap?: Map<string, PlayerLike>; teamMembers: TeamMembersMap; showGroup?: boolean; small?: boolean; hidePosition?: boolean }) {
   return (
     <section>
-      <h3 className={`font-semibold mb-2 ${small ? "text-base text-muted-foreground" : "text-lg"}`}>{title}</h3>
+      {title && <h3 className={`font-semibold mb-2 ${small ? "text-base text-muted-foreground" : "text-lg"}`}>{title}</h3>}
       <ol className="space-y-2" aria-label="Classificados">
         {rows.map(s => {
           const pos = usePos === "group" ? s.groupPosition : s.position;
@@ -126,7 +127,7 @@ function ListSection({ title, rows, usePos, playerMesaMap, playerMap, teamMember
   );
 }
 
-export default function QualifiersView({ qualifiers, viewMode = "list", playerMesaMap, players, teamMembers = {}, repescagemWinners = [] }: Props) {
+export default function QualifiersView({ hideHeading = false, qualifiers, viewMode = "list", playerMesaMap, players, teamMembers = {}, repescagemWinners = [] }: Props) {
   const Section = viewMode === "table" ? TableSection : ListSection;
   const playerMap = (() => {
     const m = new Map<string, PlayerLike>();
@@ -137,7 +138,7 @@ export default function QualifiersView({ qualifiers, viewMode = "list", playerMe
   if (!qualifiers.hasGroups) {
     return (
       <div className="space-y-6">
-        <Section title="Classificados" rows={qualifiers.direct} usePos="overall" playerMesaMap={playerMesaMap} playerMap={playerMap} teamMembers={teamMembers} />
+        <Section title={hideHeading ? "" : "Classificados"} rows={qualifiers.direct} usePos="overall" playerMesaMap={playerMesaMap} playerMap={playerMap} teamMembers={teamMembers} />
       </div>
     );
   }

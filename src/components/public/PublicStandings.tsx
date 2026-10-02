@@ -10,7 +10,7 @@ import { AlertTriangle, CheckCircle2, BarChart3, Download } from "lucide-react";
 import * as XLSX from "xlsx";
 import { FASES, isSideFase } from "@/lib/constants";
 import { computeStandings } from "@/lib/standings";
-import { computeQualifiers, countMainQualifiers, nextPhaseName, computePhaseWinnerIds } from "@/lib/qualifiers";
+import { computeEliminationQualifierIds, computeQualifiers, countMainQualifiers, nextPhaseName, computePhaseWinnerIds } from "@/lib/qualifiers";
 import { projectPhases } from "@/lib/phaseProjection";
 import PhaseRoadmap from "@/components/PhaseRoadmap";
 import QualifiersView from "@/components/QualifiersView";
@@ -196,29 +196,7 @@ export default function PublicStandings({ mainFases, results, players, teamMembe
     if (isGroupsPhase) return null;
     const faseMatchups = matchups.filter(m => (m.fase || "Fase de Grupos") === selectedFase);
     if (faseMatchups.length === 0) return null;
-    const byPlayer = new Map<string, MatchResult>();
-    filteredByFase.forEach(r => byPlayer.set(r.player_id, r));
-    const qualifiedIds = new Set<string>();
-    for (const m of faseMatchups) {
-      const r1 = byPlayer.get(m.player1_id);
-      const r2 = byPlayer.get(m.player2_id);
-      if (!r1 || !r2) continue;
-      let w: string | null = null;
-      if (r1.pontos_jogo > r2.pontos_jogo) w = m.player1_id;
-      else if (r2.pontos_jogo > r1.pontos_jogo) w = m.player2_id;
-      else if (r1.pontos_mesa !== r2.pontos_mesa) {
-        if (lowerWins) w = r1.pontos_mesa < r2.pontos_mesa ? m.player1_id : m.player2_id;
-        else w = r1.pontos_mesa > r2.pontos_mesa ? m.player1_id : m.player2_id;
-      }
-      if (w) qualifiedIds.add(w);
-    }
-    // Quando há "Disputa de 3º Lugar" cadastrada, inclui também os jogadores
-    // dessa fase paralela na lista de classificados para a Final + 3º.
-    const thirdPlaceMatchups = matchups.filter(m => (m.fase || "") === "Disputa de 3º Lugar");
-    for (const m of thirdPlaceMatchups) {
-      if (m.player1_id) qualifiedIds.add(m.player1_id);
-      if (m.player2_id) qualifiedIds.add(m.player2_id);
-    }
+    const qualifiedIds = computeEliminationQualifierIds(matchups, filteredByFase, selectedFase, lowerWins);
     if (qualifiedIds.size === 0) return null;
     const winnersResults = filteredByFase
       .filter(r => qualifiedIds.has(r.player_id))

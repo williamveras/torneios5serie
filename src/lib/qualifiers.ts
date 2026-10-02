@@ -221,3 +221,23 @@ export function computePhaseWinnerIds(
   }
   return ids;
 }
+
+/** Na semifinal, os perdedores também seguem para a disputa de terceiro,
+ * mesmo antes de os confrontos da rodada seguinte serem cadastrados. */
+export function computeEliminationQualifierIds(
+  matchups: Parameters<typeof computePhaseWinnerIds>[0],
+  results: Parameters<typeof computePhaseWinnerIds>[1],
+  fase: string,
+  lowerWins = false,
+): Set<string> {
+  const ids = computePhaseWinnerIds(matchups, results, fase, lowerWins);
+  if (fase === "Semifinal") {
+    for (const matchup of matchups.filter(m => m.fase === fase)) {
+      if (ids.has(matchup.player1_id) || ids.has(matchup.player2_id)) {
+        ids.add(matchup.player1_id);
+        ids.add(matchup.player2_id);
+      }
+    }
+  }
+  return ids;
+}

@@ -14,7 +14,7 @@ import * as XLSX from "xlsx";
 import { FASES, isSideFase } from "@/lib/constants";
 import { computeStandings } from "@/lib/standings";
 import { computeEliminationQualifierIds, computeQualifiers, countMainQualifiers, nextPhaseName, computePhaseWinnerIds } from "@/lib/qualifiers";
-import QualifiersView from "@/components/QualifiersView";
+import QualifiedPhaseSections from "@/components/QualifiedPhaseSections";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { computeCurrentRound } from "@/lib/rounds";
 import { projectPhases, findPhaseInProjection } from "@/lib/phaseProjection";
@@ -667,8 +667,7 @@ export default function StandingsTab({ tournamentId }: Props) {
             return (
               <div className="space-y-6">
                 <div className="space-y-4">
-                  <h2 className="text-xl font-bold">Classificados para a {nextFase === "Final" ? "grande final e disputa de terceiro" : nextFase === "Repescagem" ? "segunda fase e repescagem" : nextFase}</h2>
-                  <QualifiersView qualifiers={qualifiersToShow} repescagemWinners={repescagemWinners} />
+                  <QualifiedPhaseSections nextFase={nextFase} finalistIds={selectedFase === "Semifinal" ? computePhaseWinnerIds(matchups, filteredByFase, selectedFase, lowerWins) : undefined} qualifiers={qualifiersToShow} repescagemWinners={repescagemWinners} />
                 </div>
                 <Accordion type="single" collapsible className="rounded-md border bg-background px-4">
                   <AccordionItem value="full-list" className="border-b-0">

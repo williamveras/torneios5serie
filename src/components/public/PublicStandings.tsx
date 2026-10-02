@@ -13,7 +13,7 @@ import { computeStandings } from "@/lib/standings";
 import { computeEliminationQualifierIds, computeQualifiers, countMainQualifiers, nextPhaseName, computePhaseWinnerIds } from "@/lib/qualifiers";
 import { projectPhases } from "@/lib/phaseProjection";
 import PhaseRoadmap from "@/components/PhaseRoadmap";
-import QualifiersView from "@/components/QualifiersView";
+import QualifiedPhaseSections from "@/components/QualifiedPhaseSections";
 import { buildMesaMap, isGroupPhase, pairKey } from "@/lib/phase";
 import type { ViewMode } from "./ViewModeToggle";
 import type { Tables } from "@/integrations/supabase/types";
@@ -413,8 +413,7 @@ export default function PublicStandings({ mainFases, results, players, teamMembe
       ) : showQualifiers ? (
         <div className="space-y-6">
           <div className="space-y-4">
-            <h2 className="text-xl font-bold">Classificados para a {nextFase === "Final" ? "grande final e disputa de terceiro" : nextFase === "Repescagem" ? "segunda fase e repescagem" : nextFase}</h2>
-            <QualifiersView qualifiers={qualifiersToShow} viewMode={viewMode} playerMesaMap={nextPhaseMesaMap.size > 0 ? nextPhaseMesaMap : playerMesaMap} players={players} teamMembers={teamMembers} repescagemWinners={repescagemWinners} />
+            <QualifiedPhaseSections nextFase={nextFase} finalistIds={selectedFase === "Semifinal" ? computePhaseWinnerIds(matchups, filteredByFase, selectedFase, lowerWins) : undefined} qualifiers={qualifiersToShow} viewMode={viewMode} playerMesaMap={nextPhaseMesaMap.size > 0 ? nextPhaseMesaMap : playerMesaMap} players={players} teamMembers={teamMembers} repescagemWinners={repescagemWinners} />
           </div>
           <Accordion type="single" collapsible className="rounded-md border bg-background px-4">
             <AccordionItem value="full-list" className="border-b-0">

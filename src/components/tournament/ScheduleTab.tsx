@@ -17,7 +17,7 @@ import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Tables } from "@/integrations/supabase/types";
 import { computeCurrentRound } from "@/lib/rounds";
-import { getActivePublicPhase, isGroupPhase } from "@/lib/phase";
+import { getActivePublicPhase, isGroupPhase, pairKey } from "@/lib/phase";
 import { useMainFases } from "@/hooks/useMainFases";
 
 
@@ -444,20 +444,36 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
   // ===== Publicar / apagar rodada (mesmas ações da aba Confrontos) =====
   const targetFase = inGroupPhase ? "Fase de Grupos" : activePhase;
 
+  const publicationPhases = targetFase === "Final" ? ["Final", "Disputa de 3º Lugar"] : [targetFase];
+
   const roundMatchups = (rk: string) => {
     const rodadaValue = rk === NO_ROUND_KEY ? null : parseInt(rk, 10);
     return matchups.filter(
-      (m) => (m.fase || "Fase de Grupos") === targetFase && (m.rodada ?? null) === rodadaValue,
+      (m) => publicationPhases.includes(m.fase || "Fase de Grupos") && (m.rodada ?? null) === rodadaValue,
     );
   };
 
   async function togglePublishRound(rk: string, publish: boolean) {
     const rodadaValue = rk === NO_ROUND_KEY ? null : parseInt(rk, 10);
+    if (publish) {
+      const scheduled = filteredSchedules.filter(s => (s.rodada ?? null) === rodadaValue);
+      const roundPairs = roundMatchups(rk);
+      const missing = scheduled.filter(s => !roundPairs.some(m =>
+        pairKey(m.player1_id, m.player2_id) === pairKey(s.player1_id, s.player2_id)
+        && (inGroupPhase || m.fase === s.grupo),
+      ));
+      if (missing.length > 0) {
+        toast.error("Há partidas agendadas sem confronto correspondente.", {
+          description: "Gere os confrontos na aba Confrontos e confira a fase de cada agendamento antes de publicar.",
+        });
+        return;
+      }
+    }
     let q = supabase
       .from("matchups")
       .update({ published: publish } as any)
       .eq("tournament_id", tournamentId)
-      .eq("fase", targetFase);
+      .in("fase", publicationPhases);
     q = rodadaValue == null ? q.is("rodada", null) : q.eq("rodada", rodadaValue);
     const { data, error } = await (q.select("id") as any);
     if (error) {

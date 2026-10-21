@@ -1,3 +1,4 @@
+import { applyPlayerEliminations } from "@/lib/playerElimination";
 import { useState, useEffect, useMemo } from "react";
 import { useMainFases } from "@/hooks/useMainFases";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,8 +41,9 @@ const hasGroup = (g: string | null | undefined) => !!g && g.trim() !== "";
 
 export default function StandingsTab({ tournamentId }: Props) {
   const mainFases = useMainFases(tournamentId);
-  const [results, setResults] = useState<MatchResult[]>([]);
+  const [rawResults, setResults] = useState<MatchResult[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
+  const results = useMemo(() => applyPlayerEliminations(rawResults, players), [rawResults, players]);
   const [phaseStatuses, setPhaseStatuses] = useState<Tables<"phase_status">[]>([]);
   const [selectedFase, setSelectedFase] = useState<string>("Fase de Grupos");
   const [matchups, setMatchups] = useState<Tables<"matchups">[]>([]);

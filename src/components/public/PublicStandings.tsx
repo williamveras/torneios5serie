@@ -1,3 +1,4 @@
+import { applyPlayerEliminations } from "@/lib/playerElimination";
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -47,6 +48,8 @@ interface PlayerLite {
   nome_completo: string;
   nick_playroom: string | null;
   is_team?: boolean | null;
+  eliminado?: boolean;
+  elimination_reason?: string | null;
 }
 
 interface Props {
@@ -76,7 +79,8 @@ const compactCardPadding = "p-3 min-[360px]:p-4";
 const keepTogether = (text: string | number) =>
   String(text).replace(/ /g, "\u00A0").replace(/-/g, "\u2011");
 
-export default function PublicStandings({ mainFases, results, players, teamMembers = {}, phaseStatuses, matchups = [], viewMode = "list", qualifierOpts = {}, lowerWins = false, h2hFirst = false }: Props) {
+export default function PublicStandings({ mainFases, results: rawResults, players, teamMembers = {}, phaseStatuses, matchups = [], viewMode = "list", qualifierOpts = {}, lowerWins = false, h2hFirst = false }: Props) {
+  const results = useMemo(() => applyPlayerEliminations(rawResults, players), [rawResults, players]);
   // Default fase: latest concluded phase (so the public view follows the tournament progression).
   const latestConcludedFase = useMemo(() => {
     for (let i = FASES.length - 1; i >= 0; i--) {

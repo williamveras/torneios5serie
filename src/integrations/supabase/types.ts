@@ -324,6 +324,7 @@ export type Database = {
         Row: {
           comentario: string | null
           created_at: string
+          elimination_reason: string | null
           eliminado: boolean
           email: string | null
           grupo: string | null
@@ -338,6 +339,7 @@ export type Database = {
         Insert: {
           comentario?: string | null
           created_at?: string
+          elimination_reason?: string | null
           eliminado?: boolean
           email?: string | null
           grupo?: string | null
@@ -352,6 +354,7 @@ export type Database = {
         Update: {
           comentario?: string | null
           created_at?: string
+          elimination_reason?: string | null
           eliminado?: boolean
           email?: string | null
           grupo?: string | null

@@ -103,14 +103,14 @@ export default function ResultsTab({ tournamentId }: Props) {
           ...r,
           pontos_jogo: "0",
           pontos_mesa: "0",
-          penalidade_tipo: "Eliminado por W.O",
+          penalidade_tipo: player?.elimination_reason === "withdrawal" ? "Desistente" : "Eliminado por W.O",
           penalidade_outra: "",
         } : r));
         if (isFaseDeGrupos) {
           const playerGrupo = getPlayerGrupo(value);
           if (playerGrupo) setGrupo(playerGrupo);
         }
-        toast.info("Jogador eliminado por W.O — campos preenchidos automaticamente");
+        toast.info(player?.elimination_reason === "withdrawal" ? "Jogador desistente — campos preenchidos automaticamente" : "Jogador eliminado por W.O — campos preenchidos automaticamente");
       };
 
       if (player?.eliminado) {

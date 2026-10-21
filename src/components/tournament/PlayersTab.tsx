@@ -348,12 +348,12 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
     fetchPlayers();
   };
 
-  const toggleEliminado = async (p: Player) => {
+  const toggleEliminado = async (p: Player, reason: "wo" | "withdrawal" = "wo") => {
     const novoValor = !p.eliminado;
-    const { error } = await supabase.from("players").update({ eliminado: novoValor }).eq("id", p.id);
+    const { error } = await supabase.from("players").update({ eliminado: novoValor, elimination_reason: novoValor ? reason : null }).eq("id", p.id);
     if (error) toast.error("Erro ao atualizar status");
     else {
-      toast.success(novoValor ? "Jogador marcado como eliminado por W.O" : "Eliminação removida");
+      toast.success(novoValor ? (reason === "withdrawal" ? "Jogador eliminado por desistência" : "Jogador marcado como eliminado por W.O") : "Eliminação removida");
       fetchPlayers();
     }
   };
@@ -649,6 +649,9 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
                       <><Ban className="h-4 w-4 mr-2" /> Marcar como eliminado por W.O</>
                     )}
                   </DropdownMenuItem>
+                  {!p.eliminado && <DropdownMenuItem onClick={() => toggleEliminado(p, "withdrawal")}>
+                    <Ban className="h-4 w-4 mr-2" /> Eliminado por desistência
+                  </DropdownMenuItem>}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => setDeletePlayer(p)}
@@ -672,7 +675,7 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
                         <Users className="h-3 w-3" /> Dupla
                       </span>
                     )}
-                    {p.eliminado && <Badge variant="destructive">Eliminado por W.O</Badge>}
+                    {p.eliminado && <Badge variant="destructive">{p.elimination_reason === "withdrawal" ? "Eliminado por desistência" : p.elimination_reason === "wo" ? "Eliminado por W.O" : "Eliminado"}</Badge>}
                   </div>
                   {isTeam && members.length > 0 && (() => {
                     const captain = members.find(m => m.is_captain);

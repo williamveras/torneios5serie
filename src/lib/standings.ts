@@ -74,6 +74,8 @@ export function computeStandings(
   }
 
   rows.sort((a, b) => {
+    const isOut = (penalty: string) => /desistente|eliminado por w\.o/i.test(penalty);
+    if (isOut(a.penalidades) !== isOut(b.penalidades)) return isOut(a.penalidades) ? 1 : -1;
     // 1º critério: pontos de vitória (desc) — sempre 3/0, independente da regra.
     if (a.pontosJogo !== b.pontosJogo) return b.pontosJogo - a.pontosJogo;
     // Confronto direto (head-to-head): por padrão é o último critério; quando o

@@ -108,7 +108,7 @@ export default function TournamentPage({ tournament, onBack }: Props) {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4 flex-wrap h-auto">
             <TabsTrigger value="players">Participantes</TabsTrigger>
-            <TabsTrigger value="matchups">Confrontos</TabsTrigger>
+            <TabsTrigger value="matchups">Confrontos e sorteios</TabsTrigger>
             <TabsTrigger value="results">Registrar Resultados</TabsTrigger>
             <TabsTrigger value="schedule">Agenda</TabsTrigger>
             <TabsTrigger value="standings">{standingsLabel}</TabsTrigger>

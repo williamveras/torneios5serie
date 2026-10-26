@@ -27,7 +27,7 @@ type MatchResult = Tables<"match_results">;
 type Schedule = Tables<"match_schedule">;
 type PhaseStatus = Tables<"phase_status">;
 type Matchup = Tables<"matchups">;
-type ScheduledDraw = Tables<"scheduled_draws">;
+type ScheduledDraw = Pick<Tables<"scheduled_draws">, "id" | "fase" | "scheduled_at" | "status" | "kind">;
 
 const SPONSORED_TOURNAMENT_IDS = new Set(["b21eec68-3681-4a37-9740-6dbb8703f61e"]);
 
@@ -91,7 +91,7 @@ export default function PublicTournament() {
         supabase.from("phase_status").select("*").eq("tournament_id", tournamentId),
         (supabase as any).rpc("get_moderators_public", { _tournament_id: tournamentId }),
         supabase.from("matchups").select("*").eq("tournament_id", tournamentId),
-        supabase.from("scheduled_draws").select("*").eq("tournament_id", tournamentId),
+        (supabase as any).rpc("get_scheduled_draws_public", { _tournament_id: tournamentId }),
       ]);
       if (cancelled) return;
       const publicOrgId = getPublicOrgId();
@@ -130,6 +130,12 @@ export default function PublicTournament() {
 
     loadData(true);
 
+    // A tabela privada não envia eventos Realtime para visitantes.
+    const refreshDraws = async () => {
+      const { data, error } = await (supabase as any).rpc("get_scheduled_draws_public", { _tournament_id: tournamentId });
+      if (!cancelled && !error) setScheduledDraws(data || []);
+    };
+    const drawTimer = window.setInterval(refreshDraws, 30000);
     const refresh = () => loadData(false);
     const channel = supabase
       .channel(`public_tournament_${tournamentId}`)
@@ -143,6 +149,7 @@ export default function PublicTournament() {
 
     return () => {
       cancelled = true;
+      window.clearInterval(drawTimer);
       supabase.removeChannel(channel);
     };
   }, [tournamentId]);

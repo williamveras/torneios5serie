@@ -225,7 +225,7 @@ export default function QualifiersView({ hideHeading = false, qualifiers, viewMo
       })}
       {qualifiers.repescagem.length > 0 && (
         <Section
-          title={`Melhores ${qualifiers.nextSlotPosition}º colocados (classificados)`}
+          title={qualifiers.repescagem.some(r => r.groupPosition !== qualifiers.nextSlotPosition) ? "Classificados pelo ranking e preenchimento de vagas" : `Melhores ${qualifiers.nextSlotPosition}º colocados (classificados)`}
           rows={qualifiers.repescagem}
           usePos="overall"
           playerMesaMap={playerMesaMap}

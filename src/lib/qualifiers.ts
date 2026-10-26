@@ -155,14 +155,19 @@ export function computeQualifiers(
   } else {
 
 
-    // Modo ranking (padrão atual): melhores (N+1)-ésimos passam direto via repescagem.
-    // Apenas jogadores exatamente na posição (directPerGroup + 1) contam — os demais
-    // grupos-abaixo entram em notQualified.
+    // Preserva as vagas extras previstas e completa vagas de grupos sem
+    // participantes elegíveis suficientes, priorizando a próxima colocação.
     const nextSlot = extras.filter(r => r.groupPosition === byePosition);
-    const others = extras.filter(r => r.groupPosition !== byePosition);
-    repescagem = nextSlot.slice(0, repescagemTotal).map((r, i) => ({ ...r, position: i + 1 }));
-    const remainingSlot = nextSlot.slice(repescagemTotal);
-    notQualified = [...remainingSlot, ...others];
+    const regular = nextSlot.slice(0, repescagemTotal);
+    const selected = new Set(regular.map(r => r.playerId));
+    const target = groups.length * directPerGroup + repescagemTotal;
+    const vacancies = Math.max(0, target - direct.length - regular.length);
+    const replacements = extras.filter(r => !selected.has(r.playerId))
+      .sort((a, b) => a.groupPosition - b.groupPosition || crossSort(a, b))
+      .slice(0, vacancies);
+    repescagem = [...regular, ...replacements].map((r, i) => ({ ...r, position: i + 1 }));
+    const qualified = new Set(repescagem.map(r => r.playerId));
+    notQualified = extras.filter(r => !qualified.has(r.playerId));
   }
   notQualified = [...notQualified, ...rest];
 

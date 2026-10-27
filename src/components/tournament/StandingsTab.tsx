@@ -178,8 +178,10 @@ export default function StandingsTab({ tournamentId }: Props) {
     const classifiedIds = new Set([...q.direct, ...q.repescagem, ...q.playoff].map(r => r.playerId));
     // Só considera jogadores que tiveram participação na Fase de Grupos
     const playedInGroups = new Set(groupResults.map(r => r.player_id));
+    const advancedIds = new Set(matchups.filter(m => m.fase && m.fase !== "Fase de Grupos")
+      .flatMap(m => [m.player1_id, m.player2_id]));
     const toEliminate = players
-      .filter(p => !p.eliminado && playedInGroups.has(p.id) && !classifiedIds.has(p.id))
+      .filter(p => !p.eliminado && playedInGroups.has(p.id) && !classifiedIds.has(p.id) && !advancedIds.has(p.id))
       .map(p => p.id);
     if (toEliminate.length === 0) return;
     supabase.from("players").update({ eliminado: true }).in("id", toEliminate).then(({ error }) => {
@@ -193,7 +195,7 @@ export default function StandingsTab({ tournamentId }: Props) {
         if (data) setPlayers(data);
       });
     });
-  }, [grupoConcluded, results, players, qualifierOpts, lowerWins, tournamentId]);
+  }, [grupoConcluded, results, players, matchups, qualifierOpts, lowerWins, tournamentId]);
 
 
   // Detecta automaticamente o campeão quando a Final tem um vencedor.

@@ -325,6 +325,7 @@ export type Database = {
           comentario: string | null
           created_at: string
           elimination_reason: string | null
+          result_eliminated: boolean
           eliminado: boolean
           email: string | null
           grupo: string | null
@@ -340,6 +341,7 @@ export type Database = {
           comentario?: string | null
           created_at?: string
           elimination_reason?: string | null
+          result_eliminated?: boolean
           eliminado?: boolean
           email?: string | null
           grupo?: string | null
@@ -355,6 +357,7 @@ export type Database = {
           comentario?: string | null
           created_at?: string
           elimination_reason?: string | null
+          result_eliminated?: boolean
           eliminado?: boolean
           email?: string | null
           grupo?: string | null

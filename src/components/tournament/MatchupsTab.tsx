@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getPlayerDisplayName, getPlayerNickForStandings } from "@/lib/playerDisplay";
 import { fetchAllMatchResults } from "@/lib/fetchAll";
-import { computeQualifiers } from "@/lib/qualifiers";
+import { computeQualifiers, computePhaseWinnerIds, isOutOfTournament } from "@/lib/qualifiers";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -234,6 +234,10 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
       toast.error("O horário deve ser no futuro.");
       return;
     }
+    const thirdPlacePool = fase === "Disputa de 3º Lugar" ? await loadDrawPlayers() : null;
+    if (fase === "Disputa de 3º Lugar" && thirdPlacePool?.length !== 2) {
+      toast.error("Registre os resultados das duas semifinais antes de agendar o terceiro lugar."); return;
+    }
     setSchedulingDraw(true);
     let rodadaNum: number | null = null;
     if (drawRodada.trim()) {
@@ -252,7 +256,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
       scheduled_at: when.toISOString(),
       created_by: user?.id ?? null,
       rodada: rodadaNum,
-      player_pool: fase === "Repescagem" && repescagemPool.length > 1 ? repescagemPool.map((p) => p.id) : null,
+      player_pool: thirdPlacePool ? thirdPlacePool.map(p => p.id) : fase === "Repescagem" && repescagemPool.length > 1 ? repescagemPool.map((p) => p.id) : null,
     } as any);
     setSchedulingDraw(false);
     if (error) {
@@ -296,9 +300,22 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
   const hasGroups = players.some((p) => p.grupo);
   const canPorGrupo = fase === "Fase de Grupos" && hasGroups;
 
-  function generate() {
-    // Apenas jogadores que ainda continuam no torneio (não eliminados)
-    let activePlayers = players.filter((p) => !p.eliminado);
+  async function loadDrawPlayers(): Promise<Player[] | null> {
+    const { data, error } = await supabase.from("players").select("*").eq("tournament_id", tournamentId);
+    if (error || !data) { toast.error("Não foi possível atualizar os participantes do sorteio."); return null; }
+    setPlayers(data);
+    if (fase !== "Disputa de 3º Lugar") return data.filter(p => !p.eliminado);
+    const results = await fetchAllMatchResults(tournamentId);
+    const { data: semis, error: semiError } = await supabase.from("matchups").select("*").eq("tournament_id", tournamentId).eq("fase", "Semifinal");
+    if (semiError) { toast.error("Não foi possível consultar as semifinais."); return null; }
+    const winners = computePhaseWinnerIds(semis || [], results, "Semifinal", lowerWins);
+    const losers = new Set((semis || []).flatMap(m => winners.has(m.player1_id) ? [m.player2_id] : winners.has(m.player2_id) ? [m.player1_id] : []));
+    return data.filter(p => losers.has(p.id) && !p.elimination_reason && !results.some(r => r.player_id === p.id && isOutOfTournament(r.penalidades)));
+  }
+
+  async function generate() {
+    let activePlayers = await loadDrawPlayers();
+    if (!activePlayers) return;
     if (fase === "Repescagem") {
       if (repescagemPool.length < 2) {
         toast.error("Não há participantes na repescagem segundo a classificação da fase de grupos.");

@@ -113,7 +113,7 @@ export default function ResultsTab({ tournamentId }: Props) {
         toast.info(player?.elimination_reason === "withdrawal" ? "Jogador desistente — campos preenchidos automaticamente" : "Jogador eliminado por W.O — campos preenchidos automaticamente");
       };
 
-      if (player?.eliminado) {
+      if (player?.eliminado && player.elimination_reason) {
         applyWO();
         return;
       }

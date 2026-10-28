@@ -107,21 +107,10 @@ export default function PublicSchedule({ schedules, players, matchups, results =
         const mesa = map.get(pairKey(mu.player1_id, mu.player2_id)) ?? 9999;
         const matchupPairKey = pairKey(mu.player1_id, mu.player2_id);
         const sched = schedules
-          .filter(s => pairKey(s.player1_id, s.player2_id) === matchupPairKey)
+          // A repeated pair in a new phase must not inherit its old match date.
+          .filter(s => s.grupo === fase && pairKey(s.player1_id, s.player2_id) === matchupPairKey)
           .slice()
-          .sort((a, b) => {
-            const priority = (s: Schedule) => {
-              if (s.grupo === fase) return 0;
-              if (s.grupo === mu.grupo) return 1;
-              if (fase === SIDE_FASE_3RD && activeFase === "Final" && s.grupo === activeFase) return 2;
-              if (!/^\d+$/.test(s.grupo)) return 3;
-              return 4;
-            };
-            const pa = priority(a);
-            const pb = priority(b);
-            if (pa !== pb) return pa - pb;
-            return (b.created_at || "").localeCompare(a.created_at || "");
-          })[0] || null;
+          .sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""))[0] || null;
         items.push({ mesa, fase, player1_id: mu.player1_id, player2_id: mu.player2_id, schedule: sched });
       }
     }

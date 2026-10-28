@@ -242,22 +242,20 @@ export default function RegistrosViewer({ tournamentId, open, onOpenChange }: Pr
       const penalidades = p.penalidade_tipo === "Outra"
         ? p.penalidade_outra.trim() || "Outra"
         : p.penalidade_tipo;
-      return supabase
-        .from("match_results")
-        .update({
+      return {
+          id: p.result_id,
           fase: editFase,
           grupo: isFaseDeGruposEdit ? editGrupo.trim() : editFase,
           rodada: parseInt(editRodada),
           pontos_jogo: parseInt(p.pontos_jogo),
           pontos_mesa: parseInt(p.pontos_mesa),
           penalidades,
-        })
-        .eq("id", p.result_id);
+        };
     });
-    const responses = await Promise.all(updates);
+    const {error} = await (supabase as any).rpc("update_match_results", {tid: tournamentId, entries: updates});
     setSaving(false);
-    if (responses.some(r => r.error)) {
-      toast.error("Erro ao atualizar um ou mais registros do confronto");
+    if (error) {
+      toast.error(error.code === "23505" ? "Já existe resultado nesta fase/rodada para um dos jogadores." : error.message);
       return;
     }
     toast.success("Confronto atualizado");

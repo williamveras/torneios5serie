@@ -192,6 +192,7 @@ export type Database = {
           id: string
           player1_id: string
           player2_id: string
+          mesa_numero: number | null
           published: boolean
           rodada: number | null
           tournament_id: string
@@ -204,6 +205,7 @@ export type Database = {
           id?: string
           player1_id: string
           player2_id: string
+          mesa_numero?: number | null
           published?: boolean
           rodada?: number | null
           tournament_id: string
@@ -216,6 +218,7 @@ export type Database = {
           id?: string
           player1_id?: string
           player2_id?: string
+          mesa_numero?: number | null
           published?: boolean
           rodada?: number | null
           tournament_id?: string
@@ -683,6 +686,8 @@ export type Database = {
       get_players_public: {
         Args: { _tournament_id: string }
         Returns: {
+          eliminado: boolean
+          elimination_reason: string | null
           grupo: string
           id: string
           is_team: boolean

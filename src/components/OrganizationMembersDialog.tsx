@@ -151,11 +151,11 @@ export default function OrganizationMembersDialog({ open, onOpenChange, org }: P
 
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  {canManage && m.user_id !== user?.id ? (
+                  {canManage && (org.role === "owner" || m.role !== "owner") && m.user_id !== user?.id ? (
                     <Select value={m.role} onValueChange={(v) => handleChangeRole(m.id, v as any)}>
                       <SelectTrigger className="h-8 w-32"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="owner">Owner</SelectItem>
+                        {org.role === "owner" && <SelectItem value="owner">Proprietário</SelectItem>}
                         <SelectItem value="admin">Admin</SelectItem>
                         <SelectItem value="member">Membro</SelectItem>
                       </SelectContent>
@@ -163,7 +163,7 @@ export default function OrganizationMembersDialog({ open, onOpenChange, org }: P
                   ) : (
                     <span className="text-xs text-muted-foreground capitalize">{m.role}</span>
                   )}
-                  {canManage && m.user_id !== user?.id && (
+                  {canManage && (org.role === "owner" || m.role !== "owner") && m.user_id !== user?.id && (
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleRemove(m.id, m.user_id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>

@@ -35,6 +35,7 @@ export interface ExpResult {
   data_partida: string | null;
   horario: string | null;
   created_at: string;
+  mesa_numero?: number | null;
 }
 
 export interface ExpMatchup {
@@ -43,6 +44,7 @@ export interface ExpMatchup {
   player1_id: string;
   player2_id: string;
   created_at: string;
+  mesa_numero?: number | null;
 }
 
 const ROUND_LABELS: Record<number, string> = {
@@ -104,7 +106,7 @@ export const buildMesaMap = (matchups: ExpMatchup[], fase: string) => {
     .sort((a, b) => a.created_at.localeCompare(b.created_at))
     .forEach((mu, idx) => {
       const key = [mu.player1_id, mu.player2_id].sort().join("|");
-      map.set(key, idx + 1);
+      map.set(key, mu.mesa_numero ?? idx + 1);
     });
   return map;
 };
@@ -117,8 +119,8 @@ const buildPlayerMesa = (matchups: ExpMatchup[], fase: string) => {
     .slice()
     .sort((a, b) => a.created_at.localeCompare(b.created_at));
   filtered.forEach((mu, idx) => {
-    m.set(mu.player1_id, idx + 1);
-    m.set(mu.player2_id, idx + 1);
+    m.set(mu.player1_id, mu.mesa_numero ?? idx + 1);
+    m.set(mu.player2_id, mu.mesa_numero ?? idx + 1);
   });
   return m;
 };

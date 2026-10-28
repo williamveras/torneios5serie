@@ -70,7 +70,7 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
 
     const matchupsPromise = supabase
       .from("matchups")
-      .select("id, fase, player1_id, player2_id, created_at")
+      .select("id, fase, player1_id, player2_id, created_at, mesa_numero")
       .eq("tournament_id", tournamentId)
       .order("created_at", { ascending: true });
 
@@ -206,7 +206,10 @@ export default function ImportResultsDialog({ open, onOpenChange, tournamentId, 
       }));
 
       const { error } = await supabase.from("match_results").insert(toInsert);
-      if (error) failed++;
+      if (error) {
+        failed++;
+        toast.error(error.code === "23505" ? "Esta partida já tem resultado. Corrija o registro existente na aba Estatísticas." : error.message);
+      }
       else {
         inserted++;
         const desistentes = toInsert.filter(r => r.penalidades === "Desistente").map(r => r.player_id);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, Share2, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,7 +16,7 @@ import ExportTab from "./tournament/ExportTab";
 import TournamentSettingsDialog from "./tournament/TournamentSettingsDialog";
 import { useStandingsTabLabel } from "@/hooks/useStandingsTabLabel";
 import { useMainFases } from "@/hooks/useMainFases";
-import { useAutoClosePhases } from "@/hooks/useAutoClosePhases";
+import { supabase } from "@/integrations/supabase/client";
 
 type Tournament = Tables<"tournaments">;
 
@@ -29,7 +29,17 @@ export default function TournamentPage({ tournament, onBack }: Props) {
   const [activeTab, setActiveTab] = useState("players");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const mainFases = useMainFases(tournament.id);
-  useAutoClosePhases(tournament.id);
+  const [health, setHealth] = useState<{pending?: boolean; conflicts?: string[]}>({});
+  useEffect(() => {
+    let disposed = false;
+    const refresh = async () => {
+      const {data, error} = await (supabase as any).rpc("get_tournament_health", {tid: tournament.id});
+      if (!disposed && !error) setHealth(data || {});
+    };
+    refresh();
+    const timer = window.setInterval(refresh, 5000);
+    return () => { disposed = true; window.clearInterval(timer); };
+  }, [tournament.id]);
   const { label: standingsLabel } = useStandingsTabLabel(tournament.id, undefined, mainFases);
   const [prefillPlayerId, setPrefillPlayerId] = useState<string | null>(null);
   const [prefillPlayer2Id, setPrefillPlayer2Id] = useState<string | null>(null);
@@ -105,6 +115,11 @@ export default function TournamentPage({ tournament, onBack }: Props) {
       />
 
       <main className="max-w-5xl mx-auto px-4 py-6">
+        {health.pending && <p role="status" className="mb-4 text-sm">Atualizando classificação e fases...</p>}
+        {!!health.conflicts?.length && <div role="alert" className="mb-4 rounded border border-destructive p-4">
+          <p className="font-semibold">É necessário revisar o torneio</p>
+          {health.conflicts.map(message => <p key={message}>{message}</p>)}
+        </div>}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4 flex-wrap h-auto">
             <TabsTrigger value="players">Participantes</TabsTrigger>

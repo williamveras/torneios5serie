@@ -80,7 +80,7 @@ export default function BracketView({ matchups, results, players, faseOrder, cha
             const sa = (a as any).bracket_slot ?? 999999;
             const sb = (b as any).bracket_slot ?? 999999;
             if (sa !== sb) return sa - sb;
-            return a.created_at.localeCompare(b.created_at);
+            return (a.mesa_numero ?? 0) - (b.mesa_numero ?? 0) || a.created_at.localeCompare(b.created_at);
           });
         if (ms.length === 0) return null;
         const playedIds = new Set(

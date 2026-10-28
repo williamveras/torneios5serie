@@ -53,7 +53,7 @@ export default function ExportTab({ tournamentId, tournamentName }: Props) {
           .from("team_members")
           .select("team_id, member_nome, member_nick, players!inner(tournament_id)")
           .eq("players.tournament_id", tournamentId),
-        supabase.from("matchups").select("id,fase,player1_id,player2_id,created_at").eq("tournament_id", tournamentId),
+        supabase.from("matchups").select("id,fase,player1_id,player2_id,created_at,mesa_numero").eq("tournament_id", tournamentId),
         fetchAllMatchResults(tournamentId),
       ]);
       if (cancelled) return;

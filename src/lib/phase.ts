@@ -91,6 +91,7 @@ export interface MatchupLite {
   player1_id: string;
   player2_id: string;
   created_at: string;
+  mesa_numero?: number | null;
 }
 
 /**
@@ -104,7 +105,7 @@ export const buildMesaMap = (matchups: MatchupLite[], fase: string): Map<string,
     .slice()
     .sort((a, b) => a.created_at.localeCompare(b.created_at))
     .forEach((mu, idx) => {
-      m.set(pairKey(mu.player1_id, mu.player2_id), idx + 1);
+      m.set(pairKey(mu.player1_id, mu.player2_id), mu.mesa_numero ?? idx + 1);
     });
   return m;
 };

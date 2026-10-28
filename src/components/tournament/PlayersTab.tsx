@@ -642,9 +642,9 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
                   <DropdownMenuItem onClick={() => onScheduleMatch?.(p.id)}>
                     <CalendarPlus className="h-4 w-4 mr-2" /> Agendar partida
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => toggleEliminado(p)}>
+                  <DropdownMenuItem disabled={p.eliminado && !p.elimination_reason} onClick={() => toggleEliminado(p)}>
                     {p.eliminado ? (
-                      <><RotateCcw className="h-4 w-4 mr-2" /> Reverter eliminação</>
+                      <><RotateCcw className="h-4 w-4 mr-2" /> {p.elimination_reason ? "Reverter eliminação" : "Eliminação automática — revise os resultados"}</>
                     ) : (
                       <><Ban className="h-4 w-4 mr-2" /> Marcar como eliminado por W.O</>
                     )}

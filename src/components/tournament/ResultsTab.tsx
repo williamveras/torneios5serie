@@ -195,7 +195,7 @@ export default function ResultsTab({ tournamentId }: Props) {
 
     const { error } = await supabase.from("match_results").insert(toInsert);
     if (error) {
-      toast.error("Erro ao salvar resultados");
+      toast.error(error.code === "23505" ? "Este jogador já tem resultado nesta fase/rodada. Corrija o registro existente na aba Estatísticas." : error.message);
     } else {
       const desistentes = toInsert.filter(r => r.penalidades === "Desistente").map(r => r.player_id);
       if (desistentes.length > 0) {

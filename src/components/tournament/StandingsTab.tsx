@@ -92,101 +92,15 @@ export default function StandingsTab({ tournamentId }: Props) {
   const grupoStatus = phaseStatuses.find(p => p.fase === "Fase de Grupos")?.status || "em_andamento";
   const grupoConcluded = grupoStatus === "concluida";
 
-  // Auto-close Fase de Grupos when all rounds are complete
+  // Automatic phase/champion/qualification updates are owned by the server.
   useEffect(() => {
-    if (grupoConcluded) return;
-    if (!numeroRodadas) return;
-    if (matchups.length === 0 || results.length === 0) return;
-    const { phaseComplete } = computeCurrentRound(matchups as any, results as any, numeroRodadas);
-    if (!phaseComplete) return;
-
-    const existing = phaseStatuses.find(p => p.fase === "Fase de Grupos");
-    const op = existing
-      ? supabase.from("phase_status").update({ status: "concluida" }).eq("id", existing.id)
-      : supabase.from("phase_status").insert({
-          tournament_id: tournamentId, fase: "Fase de Grupos", status: "concluida",
-        });
-    op.then(({ error }) => {
-      if (error) return;
-      toast.success("Fase de Grupos encerrada automaticamente — todas as rodadas concluídas.");
+    const timer = window.setInterval(() => {
       loadPhaseStatuses();
-    });
-  }, [matchups, results, numeroRodadas, phaseStatuses, grupoConcluded, tournamentId]);
-
-  // O fechamento automático das fases eliminatórias (incluindo "Repescagem")
-  // é feito por useAutoClosePhases, no nível da página do torneio.
-
-  // Eliminações por resultado são sincronizadas pelo banco.
-
-  // Auto-elimina jogadores NÃO CLASSIFICADOS da Fase de Grupos assim que ela
-  // for encerrada. Sem isso, os não-classificados continuam com eliminado=false
-  // e entrariam indevidamente no sorteio das fases seguintes.
-  useEffect(() => {
-    if (!grupoConcluded) return;
-    if (players.length === 0 || results.length === 0) return;
-    const groupResults = results.filter(r => (r.fase || "Fase de Grupos") === "Fase de Grupos");
-    if (groupResults.length === 0) return;
-    const nameOf = (id: string) => {
-      const p = players.find(pp => pp.id === id);
-      return p ? getPlayerDisplayName(p as any) : id;
-    };
-    const nickOf = (id: string) => {
-      const p = players.find(pp => pp.id === id);
-      return p ? getPlayerNickForStandings(p as any) : "";
-    };
-    const q = computeQualifiers(groupResults, nameOf, nickOf, { ...qualifierOpts, lowerWins, h2hFirst });
-    const classifiedIds = new Set([...q.direct, ...q.repescagem, ...q.playoff].map(r => r.playerId));
-    // Só considera jogadores que tiveram participação na Fase de Grupos
-    const playedInGroups = new Set(groupResults.map(r => r.player_id));
-    const advancedIds = new Set(matchups.filter(m => m.fase && m.fase !== "Fase de Grupos")
-      .flatMap(m => [m.player1_id, m.player2_id]));
-    const toEliminate = players
-      .filter(p => !p.eliminado && playedInGroups.has(p.id) && !classifiedIds.has(p.id) && !advancedIds.has(p.id))
-      .map(p => p.id);
-    if (toEliminate.length === 0) return;
-    supabase.from("players").update({ eliminado: true }).in("id", toEliminate).then(({ error }) => {
-      if (error) return;
-      toast.success(
-        toEliminate.length === 1
-          ? "1 participante eliminado automaticamente — não classificado na Fase de Grupos."
-          : `${toEliminate.length} participantes eliminados automaticamente — não classificados na Fase de Grupos.`,
-      );
-      supabase.from("players").select("*").eq("tournament_id", tournamentId).then(({ data }) => {
-        if (data) setPlayers(data);
-      });
-    });
-  }, [grupoConcluded, results, players, matchups, qualifierOpts, lowerWins, tournamentId]);
-
-
-  // Detecta automaticamente o campeão quando a Final tem um vencedor.
-  useEffect(() => {
-    if (campeaoId) return;
-    const finalMatchup = matchups.find(m => m.fase === "Final");
-    if (!finalMatchup) return;
-    const r1 = results.find(r => r.player_id === finalMatchup.player1_id && r.fase === "Final");
-    const r2 = results.find(r => r.player_id === finalMatchup.player2_id && r.fase === "Final");
-    if (!r1 || !r2) return;
-    let winner: string | null = null;
-    if (r1.pontos_jogo > r2.pontos_jogo) winner = finalMatchup.player1_id;
-    else if (r2.pontos_jogo > r1.pontos_jogo) winner = finalMatchup.player2_id;
-    else if (r1.pontos_mesa !== r2.pontos_mesa) {
-      if (lowerWins) winner = r1.pontos_mesa < r2.pontos_mesa ? finalMatchup.player1_id : finalMatchup.player2_id;
-      else winner = r1.pontos_mesa > r2.pontos_mesa ? finalMatchup.player1_id : finalMatchup.player2_id;
-    }
-    if (!winner) return;
-    (supabase.from("tournaments") as any)
-      .update({ campeao_id: winner })
-      .eq("id", tournamentId)
-      .then(({ error }: { error: any }) => {
-        if (error) return;
-        setCampeaoId(winner);
-        const p = players.find(pp => pp.id === winner);
-        toast.success(`🏆 Campeão definido: ${getPlayerDisplayName(p, "vencedor")}!`);
-      });
-  }, [matchups, results, campeaoId, tournamentId, players]);
-
-
-
+      supabase.from("tournaments").select("campeao_id").eq("id", tournamentId).maybeSingle()
+        .then(({ data }) => { if (data) setCampeaoId(data.campeao_id); });
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, [tournamentId]);
 
   const currentPhaseStatus = phaseStatuses.find(p => p.fase === selectedFase)?.status || "em_andamento";
   const isConcluded = currentPhaseStatus === "concluida";
@@ -373,7 +287,7 @@ export default function StandingsTab({ tournamentId }: Props) {
           const sa = (a as any).bracket_slot ?? 999999;
           const sb = (b as any).bracket_slot ?? 999999;
           if (sa !== sb) return sa - sb;
-          return a.created_at.localeCompare(b.created_at);
+          return (a.mesa_numero ?? 0) - (b.mesa_numero ?? 0) || a.created_at.localeCompare(b.created_at);
         });
       const faseResults = results.filter(r => (r.fase || "Fase de Grupos") === sourceFase);
       const byPlayer = new Map<string, typeof faseResults[number]>();
@@ -409,16 +323,9 @@ export default function StandingsTab({ tournamentId }: Props) {
       bracket_slot: idx + 1,
     }));
     setPromoting(true);
-    // Substitui qualquer matchup existente da fase alvo
-    const { error: delErr } = await supabase
-      .from("matchups").delete()
-      .eq("tournament_id", tournamentId).eq("fase", targetFase);
-    if (delErr) {
-      setPromoting(false);
-      toast.error("Erro ao limpar confrontos existentes: " + delErr.message);
-      return;
-    }
-    const { error } = await (supabase.from("matchups") as any).insert(rows);
+    const { error } = await (supabase as any).rpc("save_matchup_draw", {
+      tid: tournamentId, phase: targetFase, rows, replace_existing: true,
+    });
     setPromoting(false);
     if (error) { toast.error("Erro ao gerar confrontos: " + error.message); return; }
     toast.success(`${rows.length} confronto${rows.length === 1 ? "" : "s"} gerado${rows.length === 1 ? "" : "s"} para a ${targetFase}.`);

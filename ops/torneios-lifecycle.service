@@ -1,0 +1,9 @@
+[Unit]
+Description=Atualizar classificacoes e fases dos torneios
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/node /opt/torneios-supabase/tournament-lifecycle.cjs
+TimeoutStartSec=120
+UMask=0077

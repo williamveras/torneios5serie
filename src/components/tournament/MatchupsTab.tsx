@@ -115,6 +115,10 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
     fetchPhaseStatuses();
     fetchSchedules();
     fetchQualifierContext();
+    const timer = window.setInterval(() => {
+      fetchScheduledDraws(); fetchMatchups(); fetchPhaseStatuses(); fetchPlayers();
+    }, 10000);
+    return () => window.clearInterval(timer);
   }, [tournamentId]);
 
   async function fetchQualifierContext() {
@@ -301,27 +305,16 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
   const canPorGrupo = fase === "Fase de Grupos" && hasGroups;
 
   async function loadDrawPlayers(): Promise<Player[] | null> {
-    const { data, error } = await supabase.from("players").select("*").eq("tournament_id", tournamentId);
-    if (error || !data) { toast.error("Não foi possível atualizar os participantes do sorteio."); return null; }
-    setPlayers(data);
-    if (fase !== "Disputa de 3º Lugar") return data.filter(p => !p.eliminado);
-    const results = await fetchAllMatchResults(tournamentId);
-    const { data: semis, error: semiError } = await supabase.from("matchups").select("*").eq("tournament_id", tournamentId).eq("fase", "Semifinal");
-    if (semiError) { toast.error("Não foi possível consultar as semifinais."); return null; }
-    const winners = computePhaseWinnerIds(semis || [], results, "Semifinal", lowerWins);
-    const losers = new Set((semis || []).flatMap(m => winners.has(m.player1_id) ? [m.player2_id] : winners.has(m.player2_id) ? [m.player1_id] : []));
-    return data.filter(p => losers.has(p.id) && !p.elimination_reason && !results.some(r => r.player_id === p.id && isOutOfTournament(r.penalidades)));
+    const {data, error} = await (supabase as any).rpc("get_draw_players", {tid: tournamentId, phase: fase});
+    if (error) { toast.error(error.message); return null; }
+    return data || [];
   }
 
   async function generate() {
     let activePlayers = await loadDrawPlayers();
     if (!activePlayers) return;
-    if (fase === "Repescagem") {
-      if (repescagemPool.length < 2) {
-        toast.error("Não há participantes na repescagem segundo a classificação da fase de grupos.");
-        return;
-      }
-      activePlayers = repescagemPool;
+    if (fase !== "Fase de Grupos" && activePlayers.length % 2 !== 0) {
+      toast.error("Número ímpar de classificados. Revise as vagas antes de sortear."); return;
     }
     if (activePlayers.length < 2) {
       toast.error("É necessário ter pelo menos 2 jogadores ativos (não eliminados).");
@@ -394,18 +387,6 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
       return;
     }
     setSaving(true);
-    if (replace) {
-      const { error: delErr } = await supabase
-        .from("matchups")
-        .delete()
-        .eq("tournament_id", tournamentId)
-        .eq("fase", fase);
-      if (delErr) {
-        setSaving(false);
-        toast.error("Erro ao substituir: " + delErr.message);
-        return;
-      }
-    }
     const rows = valid.map((d) => ({
       tournament_id: tournamentId,
       fase,
@@ -414,7 +395,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
       player2_id: d.player2_id!,
       rodada: d.rodada ?? null,
     }));
-    const { error } = await supabase.from("matchups").insert(rows);
+    const { error } = await (supabase as any).rpc("save_matchup_draw", {tid: tournamentId, phase: fase, rows, replace_existing: replace});
     setSaving(false);
     setConfirmReplace(null);
     if (error) {
@@ -767,15 +748,18 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
           </div>
 
           {/* Pending scheduled draws */}
-          {scheduledDraws.filter((s) => s.status === "pending").length > 0 && (
+          {scheduledDraws.filter((s) => s.status === "pending" || s.status === "failed").length > 0 && (
             <div className="space-y-2 pt-2 border-t">
-              <p className="text-sm font-medium">Sorteios agendados</p>
-              {scheduledDraws.filter((s) => s.status === "pending").map((s) => {
+              <p className="text-sm font-medium">Sorteios agendados e avisos</p>
+              {scheduledDraws.filter((s) => s.status === "pending" || s.status === "failed").map((s) => {
                 const dt = new Date(s.scheduled_at);
                 return (
                   <div key={s.id} className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2 text-sm">
                     <span>
                       <strong>{s.fase}</strong>{(s as any).rodada != null ? ` · Rodada ${(s as any).rodada}` : ""} — {s.mode === "geral" ? "Geral" : "Por grupo"} · {dt.toLocaleDateString("pt-BR")} às {dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                      {s.status === "failed" && <span role="alert" className="block text-destructive mt-1">
+                        Sorteio não realizado: {s.error_message || "Revise os dados e agende novamente."}
+                      </span>}
                     </span>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => cancelScheduledDraw(s.id)} aria-label="Cancelar">
                       <X className="h-4 w-4" />
@@ -907,7 +891,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
             ? matchups
                 .filter((m) => m.fase === f)
                 .slice()
-                .sort((a, b) => a.created_at.localeCompare(b.created_at))
+                .sort((a, b) => (a.mesa_numero ?? 0) - (b.mesa_numero ?? 0) || a.created_at.localeCompare(b.created_at))
             : [];
           return (
             <Card key={f}>
@@ -944,7 +928,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
                             return (
                               <div key={m.id} className="flex items-center justify-between py-1.5 px-3 rounded-md bg-muted/50">
                                 <span className="text-sm">
-                                  <span className="text-muted-foreground mr-2">Mesa {i + 1}:</span>
+                                  <span className="text-muted-foreground mr-2">Mesa {m.mesa_numero ?? i + 1}:</span>
                                   {getPlayerName(m.player1_id)} <span className="text-muted-foreground">vs</span> {getPlayerName(m.player2_id)}
                                   {sch && (
                                     <strong className="ml-2 text-foreground">— {formatScheduleWhen(sch)}</strong>

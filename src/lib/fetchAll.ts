@@ -16,6 +16,7 @@ export async function fetchAllMatchResults(tournamentId: string) {
       .select("*")
       .eq("tournament_id", tournamentId)
       .order("created_at", { ascending: true })
+      .order("id", { ascending: true })
       .range(from, from + PAGE_SIZE - 1);
     if (error) throw error;
     if (!data || data.length === 0) break;

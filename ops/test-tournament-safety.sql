@@ -71,6 +71,12 @@ SELECT execute_scheduled_draws();
 SELECT execute_scheduled_draws();
 SELECT pg_temp.check_true((SELECT status='done' FROM scheduled_draws WHERE id='50000000-0000-0000-0000-000000000003'),'Valid draw failed');
 SELECT pg_temp.check_true((SELECT count(*)=1 AND min(mesa_numero)=1 FROM matchups WHERE tournament_id='30000000-0000-0000-0000-000000000002'),'Repeated draw duplicated matches');
+-- Completed scheduled draws are immediately visible to anonymous visitors.
+SET LOCAL ROLE anon;
+SELECT pg_temp.check_true((SELECT count(*)=1 AND bool_and(published) FROM matchups WHERE tournament_id='30000000-0000-0000-0000-000000000002'),'Scheduled draw not public');
+RESET ROLE;
+-- Preserve the rollback test below by explicitly reverting this fixture to draft.
+UPDATE matchups SET published=false WHERE tournament_id='30000000-0000-0000-0000-000000000002';
 -- Stale projections cannot overwrite newer result changes.
 SELECT pg_temp.check_true(NOT tournament_security.apply_projection('30000000-0000-0000-0000-000000000002',-1,'{}'),'Stale projection accepted');
 CREATE TEMP TABLE saved_draw AS SELECT id FROM matchups WHERE tournament_id='30000000-0000-0000-0000-000000000002';
@@ -92,4 +98,13 @@ END $$;
 RESET ROLE;
 SELECT pg_temp.check_true((SELECT count(*)=1 FROM matchups m JOIN saved_draw s ON s.id=m.id),'Replacement lost old draw');
 SELECT pg_temp.check_true((SELECT pontos_jogo=3 FROM match_results WHERE tournament_id='30000000-0000-0000-0000-000000000001'),'Partial edit persisted');
+-- Immediate draws publish only once successfully saved.
+DELETE FROM matchups WHERE tournament_id='30000000-0000-0000-0000-000000000002';
+UPDATE tournament_security.lifecycle SET dirty=false WHERE tournament_id='30000000-0000-0000-0000-000000000002';
+SET LOCAL ROLE authenticated;
+SELECT save_matchup_draw('30000000-0000-0000-0000-000000000002','Final','[{"player1_id":"40000000-0000-0000-0000-000000000003","player2_id":"40000000-0000-0000-0000-000000000004","grupo":"Final"}]',false);
+RESET ROLE;
+SET LOCAL ROLE anon;
+SELECT pg_temp.check_true((SELECT count(*)=1 AND bool_and(published) FROM matchups WHERE tournament_id='30000000-0000-0000-0000-000000000002'),'Immediate draw not public');
+RESET ROLE;
 ROLLBACK;

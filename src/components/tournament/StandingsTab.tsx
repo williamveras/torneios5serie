@@ -328,7 +328,7 @@ export default function StandingsTab({ tournamentId }: Props) {
     });
     setPromoting(false);
     if (error) { toast.error("Erro ao gerar confrontos: " + error.message); return; }
-    toast.success(`${rows.length} confronto${rows.length === 1 ? "" : "s"} gerado${rows.length === 1 ? "" : "s"} para a ${targetFase}.`);
+    toast.success(`${rows.length} confronto${rows.length === 1 ? "" : "s"} gerado${rows.length === 1 ? "" : "s"} e publicado${rows.length === 1 ? "" : "s"} para a ${targetFase}.`);
     // Recarrega matchups
     const { data } = await supabase.from("matchups").select("*").eq("tournament_id", tournamentId);
     if (data) setMatchups(data);

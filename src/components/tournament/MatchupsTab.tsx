@@ -267,7 +267,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
       toast.error("Erro ao agendar sorteio: " + error.message);
       return;
     }
-    toast.success("Sorteio agendado!");
+    toast.success("Sorteio agendado! Os confrontos serão publicados automaticamente após o sorteio.");
     setDrawDate("");
     setDrawTime("");
     setDrawRodada("");
@@ -401,7 +401,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
     if (error) {
       toast.error("Erro ao salvar: " + error.message);
     } else {
-      toast.success(`${rows.length} confronto(s) salvo(s)!`);
+      toast.success(`${rows.length} confronto(s) salvo(s) e publicado(s)!`);
       setDrafts([]);
       fetchMatchups();
     }
@@ -712,7 +712,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
                   <RefreshCw className="h-4 w-4 mr-1" /> Embaralhar novamente
                 </Button>
                 <Button variant="default" onClick={trySave} disabled={saving}>
-                  <Save className="h-4 w-4 mr-1" /> {saving ? "Salvando..." : "Salvar Confrontos"}
+                  <Save className="h-4 w-4 mr-1" /> {saving ? "Salvando..." : "Salvar e publicar confrontos"}
                 </Button>
                 <Button variant="ghost" onClick={() => setDrafts([])}>Descartar</Button>
               </>

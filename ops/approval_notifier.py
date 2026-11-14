@@ -3,30 +3,36 @@
 import argparse, fcntl, html, json, smtplib, ssl, subprocess, uuid
 from email.message import EmailMessage
 from pathlib import Path
+from email.utils import formataddr, parseaddr
 ADMIN = 'williamveras2010@gmail.com'
 BASE = 'https://torneios.5serie.net'
 def sql(statement):
     result = subprocess.run(['docker','exec','-i','supabase-db','psql','-U','postgres','-d','postgres','-X','-qAt','-v','ON_ERROR_STOP=1'],input=statement,text=True,capture_output=True,check=True)
     return result.stdout.strip()
 def compose(row, sender):
+    brand=row.get('brand') or 'Torneios'
+    base=row.get('base') or BASE
+    sender=formataddr((brand,parseaddr(sender)[1]))
     name=html.escape(row['name'] or 'usuário')
     email=html.escape(row['email'])
     decision=row['kind']
     msg=EmailMessage();msg['From']=sender;msg['To']=ADMIN if decision=='pending' else row['email']
     msg['Message-ID']=f"<{row['id']}@torneios.5serie.net>"
     if decision=='pending':
-        url=BASE+'/account-approvals?request='+row['user_id']
-        msg['Subject']='Nova conta aguardando aprovação — Torneios'
+        url=base+'/account-approvals?request='+row['user_id']
+        msg['Subject']='Nova conta aguardando aprovação — '+brand
         plain=f"Um novo cadastro aguarda sua análise.\nNome: {row['name']}\nE-mail: {row['email']}\n\nAcesse {url} e entre com sua conta de administrador para aprovar ou recusar."
         body=f'<h2>Nova conta aguardando aprovação</h2><p>Nome: {name}<br>E-mail: {email}</p><p><a href="{url}">Analisar solicitação: aprovar ou recusar</a></p><p>Entre com sua conta de administrador. Abrir este link não aprova a conta automaticamente.</p>'
     elif decision=='approved':
-        msg['Subject']='Sua conta foi aprovada — Torneios'
-        plain=f"Olá, {row['name']}! Sua conta foi aprovada. Entre em {BASE}/auth com seu e-mail e senha. O acesso às organizações depende das permissões concedidas pela administração."
-        body=f'<h2>Sua conta foi aprovada</h2><p>Olá, {name}! Seu cadastro foi aprovado.</p><p><a href="{BASE}/auth">Entrar no sistema</a></p><p>Use seu e-mail e senha. O acesso às organizações depende das permissões concedidas pela administração.</p>'
+        msg['Subject']='Sua conta foi aprovada — '+brand
+        plain=f"Olá, {row['name']}! Sua conta foi aprovada. Entre em {base}/auth com seu e-mail e senha. O acesso às organizações depende das permissões concedidas pela administração."
+        body=f'<h2>Sua conta foi aprovada</h2><p>Olá, {name}! Seu cadastro foi aprovado.</p><p><a href="{base}/auth">Entrar no sistema</a></p><p>Use seu e-mail e senha. O acesso às organizações depende das permissões concedidas pela administração.</p>'
     else:
-        msg['Subject']='Atualização sobre seu cadastro — Torneios'
+        msg['Subject']='Atualização sobre seu cadastro — '+brand
         plain='Sua solicitação de cadastro não foi aprovada. Para esclarecer a decisão, entre em contato com a administração.'
         body=f'<h2>Cadastro não aprovado</h2><p>Olá, {name}.</p><p>{plain}</p>'
+    plain += '\n\n'+brand
+    body += '<p>'+html.escape(brand)+'</p>'
     msg.set_content(plain);msg.add_alternative('<!doctype html><html lang="pt-BR"><body style="font-family:Arial,sans-serif;line-height:1.6">'+body+'</body></html>',subtype='html')
     return msg
 def main():
@@ -39,9 +45,10 @@ def main():
         if '=' in line and not line.startswith('#'):
             key,value=line.split('=',1);env[key]=value.strip().strip('"')
     raw=sql("""SELECT coalesce(json_agg(x),'[]') FROM (
-      SELECT q.id,q.user_id,q.kind,q.attempts,u.email,left(coalesce(u.raw_user_meta_data->>'nome',''),200) AS name
+      SELECT q.id,q.user_id,q.kind,q.attempts,u.email,left(coalesce(u.raw_user_meta_data->>'nome',''),200) AS name, o.nome AS brand, o.public_base_url AS base
       FROM account_security.mail_queue q JOIN auth.users u ON u.id=q.user_id
       JOIN account_security.requests r ON r.user_id=q.user_id
+      LEFT JOIN LATERAL (SELECT nome,public_base_url FROM public.organizations WHERE public_base_url=u.raw_user_meta_data->>'site_origin' AND public_base_url IN ('https://torneios.vini10.com','https://torneios.amizadevip.com.br','https://torneios.5serie.net') ORDER BY id LIMIT 1) o ON true
       WHERE q.sent_at IS NULL AND q.next_attempt<=now() AND q.attempts<10 AND u.email IS NOT NULL
       AND (q.kind<>'pending' OR r.status='pending') ORDER BY q.created_at LIMIT 25
     ) x;""")

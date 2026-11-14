@@ -13,7 +13,7 @@ afterEach(()=>{cleanup();vi.clearAllMocks();});
 it('moves focus into the confirmation before approving and closes after success',async()=>{
  mocks.rpc.mockResolvedValue({error:null});
  render(<MemoryRouter><AccountApprovals/></MemoryRouter>);
- fireEvent.click(screen.getByRole('button',{name:'Aprovar',exact:true}));
+ fireEvent.click(screen.getByRole('button',{name:'Aprovar'}));
  const dialog=screen.getByRole('alertdialog',{name:'Aprovar o cadastro?'});
  await waitFor(()=>expect(dialog.contains(document.activeElement)).toBe(true));
  expect(mocks.rpc).not.toHaveBeenCalled();
@@ -25,7 +25,7 @@ it('moves focus into the confirmation before approving and closes after success'
 it('announces a failure inside the confirmation and allows retry',async()=>{
  mocks.rpc.mockRejectedValue(new Error('Conexão indisponível'));
  render(<MemoryRouter><AccountApprovals/></MemoryRouter>);
- fireEvent.click(screen.getByRole('button',{name:'Aprovar',exact:true}));
+ fireEvent.click(screen.getByRole('button',{name:'Aprovar'}));
  fireEvent.click(screen.getByRole('button',{name:'Confirmar aprovação'}));
  expect((await screen.findByRole('alert')).textContent).toContain('Conexão indisponível');
  await waitFor(()=>expect((screen.getByRole('button',{name:'Confirmar aprovação'}) as HTMLButtonElement).disabled).toBe(false));

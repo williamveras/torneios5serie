@@ -3,12 +3,16 @@
 import argparse,fcntl,html,json,smtplib,ssl,uuid
 from email.message import EmailMessage
 from pathlib import Path
+from email.utils import formataddr, parseaddr
 from approval_notifier import sql,BASE
 
 def compose(row,sender):
-    url=BASE+'/organization-invite?invite='+str(uuid.UUID(row['id']))
+    base=row.get('public_base_url') or BASE
+    if base not in ('https://torneios.vini10.com','https://torneios.amizadevip.com.br','https://torneios.5serie.net'):base=BASE
+    sender=formataddr((row['organization_name'],parseaddr(sender)[1]))
+    url=base+'/organization-invite?invite='+str(uuid.UUID(row['id']))
     name=html.escape(row['organization_name']);role='Administrador' if row['role']=='admin' else 'Membro'
-    msg=EmailMessage();msg['From']=sender;msg['To']=row['email'];msg['Subject']='Convite para participar de uma organização — Torneios'
+    msg=EmailMessage();msg['From']=sender;msg['To']=row['email'];msg['Subject']='Convite para participar — '+row['organization_name']
     msg['Message-ID']=f"<org-invite-{row['id']}@torneios.5serie.net>"
     msg.set_content(f"Você foi convidado para a organização {row['organization_name']}, como {role}.\n\nAceite em: {url}\n\nO convite vale por sete dias. Entre com o mesmo e-mail que recebeu esta mensagem. Se ainda não tem conta, cadastre-se e aguarde a aprovação antes de aceitar. Se não reconhece este convite, ignore a mensagem.")
     msg.add_alternative(f'<!doctype html><html lang="pt-BR"><body style="font-family:Arial,sans-serif;line-height:1.6"><h2>Convite para organização</h2><p>Você foi convidado para <strong>{name}</strong>, como <strong>{role}</strong>.</p><p><a href="{url}">Ver e aceitar convite</a></p><p>O convite vale por sete dias. Entre com o mesmo e-mail que recebeu esta mensagem. Se ainda não tem conta, cadastre-se e aguarde a aprovação antes de aceitar.</p><p>Se não reconhece este convite, ignore esta mensagem.</p></body></html>',subtype='html')
@@ -24,7 +28,7 @@ def main():
         if '=' in line and not line.startswith('#'):
             k,v=line.split('=',1);env[k]=v.strip().strip('"')
     rows=json.loads(sql("""SELECT coalesce(json_agg(x),'[]') FROM (
-      SELECT i.id,i.email,i.role,o.nome AS organization_name FROM account_security.organization_invites i JOIN public.organizations o ON o.id=i.organization_id
+      SELECT i.id,i.email,i.role,o.nome AS organization_name,o.public_base_url FROM account_security.organization_invites i JOIN public.organizations o ON o.id=i.organization_id
       JOIN account_security.requests r ON r.user_id=i.invited_by AND r.status='approved'
       WHERE i.status='pending' AND i.expires_at>now() AND i.sent_at IS NULL AND i.attempts<10 AND i.next_attempt<=now()
       AND public.has_org_role(i.organization_id,i.invited_by,ARRAY['owner','admin']::public.org_role[]) ORDER BY i.created_at LIMIT 25

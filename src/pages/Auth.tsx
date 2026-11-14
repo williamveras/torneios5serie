@@ -35,7 +35,7 @@ export default function Auth() {
         email,
         password,
         options: {
-          data: { nome: nome.trim() },
+          data: { nome: nome.trim(), site_origin: window.location.origin },
           emailRedirectTo: `${window.location.origin}/admin`,
         },
       });

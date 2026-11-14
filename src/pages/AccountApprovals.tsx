@@ -6,6 +6,7 @@ import { useAccountAccess } from "@/hooks/useAccountAccess";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from "@/components/ui/alert-dialog";
 type RequestRow = {user_id:string; nome:string; email:string; status:string; created_at:string; decided_at:string|null};
 export default function AccountApprovals() {
   const {user, loading}=useAuth();
@@ -13,17 +14,22 @@ export default function AccountApprovals() {
   const [params]=useSearchParams();
   const [confirm,setConfirm]=useState<{row:RequestRow;decision:"approved"|"rejected"}|null>(null);
   const [saving,setSaving]=useState(false);
+  const [decisionError,setDecisionError]=useState<string|null>(null);
   const requests=useQuery({queryKey:["account-requests",user?.id],enabled:access.data?.is_admin===true,
     queryFn:async():Promise<RequestRow[]>=>{const {data,error}=await (supabase as any).rpc("account_approval_requests");if(error)throw error;return data;}});
   if(loading || (user && access.isPending))return <p className="p-8">Carregando...</p>;
   if(!user)return <Navigate to="/auth?next=approvals" replace/>;
   if(!access.data?.is_admin)return <main className="p-8"><p>Acesso restrito ao administrador de aprovação de contas.</p><Link to="/admin">Voltar ao painel</Link></main>;
   const decide=async()=>{
-    if(!confirm)return;setSaving(true);
-    const {error}=await (supabase as any).rpc("decide_account_approval",{target:confirm.row.user_id,decision:confirm.decision});
-    setSaving(false);
-    if(error){toast.error("Não foi possível concluir. A solicitação pode já ter sido analisada.");await requests.refetch();setConfirm(null);return;}
-    toast.success(confirm.decision==="approved"?"Conta aprovada. O aviso por e-mail foi agendado.":"Cadastro recusado. O aviso por e-mail foi agendado.");setConfirm(null);await requests.refetch();
+    if(!confirm || saving)return;setSaving(true);setDecisionError(null);
+    try {
+      const {error}=await (supabase as any).rpc("decide_account_approval",{target:confirm.row.user_id,decision:confirm.decision});
+      if(error)throw error;
+      toast.success(confirm.decision==="approved"?"Conta aprovada. O aviso por e-mail foi agendado.":"Cadastro recusado. O aviso por e-mail foi agendado.");setConfirm(null);await requests.refetch();
+    } catch(error) {
+      setDecisionError("Não foi possível concluir: "+(error && typeof error==='object' && 'message' in error ? String(error.message) : "verifique sua conexão e tente novamente."));
+      await requests.refetch();
+    } finally {setSaving(false);}
   };
   return <main className="max-w-4xl mx-auto p-6 space-y-5">
     <Link to="/admin" className="underline">Voltar ao painel</Link><h1 className="text-2xl font-bold">Aprovação de contas</h1>
@@ -35,11 +41,20 @@ export default function AccountApprovals() {
     {requests.data?.map(row=><section key={row.user_id} className={`border rounded-lg p-4 space-y-2 ${params.get('request')===row.user_id?'border-primary bg-primary/5':''}`}>
       <h2 className="font-semibold">{row.nome||row.email}</h2><p>{row.email}</p><p>Solicitada em {new Date(row.created_at).toLocaleString('pt-BR')}</p>
       <p>Situação: {row.status==='pending'?'Pendente':row.status==='approved'?'Aprovada':'Recusada'}</p>
-      {row.status==='pending' && <div className="flex gap-3"><Button disabled={saving} onClick={()=>setConfirm({row,decision:'approved'})}>Aprovar</Button><Button variant="destructive" disabled={saving} onClick={()=>setConfirm({row,decision:'rejected'})}>Recusar</Button></div>}
+      {row.status==='pending' && <div className="flex gap-3"><Button disabled={saving} onClick={()=>{setDecisionError(null);setConfirm({row,decision:'approved'});}}>Aprovar</Button><Button variant="destructive" disabled={saving} onClick={()=>{setDecisionError(null);setConfirm({row,decision:'rejected'});}}>Recusar</Button></div>}
     </section>)}
-    {confirm && <div role="dialog" aria-modal="true" aria-label="Confirmar decisão" className="fixed inset-0 bg-black/50 flex items-center justify-center p-6"><section className="bg-background rounded-lg p-6 max-w-md space-y-4">
-      <h2 className="font-semibold">{confirm.decision==='approved'?'Aprovar':'Recusar'} o cadastro?</h2><p>{confirm.row.email}</p><p>O usuário será avisado por e-mail.</p>
-      <div className="flex gap-3"><Button disabled={saving} onClick={decide}>{saving?'Salvando...':'Confirmar'}</Button><Button variant="outline" disabled={saving} onClick={()=>setConfirm(null)}>Cancelar</Button></div>
-    </section></div>}
+    <AlertDialog open={!!confirm} onOpenChange={open=>{if(!open && !saving)setConfirm(null);}}>
+      <AlertDialogContent aria-busy={saving}>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{confirm?.decision==='approved'?'Aprovar':'Recusar'} o cadastro?</AlertDialogTitle>
+          <AlertDialogDescription>{confirm?.row.nome || confirm?.row.email} — {confirm?.row.email}. O usuário será avisado por e-mail.</AlertDialogDescription>
+        </AlertDialogHeader>
+        {decisionError && <p role="alert" className="text-destructive">{decisionError}</p>}
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={saving}>Cancelar</AlertDialogCancel>
+          <Button disabled={saving} onClick={decide}>{saving?'Salvando...':confirm?.decision==='approved'?'Confirmar aprovação':'Confirmar recusa'}</Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </main>;
 }

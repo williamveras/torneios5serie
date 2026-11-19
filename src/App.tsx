@@ -13,6 +13,8 @@ import AccountApprovals from "./pages/AccountApprovals";
 import OrganizationInvite from "./pages/OrganizationInvite";
 import NotFound from "./pages/NotFound";
 
+import LanguageSelector from "@/components/public/LanguageSelector";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -21,6 +23,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <LanguageSelector />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/admin" element={<Index />} />

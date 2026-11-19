@@ -1,0 +1,10 @@
+[Unit]
+Description=Process the public translation queue
+
+[Timer]
+OnBootSec=60
+OnUnitInactiveSec=10
+Unit=torneios-translation.service
+
+[Install]
+WantedBy=timers.target

@@ -1,3 +1,4 @@
+import { t as tr, usePublicLanguage, localeCode } from "@/lib/publicI18n";
 import { applyPlayerEliminations } from "@/lib/playerElimination";
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,421 +20,322 @@ import { buildMesaMap, isGroupPhase, pairKey } from "@/lib/phase";
 import type { ViewMode } from "./ViewModeToggle";
 import type { Tables } from "@/integrations/supabase/types";
 import { getPlayerNickForStandings, formatPlayerWithTeam, type PlayerDisplayLike } from "@/lib/playerDisplay";
-
 // Para a tabela de classificação: queremos que duplas apareçam como o nome da equipe.
 // Como a coluna usa `s.nick || s.playerName`, e para duplas o nick fica vazio,
 // basta retornar nome_completo (team name) como "playerName".
-const getPlayerFullNameForRank = (p?: PlayerDisplayLike | null) =>
-  (p?.nome_completo || "").trim() || "Jogador desconhecido";
-
-type TeamMembersMap = Record<string, { nome: string; nick: string | null }[]>;
-
-const formatTeamWithMembers = (
-  baseName: string,
-  player: (PlayerLite | undefined),
-  teamMembers: TeamMembersMap,
-) => {
-  if (!player?.is_team) return baseName;
-  return formatPlayerWithTeam(player, teamMembers, baseName);
+const getPlayerFullNameForRank = (p?: PlayerDisplayLike | null) => (p?.nome_completo || "").trim() || tr("Jogador desconhecido");
+type TeamMembersMap = Record<string, {
+    nome: string;
+    nick: string | null;
+}[]>;
+const formatTeamWithMembers = (baseName: string, player: (PlayerLite | undefined), teamMembers: TeamMembersMap) => {
+    if (!player?.is_team)
+        return baseName;
+    return formatPlayerWithTeam(player, teamMembers, baseName);
 };
-
-
 type MatchResult = Tables<"match_results">;
 type PhaseStatus = Tables<"phase_status">;
-
 type Matchup = Tables<"matchups">;
-
 interface PlayerLite {
-  id: string;
-  nome_completo: string;
-  nick_playroom: string | null;
-  is_team?: boolean | null;
-  eliminado?: boolean;
-  elimination_reason?: string | null;
+    id: string;
+    nome_completo: string;
+    nick_playroom: string | null;
+    is_team?: boolean | null;
+    eliminado?: boolean;
+    elimination_reason?: string | null;
 }
-
 interface Props {
-  mainFases?: string[] | null;
-  results: MatchResult[];
-  players: PlayerLite[];
-  teamMembers?: TeamMembersMap;
-  phaseStatuses: PhaseStatus[];
-  matchups?: Matchup[];
-  viewMode?: ViewMode;
-  qualifierOpts?: { directPerGroup?: number; repescagemTotal?: number; mode?: "ranking" | "playoff"; playoffSize?: number; byePosition?: number; byeTotal?: number };
-  lowerWins?: boolean;
-  h2hFirst?: boolean;
+    mainFases?: string[] | null;
+    results: MatchResult[];
+    players: PlayerLite[];
+    teamMembers?: TeamMembersMap;
+    phaseStatuses: PhaseStatus[];
+    matchups?: Matchup[];
+    viewMode?: ViewMode;
+    qualifierOpts?: {
+        directPerGroup?: number;
+        repescagemTotal?: number;
+        mode?: "ranking" | "playoff";
+        playoffSize?: number;
+        byePosition?: number;
+        byeTotal?: number;
+    };
+    lowerWins?: boolean;
+    h2hFirst?: boolean;
 }
-
-
 const naturalGroupSort = (a: string, b: string) => {
-  const na = Number(a), nb = Number(b);
-  if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
-  return a.localeCompare(b);
+    const na = Number(a), nb = Number(b);
+    if (!Number.isNaN(na) && !Number.isNaN(nb))
+        return na - nb;
+    return a.localeCompare(b);
 };
-
 const hasGroup = (g: string | null | undefined) => !!g && g.trim() !== "";
 const noWrapText = "public-nowrap";
 const scrollLine = "public-scroll-line";
 const compactCardPadding = "p-3 min-[360px]:p-4";
-const keepTogether = (text: string | number) =>
-  String(text).replace(/ /g, "\u00A0").replace(/-/g, "\u2011");
-
+const keepTogether = (text: string | number) => String(text).replace(/ /g, "\u00A0").replace(/-/g, "\u2011");
 export default function PublicStandings({ mainFases, results: rawResults, players, teamMembers = {}, phaseStatuses, matchups = [], viewMode = "list", qualifierOpts = {}, lowerWins = false, h2hFirst = false }: Props) {
-  const results = useMemo(() => applyPlayerEliminations(rawResults, players), [rawResults, players]);
-  // Default fase: latest concluded phase (so the public view follows the tournament progression).
-  const latestConcludedFase = useMemo(() => {
-    for (let i = FASES.length - 1; i >= 0; i--) {
-      const f = FASES[i];
-      if (isSideFase(f)) continue;
-      if (phaseStatuses.find(p => p.fase === f)?.status === "concluida") return f;
-    }
-    return "Fase de Grupos";
-  }, [phaseStatuses]);
-  const [selectedFase, setSelectedFase] = useState<string>(latestConcludedFase);
-  const [userPickedFase, setUserPickedFase] = useState(false);
-  // Keep selected fase in sync with progression until the user manually changes it.
-  useEffect(() => {
-    if (!userPickedFase) setSelectedFase(latestConcludedFase);
-  }, [latestConcludedFase, userPickedFase]);
-
-  const playerMap = useMemo(() => {
-    const m = new Map<string, PlayerLite>();
-    players.forEach(p => m.set(p.id, p));
-    return m;
-  }, [players]);
-
-  const getPlayerName = (id: string) => getPlayerFullNameForRank(playerMap.get(id));
-  const getPlayerNick = (id: string) => getPlayerNickForStandings(playerMap.get(id));
-
-  const availableFases = useMemo(() => {
-    const fases = [...new Set(results.map(r => r.fase || "Fase de Grupos"))];
-    return FASES.filter(f => fases.includes(f));
-  }, [results]);
-
-  const filteredByFase = useMemo(
-    () => results.filter(r => (r.fase || "Fase de Grupos") === selectedFase),
-    [results, selectedFase],
-  );
-
-  const isGroupsPhase = selectedFase === "Fase de Grupos";
-
-  const hasAnyGroup = useMemo(
-    () => isGroupsPhase && filteredByFase.some(r => hasGroup(r.grupo)),
-    [filteredByFase, isGroupsPhase],
-  );
-
-  const groups = useMemo(
-    () => [...new Set(filteredByFase.filter(r => hasGroup(r.grupo)).map(r => r.grupo))].sort(naturalGroupSort),
-    [filteredByFase],
-  );
-
-  // Mesa lookup per player for the selected fase (only meaningful for non-group fases,
-  // where each player participates in a single matchup/mesa).
-  const playerMesaMap = useMemo(() => {
-    const map = new Map<string, number>();
-    if (isGroupPhase(selectedFase)) return map;
-    const mesaMap = buildMesaMap(matchups, selectedFase);
-    matchups
-      .filter(mu => (mu.fase || "Fase de Grupos") === selectedFase)
-      .forEach(mu => {
-        const n = mesaMap.get(pairKey(mu.player1_id, mu.player2_id));
-        if (!n) return;
-        map.set(mu.player1_id, n);
-        map.set(mu.player2_id, n);
-      });
-    return map;
-  }, [matchups, selectedFase]);
-
-
-
-  const sections = useMemo(() => {
-    if (!hasAnyGroup) {
-      return [{
-        grupo: "",
-        rows: computeStandings(filteredByFase, getPlayerName, getPlayerNick, { lowerWins, h2hFirst }),
-      }];
-    }
-    return groups.map(g => ({
-      grupo: g,
-      rows: computeStandings(
-        filteredByFase.filter(r => r.grupo === g),
-        getPlayerName,
-        getPlayerNick,
-        { lowerWins, h2hFirst },
-      ),
-    }));
-  }, [filteredByFase, groups, hasAnyGroup, players, lowerWins]);
-
-  const totalRows = sections.reduce((acc, s) => acc + s.rows.length, 0);
-
-  const phaseStatus = phaseStatuses.find(p => p.fase === selectedFase)?.status || "em_andamento";
-  const isInProgress = phaseStatus === "em_andamento" && totalRows > 0;
-  const isConcluded = phaseStatus === "concluida";
-
-  const qualifiers = useMemo(
-    () => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins, h2hFirst }),
-    [filteredByFase, players, qualifierOpts, lowerWins],
-  );
-  const nextFase = nextPhaseName(selectedFase, mainFases);
-
-  // Mesa lookup for the NEXT phase — used to annotate qualifiers with the mesa where they will play.
-  const nextPhaseMesaMap = useMemo(() => {
-    const map = new Map<string, number>();
-    if (!nextFase) return map;
-    const mesaMap = buildMesaMap(matchups, nextFase);
-    matchups
-      .filter(mu => (mu.fase || "Fase de Grupos") === nextFase)
-      .forEach(mu => {
-        const n = mesaMap.get(pairKey(mu.player1_id, mu.player2_id));
-        if (!n) return;
-        map.set(mu.player1_id, n);
-        map.set(mu.player2_id, n);
-      });
-    return map;
-  }, [matchups, nextFase]);
-
-  // Vencedores da fase eliminatória selecionada (quando concluída) — formam a lista
-  // de classificados para a próxima fase, exibida da mesma forma que os classificados
-  // saídos da Fase de Grupos.
-  const elimWinnersQualifiers = useMemo(() => {
-    if (isGroupsPhase) return null;
-    const faseMatchups = matchups.filter(m => (m.fase || "Fase de Grupos") === selectedFase);
-    if (faseMatchups.length === 0) return null;
-    const qualifiedIds = computeEliminationQualifierIds(matchups, filteredByFase, selectedFase, lowerWins);
-    if (qualifiedIds.size === 0) return null;
-    const winnersResults = filteredByFase
-      .filter(r => qualifiedIds.has(r.player_id))
-      // Compute as a flat list, ignoring any synthetic `grupo` on elimination results.
-      .map(r => ({ ...r, grupo: "" })) as MatchResult[];
-    return computeQualifiers(winnersResults, getPlayerName, getPlayerNick, { lowerWins, h2hFirst });
-  }, [matchups, filteredByFase, selectedFase, isGroupsPhase, players, lowerWins]);
-
-  const showQualifiers = isConcluded && !!nextFase && totalRows > 0 && (
-    isGroupsPhase
-      ? hasAnyGroup
-      : (elimWinnersQualifiers !== null && elimWinnersQualifiers.direct.length > 0)
-  );
-  const qualifiersToShow = isGroupsPhase ? qualifiers : (elimWinnersQualifiers ?? qualifiers);
-
-  // Vencedores da fase extra de Repescagem — listados junto aos classificados
-  // diretos da Fase de Grupos.
-  const repescagemWinners = useMemo(() => {
-    if (!isGroupsPhase) return [];
-    const ids = computePhaseWinnerIds(matchups as any, results as any, "Repescagem", lowerWins);
-    if (ids.size === 0) return [];
-    const rows = results
-      .filter(r => (r.fase || "Fase de Grupos") === "Repescagem" && ids.has(r.player_id))
-      .map(r => ({ ...r, grupo: "" })) as MatchResult[];
-    return computeQualifiers(rows, getPlayerName, getPlayerNick, { lowerWins, h2hFirst }).direct;
-  }, [matchups, results, isGroupsPhase, players, lowerWins, h2hFirst]);
-
-  // Projeção de fases eliminatórias (visível na fase de grupos para mostrar o roadmap completo).
-  const grupoResults = useMemo(
-    () => results.filter(r => (r.fase || "Fase de Grupos") === "Fase de Grupos"),
-    [results],
-  );
-  const grupoQualifiers = useMemo(
-    () => computeQualifiers(grupoResults, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins, h2hFirst }),
-    [grupoResults, players, qualifierOpts, lowerWins],
-  );
-  const classifiedCount = countMainQualifiers(grupoQualifiers);
-  const projection = useMemo(() => projectPhases(classifiedCount), [classifiedCount]);
-  const concludedFases = phaseStatuses.filter(p => p.status === "concluida").map(p => p.fase);
-
-  const exportToXlsx = () => {
-    const wb = XLSX.utils.book_new();
-    if (!hasAnyGroup) {
-      const data = sections[0].rows.map(s => ({
-        "Posição": s.position,
-        "Nick": s.nick || s.playerName,
-        "Pts Vitória": s.pontosJogo,
-        "Pts Mesa": s.pontosMesa,
-        "Penalidades": s.penalidades,
-      }));
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), "Classificação");
-    } else {
-      const geral = sections.flatMap(sec =>
-        sec.rows.map(s => ({
-          "Grupo": sec.grupo,
-          "Posição no Grupo": s.position,
-          "Nick": s.nick || s.playerName,
-          "Pts Vitória": s.pontosJogo,
-          "Pts Mesa": s.pontosMesa,
-          "Penalidades": s.penalidades,
-        })),
-      );
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(geral), "Geral");
-      sections.forEach(sec => {
-        const data = sec.rows.map(s => ({
-          "Posição": s.position,
-          "Nick": s.nick || s.playerName,
-          "Pts Vitória": s.pontosJogo,
-          "Pts Mesa": s.pontosMesa,
-          "Penalidades": s.penalidades,
+    usePublicLanguage();
+    const results = useMemo(() => applyPlayerEliminations(rawResults, players), [rawResults, players]);
+    // Default fase: latest concluded phase (so the public view follows the tournament progression).
+    const latestConcludedFase = useMemo(() => {
+        for (let i = FASES.length - 1; i >= 0; i--) {
+            const f = FASES[i];
+            if (isSideFase(f))
+                continue;
+            if (phaseStatuses.find(p => p.fase === f)?.status === "concluida")
+                return f;
+        }
+        return "Fase de Grupos";
+    }, [phaseStatuses]);
+    const [selectedFase, setSelectedFase] = useState<string>(latestConcludedFase);
+    const [userPickedFase, setUserPickedFase] = useState(false);
+    // Keep selected fase in sync with progression until the user manually changes it.
+    useEffect(() => {
+        if (!userPickedFase)
+            setSelectedFase(latestConcludedFase);
+    }, [latestConcludedFase, userPickedFase]);
+    const playerMap = useMemo(() => {
+        const m = new Map<string, PlayerLite>();
+        players.forEach(p => m.set(p.id, p));
+        return m;
+    }, [players]);
+    const getPlayerName = (id: string) => getPlayerFullNameForRank(playerMap.get(id));
+    const getPlayerNick = (id: string) => getPlayerNickForStandings(playerMap.get(id));
+    const availableFases = useMemo(() => {
+        const fases = [...new Set(results.map(r => r.fase || "Fase de Grupos"))];
+        return FASES.filter(f => fases.includes(f));
+    }, [results]);
+    const filteredByFase = useMemo(() => results.filter(r => (r.fase || "Fase de Grupos") === selectedFase), [results, selectedFase]);
+    const isGroupsPhase = selectedFase === "Fase de Grupos";
+    const hasAnyGroup = useMemo(() => isGroupsPhase && filteredByFase.some(r => hasGroup(r.grupo)), [filteredByFase, isGroupsPhase]);
+    const groups = useMemo(() => [...new Set(filteredByFase.filter(r => hasGroup(r.grupo)).map(r => r.grupo))].sort(naturalGroupSort), [filteredByFase]);
+    // Mesa lookup per player for the selected fase (only meaningful for non-group fases,
+    // where each player participates in a single matchup/mesa).
+    const playerMesaMap = useMemo(() => {
+        const map = new Map<string, number>();
+        if (isGroupPhase(selectedFase))
+            return map;
+        const mesaMap = buildMesaMap(matchups, selectedFase);
+        matchups
+            .filter(mu => (mu.fase || "Fase de Grupos") === selectedFase)
+            .forEach(mu => {
+            const n = mesaMap.get(pairKey(mu.player1_id, mu.player2_id));
+            if (!n)
+                return;
+            map.set(mu.player1_id, n);
+            map.set(mu.player2_id, n);
+        });
+        return map;
+    }, [matchups, selectedFase]);
+    const sections = useMemo(() => {
+        if (!hasAnyGroup) {
+            return [{
+                    grupo: "",
+                    rows: computeStandings(filteredByFase, getPlayerName, getPlayerNick, { lowerWins, h2hFirst }),
+                }];
+        }
+        return groups.map(g => ({
+            grupo: g,
+            rows: computeStandings(filteredByFase.filter(r => r.grupo === g), getPlayerName, getPlayerNick, { lowerWins, h2hFirst }),
         }));
-        const sheetName = `Grupo ${sec.grupo}`.slice(0, 31);
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), sheetName);
-      });
-    }
-    XLSX.writeFile(wb, `classificacao_${selectedFase.replace(/ /g, "_")}.xlsx`);
-  };
-
-  const renderStandingsSections = () => (
-    viewMode === "table" ? (
-      <div className="space-y-6">
-        {sections.map(sec => (
-          <section key={sec.grupo || "__no_group__"}>
-            {hasAnyGroup && (
-              <h3 className="font-semibold text-lg mb-2">Grupo {sec.grupo}</h3>
-            )}
+    }, [filteredByFase, groups, hasAnyGroup, players, lowerWins]);
+    const totalRows = sections.reduce((acc, s) => acc + s.rows.length, 0);
+    const phaseStatus = phaseStatuses.find(p => p.fase === selectedFase)?.status || "em_andamento";
+    const isInProgress = phaseStatus === "em_andamento" && totalRows > 0;
+    const isConcluded = phaseStatus === "concluida";
+    const qualifiers = useMemo(() => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins, h2hFirst }), [filteredByFase, players, qualifierOpts, lowerWins]);
+    const nextFase = nextPhaseName(selectedFase, mainFases);
+    // Mesa lookup for the NEXT phase — used to annotate qualifiers with the mesa where they will play.
+    const nextPhaseMesaMap = useMemo(() => {
+        const map = new Map<string, number>();
+        if (!nextFase)
+            return map;
+        const mesaMap = buildMesaMap(matchups, nextFase);
+        matchups
+            .filter(mu => (mu.fase || "Fase de Grupos") === nextFase)
+            .forEach(mu => {
+            const n = mesaMap.get(pairKey(mu.player1_id, mu.player2_id));
+            if (!n)
+                return;
+            map.set(mu.player1_id, n);
+            map.set(mu.player2_id, n);
+        });
+        return map;
+    }, [matchups, nextFase]);
+    // Vencedores da fase eliminatória selecionada (quando concluída) — formam a lista
+    // de classificados para a próxima fase, exibida da mesma forma que os classificados
+    // saídos da Fase de Grupos.
+    const elimWinnersQualifiers = useMemo(() => {
+        if (isGroupsPhase)
+            return null;
+        const faseMatchups = matchups.filter(m => (m.fase || "Fase de Grupos") === selectedFase);
+        if (faseMatchups.length === 0)
+            return null;
+        const qualifiedIds = computeEliminationQualifierIds(matchups, filteredByFase, selectedFase, lowerWins);
+        if (qualifiedIds.size === 0)
+            return null;
+        const winnersResults = filteredByFase
+            .filter(r => qualifiedIds.has(r.player_id))
+            // Compute as a flat list, ignoring any synthetic `grupo` on elimination results.
+            .map(r => ({ ...r, grupo: "" })) as MatchResult[];
+        return computeQualifiers(winnersResults, getPlayerName, getPlayerNick, { lowerWins, h2hFirst });
+    }, [matchups, filteredByFase, selectedFase, isGroupsPhase, players, lowerWins]);
+    const showQualifiers = isConcluded && !!nextFase && totalRows > 0 && (isGroupsPhase
+        ? hasAnyGroup
+        : (elimWinnersQualifiers !== null && elimWinnersQualifiers.direct.length > 0));
+    const qualifiersToShow = isGroupsPhase ? qualifiers : (elimWinnersQualifiers ?? qualifiers);
+    // Vencedores da fase extra de Repescagem — listados junto aos classificados
+    // diretos da Fase de Grupos.
+    const repescagemWinners = useMemo(() => {
+        if (!isGroupsPhase)
+            return [];
+        const ids = computePhaseWinnerIds(matchups as any, results as any, "Repescagem", lowerWins);
+        if (ids.size === 0)
+            return [];
+        const rows = results
+            .filter(r => (r.fase || "Fase de Grupos") === "Repescagem" && ids.has(r.player_id))
+            .map(r => ({ ...r, grupo: "" })) as MatchResult[];
+        return computeQualifiers(rows, getPlayerName, getPlayerNick, { lowerWins, h2hFirst }).direct;
+    }, [matchups, results, isGroupsPhase, players, lowerWins, h2hFirst]);
+    // Projeção de fases eliminatórias (visível na fase de grupos para mostrar o roadmap completo).
+    const grupoResults = useMemo(() => results.filter(r => (r.fase || "Fase de Grupos") === "Fase de Grupos"), [results]);
+    const grupoQualifiers = useMemo(() => computeQualifiers(grupoResults, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins, h2hFirst }), [grupoResults, players, qualifierOpts, lowerWins]);
+    const classifiedCount = countMainQualifiers(grupoQualifiers);
+    const projection = useMemo(() => projectPhases(classifiedCount), [classifiedCount]);
+    const concludedFases = phaseStatuses.filter(p => p.status === "concluida").map(p => p.fase);
+    const exportToXlsx = () => {
+        const wb = XLSX.utils.book_new();
+        if (!hasAnyGroup) {
+            const data = sections[0].rows.map(s => ({
+                [tr("Posição")]: s.position,
+                "Nick": s.nick || s.playerName,
+                [tr("Pts Vitória")]: s.pontosJogo,
+                [tr("Pts Mesa")]: s.pontosMesa,
+                [tr("Penalidades")]: tr(s.penalidades),
+            }));
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), tr("Classificação"));
+        }
+        else {
+            const geral = sections.flatMap(sec => sec.rows.map(s => ({
+                [tr("Grupo")]: sec.grupo,
+                [tr("Posição no Grupo")]: s.position,
+                "Nick": s.nick || s.playerName,
+                [tr("Pts Vitória")]: s.pontosJogo,
+                [tr("Pts Mesa")]: s.pontosMesa,
+                [tr("Penalidades")]: tr(s.penalidades),
+            })));
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(geral), tr("Geral"));
+            sections.forEach(sec => {
+                const data = sec.rows.map(s => ({
+                    [tr("Posição")]: s.position,
+                    "Nick": s.nick || s.playerName,
+                    [tr("Pts Vitória")]: s.pontosJogo,
+                    [tr("Pts Mesa")]: s.pontosMesa,
+                    [tr("Penalidades")]: tr(s.penalidades),
+                }));
+                const sheetName = tr("Grupo {0}", { "0": sec.grupo }).slice(0, 31);
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), sheetName);
+            });
+        }
+        XLSX.writeFile(wb, `classificacao_${selectedFase.replace(/ /g, "_")}.xlsx`);
+    };
+    const renderStandingsSections = () => (viewMode === "table" ? (<div className="space-y-6">
+        {sections.map(sec => (<section key={sec.grupo || "__no_group__"}>
+            {hasAnyGroup && (<h3 className="font-semibold text-lg mb-2">{tr("Grupo ")}{sec.grupo}</h3>)}
             <div className="rounded-md border overflow-x-auto">
               <Table className="min-w-max">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-12">#</TableHead>
-                    <TableHead>Jogador</TableHead>
-                    <TableHead className="text-right whitespace-nowrap">Pts. vitória</TableHead>
-                    <TableHead className="text-right whitespace-nowrap">Pts. mesa</TableHead>
-                    <TableHead className="whitespace-nowrap">Penalidades</TableHead>
+                    <TableHead>{tr("Jogador")}</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">{tr("Pts. vit\u00F3ria")}</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">{tr("Pts. mesa")}</TableHead>
+                    <TableHead className="whitespace-nowrap">{tr("Penalidades")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {sec.rows.map(s => {
-                    const baseName = formatTeamWithMembers(s.nick || s.playerName, playerMap.get(s.playerId), teamMembers);
-                    const mesa = playerMesaMap.get(s.playerId);
-                    const displayName = mesa ? `${baseName}, mesa ${mesa}` : baseName;
-
-                    return (
-                      <TableRow key={s.playerId} className={s.hasPenalty ? "bg-destructive/5" : ""}>
-                        <TableCell className="font-bold tabular-nums">{s.position}º</TableCell>
+                const baseName = formatTeamWithMembers(s.nick || s.playerName, playerMap.get(s.playerId), teamMembers);
+                const mesa = playerMesaMap.get(s.playerId);
+                const displayName = mesa ? tr("{0}, mesa {1}", { "0": baseName, "1": mesa }) : baseName;
+                return (<TableRow key={s.playerId} className={s.hasPenalty ? "bg-destructive/5" : ""}>
+                        <TableCell className="font-bold tabular-nums">{s.position}{tr("\u00BA")}</TableCell>
                         <TableCell className={`font-medium ${noWrapText}`}>{displayName}</TableCell>
                         <TableCell className={`text-right tabular-nums ${noWrapText}`}>{s.pontosJogo}</TableCell>
                         <TableCell className={`text-right tabular-nums ${noWrapText}`}>{s.pontosMesa}</TableCell>
                         <TableCell className={`${noWrapText} ${s.hasPenalty ? "text-destructive" : "text-muted-foreground"}`}>
-                          {s.penalidades}
+                          {tr(s.penalidades)}
                         </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                      </TableRow>);
+            })}
                 </TableBody>
               </Table>
             </div>
-          </section>
-        ))}
-      </div>
-    ) : (
-      <div className="space-y-6">
-        {sections.map(sec => (
-          <section key={sec.grupo || "__no_group__"}>
-            {hasAnyGroup && (
-              <h3 className="font-semibold text-lg mb-2">
-                Grupo {sec.grupo}
-              </h3>
-            )}
-            <ol
-              className="space-y-2"
-              aria-label={hasAnyGroup ? "Classificação" : `Classificação — ${selectedFase}`}
-            >
+          </section>))}
+      </div>) : (<div className="space-y-6">
+        {sections.map(sec => (<section key={sec.grupo || "__no_group__"}>
+            {hasAnyGroup && (<h3 className="font-semibold text-lg mb-2">{tr("Grupo ")}{sec.grupo}
+              </h3>)}
+            <ol className="space-y-2" aria-label={hasAnyGroup ? tr("Classifica\u00E7\u00E3o") : tr("Classifica\u00E7\u00E3o \u2014 {0}", { "0": tr(selectedFase) })}>
               {sec.rows.map(s => {
                 const baseName = formatTeamWithMembers(s.nick || s.playerName, playerMap.get(s.playerId), teamMembers);
                 const mesa = playerMesaMap.get(s.playerId);
-                const displayName = mesa ? `${baseName}, mesa ${mesa}` : baseName;
-
-                return (
-                  <li
-                    key={s.playerId}
-                    className={`rounded-md border bg-background flex items-start gap-3 min-w-0 overflow-hidden ${compactCardPadding} ${s.hasPenalty ? "bg-destructive/5" : ""}`}
-                  >
-                    <div
-                      className="font-bold tabular-nums text-lg min-w-[2.5rem]"
-                      aria-label={`Posição ${s.position}`}
-                    >
-                      {s.position}º
-                    </div>
+                const displayName = mesa ? tr("{0}, mesa {1}", { "0": baseName, "1": mesa }) : baseName;
+                return (<li key={s.playerId} className={`rounded-md border bg-background flex items-start gap-3 min-w-0 overflow-hidden ${compactCardPadding} ${s.hasPenalty ? "bg-destructive/5" : ""}`}>
+                    <div className="font-bold tabular-nums text-lg min-w-[2.5rem]" aria-label={tr("Posi\u00E7\u00E3o {0}", { "0": s.position })}>
+                      {s.position}{tr("\u00BA")}</div>
                     <div className="flex-1 min-w-0">
                       <p className={`font-medium ${scrollLine}`}><span className="public-line-content">{keepTogether(displayName)}</span></p>
                       <p className={`text-sm mt-0.5 ${scrollLine}`}>
-                        <span className="public-line-content">{keepTogether(`${s.pontosJogo} pontos de vitória, ${s.pontosMesa} pontos de mesa.`)}</span>
+                        <span className="public-line-content">{keepTogether(tr("{0} pontos de vit\u00F3ria, {1} pontos de mesa.", { "0": s.pontosJogo, "1": s.pontosMesa }))}</span>
                       </p>
                       <p className={`text-sm ${scrollLine} ${s.hasPenalty ? "text-destructive" : "text-muted-foreground"}`}>
-                        <span className="public-line-content">{keepTogether(`Penalidades: ${s.penalidades}.`)}</span>
+                        <span className="public-line-content">{keepTogether(tr("Penalidades: {0}.", { "0": tr(s.penalidades) }))}</span>
                       </p>
                     </div>
-                  </li>
-                );
-              })}
+                  </li>);
+            })}
             </ol>
-          </section>
-        ))}
-      </div>
-    )
-  );
-
-  return (
-    <div className="space-y-4">
-      {totalRows > 0 && (
-        <div className="flex justify-end">
+          </section>))}
+      </div>));
+    return (<div className="space-y-4">
+      {totalRows > 0 && (<div className="flex justify-end">
           <Button variant="outline" size="sm" onClick={exportToXlsx}>
-            <Download className="h-4 w-4 mr-1" /> Exportar planilha
-          </Button>
-        </div>
-      )}
-      {totalRows > 0 && (
-        isInProgress ? (
-          <Alert className="border-yellow-500/50 bg-yellow-500/10" role="status">
-            <AlertTriangle className="h-4 w-4 text-yellow-600" />
+            <Download className="h-4 w-4 mr-1"/>{tr(" Exportar planilha")}</Button>
+        </div>)}
+      {totalRows > 0 && (isInProgress ? (<Alert className="border-yellow-500/50 bg-yellow-500/10" role="status">
+            <AlertTriangle className="h-4 w-4 text-yellow-600"/>
             <AlertDescription>
-              <strong>Fase em andamento</strong> — esta classificação é parcial e pode mudar até o encerramento da fase.
-            </AlertDescription>
-          </Alert>
-        ) : (
-          <Alert className="border-green-500/50 bg-green-500/10" role="status">
-            <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <strong>{tr("Fase em andamento")}</strong>{tr(" \u2014 esta classifica\u00E7\u00E3o \u00E9 parcial e pode mudar at\u00E9 o encerramento da fase.")}</AlertDescription>
+          </Alert>) : (<Alert className="border-green-500/50 bg-green-500/10" role="status">
+            <CheckCircle2 className="h-4 w-4 text-green-600"/>
             <AlertDescription>
-              {showQualifiers ? (
-                <div className="space-y-2">
-                  <p><strong>Fase encerrada</strong> — classificação oficial.</p>
-                  <p>Abaixo, segue a lista de classificados para a {nextFase}.</p>
-                  <p>
-                    Se você deseja visualizar a lista completa dos jogadores e suas respectivas posições, até mesmo os que não passaram, pode procurar aqui mesmo, no fim dessa página, a guia "lista completa de jogadores e suas respectivas posições no torneio."
-                  </p>
-                </div>
-              ) : (
-                <><strong>Fase encerrada</strong> — classificação oficial.</>
-              )}
+              {showQualifiers ? (<div className="space-y-2">
+                  <p><strong>{tr("Fase encerrada")}</strong>{tr(" \u2014 classifica\u00E7\u00E3o oficial.")}</p>
+                  <p>{tr("Abaixo, segue a lista de classificados para a ")}{tr(nextFase)}.</p>
+                  <p>{tr("Se voc\u00EA deseja visualizar a lista completa dos jogadores e suas respectivas posi\u00E7\u00F5es, at\u00E9 mesmo os que n\u00E3o passaram, pode procurar aqui mesmo, no fim dessa p\u00E1gina, a guia \"lista completa de jogadores e suas respectivas posi\u00E7\u00F5es no torneio.\"")}</p>
+                </div>) : (<><strong>{tr("Fase encerrada")}</strong>{tr(" \u2014 classifica\u00E7\u00E3o oficial.")}</>)}
             </AlertDescription>
-          </Alert>
-        )
-      )}
+          </Alert>))}
 
-      {totalRows === 0 ? (
-        <Card>
+      {totalRows === 0 ? (<Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            <BarChart3 className="h-10 w-10 mx-auto mb-3 opacity-40" aria-hidden="true" />
-            <p>Nenhum resultado registrado para esta fase.</p>
+            <BarChart3 className="h-10 w-10 mx-auto mb-3 opacity-40" aria-hidden="true"/>
+            <p>{tr("Nenhum resultado registrado para esta fase.")}</p>
           </CardContent>
-        </Card>
-      ) : showQualifiers ? (
-        <div className="space-y-6">
+        </Card>) : showQualifiers ? (<div className="space-y-6">
           <div className="space-y-4">
-            <QualifiedPhaseSections nextFase={nextFase} finalistIds={selectedFase === "Semifinal" ? computePhaseWinnerIds(matchups, filteredByFase, selectedFase, lowerWins) : undefined} qualifiers={qualifiersToShow} viewMode={viewMode} playerMesaMap={nextPhaseMesaMap.size > 0 ? nextPhaseMesaMap : playerMesaMap} players={players} teamMembers={teamMembers} repescagemWinners={repescagemWinners} />
+            <QualifiedPhaseSections nextFase={nextFase} finalistIds={selectedFase === "Semifinal" ? computePhaseWinnerIds(matchups, filteredByFase, selectedFase, lowerWins) : undefined} qualifiers={qualifiersToShow} viewMode={viewMode} playerMesaMap={nextPhaseMesaMap.size > 0 ? nextPhaseMesaMap : playerMesaMap} players={players} teamMembers={teamMembers} repescagemWinners={repescagemWinners}/>
           </div>
           <Accordion type="single" collapsible className="rounded-md border bg-background px-4">
             <AccordionItem value="full-list" className="border-b-0">
-              <AccordionTrigger className="text-left">
-                Lista completa de jogadores e suas respectivas posições no torneio
-              </AccordionTrigger>
+              <AccordionTrigger className="text-left">{tr("Lista completa de jogadores e suas respectivas posi\u00E7\u00F5es no torneio")}</AccordionTrigger>
               <AccordionContent className="pt-2">
                 {renderStandingsSections()}
               </AccordionContent>
             </AccordionItem>
           </Accordion>
-        </div>
-      ) : (
-        renderStandingsSections()
-      )}
-    </div>
-  );
+        </div>) : (renderStandingsSections())}
+    </div>);
 }
-

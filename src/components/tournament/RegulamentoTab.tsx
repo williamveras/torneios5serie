@@ -1,3 +1,5 @@
+import TranslationReview from "./TranslationReview";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +13,7 @@ interface Props {
 }
 
 export default function RegulamentoTab({ tournamentId }: Props) {
+  const client = useQueryClient();
   const [regulamento, setRegulamento] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -42,6 +45,7 @@ export default function RegulamentoTab({ tournamentId }: Props) {
       toast.error("Erro ao salvar", { description: error.message });
     } else {
       toast.success("Regulamento salvo!");
+      client.invalidateQueries({ queryKey: ["translation-review", tournamentId] });
     }
   };
 
@@ -71,6 +75,7 @@ export default function RegulamentoTab({ tournamentId }: Props) {
             </div>
           </>
         )}
+        <TranslationReview tournamentId={tournamentId} />
       </CardContent>
     </Card>
   );

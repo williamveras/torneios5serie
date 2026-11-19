@@ -38,6 +38,20 @@ A fila tem até 10 tentativas por mensagem, com intervalo crescente até uma hor
 
 Ao criar novas tabelas ou funções privilegiadas, mantenha a verificação de aprovação no banco. O cadastro público de participantes por links de inscrição continua independente das contas de administração.
 
+### Idiomas públicos e traduções locais
+
+As páginas públicas e inscrições oferecem português, inglês, espanhol e francês. A escolha fica no navegador e pode ser compartilhada com `?lang=en`, `?lang=es` ou `?lang=fr`. O painel administrativo permanece em português. Os valores das fases, preferências de horário e regras de classificação continuam sendo gravados em português; somente a apresentação é traduzida. O catálogo está em `src/locales/public.json`.
+
+A migração `20261119142811_public_translations.sql` deve ser aplicada uma única vez, em transação, no banco central após backup. Ela cria uma fila privada para regulamentos e observações de confrontos. O frontend das outras VPS usa o mesmo banco e não precisa instalar outro tradutor.
+
+Na VPS central, instale `python3-venv` e execute `sh ops/install-translations.sh`. O runtime usa Argos Translate 1.10.0 com Torch CPU 2.7.1 e modelos pt→en, en→es e en→fr. A instalação inicial baixa os modelos; a tradução acontece localmente, sem API externa, chave ou cobrança por texto. A versão completa das dependências fica em `/opt/torneios-translation/requirements.lock`. O serviço não expõe uma porta HTTP. O timer processa um item de cada vez, com CPU limitada a 75% de um núcleo e memória limitada a 1800 MB.
+
+O organizador pode revisar em **Regulamento → Traduções públicas**. Alterar o original invalida as três traduções, incluindo revisões, e solicita novas versões. O worker não sobrescreve uma revisão nem salva uma tradução de um original que mudou durante o processamento. Textos idênticos reutilizam traduções automáticas já concluídas; revisões de outra organização não são reutilizadas.
+
+A tradução automática pode conter erros de interpretação. Há conferência de números e proteção de links, mas a revisão de critérios, pontuações e prazos continua recomendada. Se a tradução falhar ou ainda estiver na fila, a página identifica o original em português; não apresenta a versão anterior como atualizada. Após três tentativas, o organizador pode preencher manualmente ou solicitar **Gerar novamente**. Textos com mais de 100 mil caracteres precisam de tradução manual.
+
+Diagnóstico: `systemctl status torneios-translation.timer`, `journalctl -u torneios-translation.service` e tabela privada `tournament_security.translations`. Não registre regulamentos completos ou dados de acesso nos logs. Os testes de permissões em `ops/test-public-translations.sql` usam os IDs da cópia de testes e terminam em ROLLBACK; não devem ser executados em produção. Os testes do worker podem ser executados com `cd ops && /opt/torneios-translation/venv/bin/python -m unittest test_translation_worker.py`.
+
 ### Convites para organizações
 
 Aplique uma vez a migração `20260919121924_organization_email_invites.sql` no banco central, após backup. Os convites ficam no schema privado `account_security`, são vinculados ao e-mail e expiram em sete dias. Apenas donos e administradores aprovados da organização podem convidar, reenviar ou cancelar. O aceite exige conta aprovada e o mesmo e-mail; o convite não aprova cadastros automaticamente. Reenviar cancela o link anterior e gera outro, respeitando intervalo de um minuto e limite de 30 convites por organização por hora.

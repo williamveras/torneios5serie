@@ -1,239 +1,184 @@
+import { t as tr, usePublicLanguage, localeCode } from "@/lib/publicI18n";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { QualifiersResult, QualifierRow } from "@/lib/qualifiers";
 import type { ViewMode } from "@/components/public/ViewModeToggle";
-
 interface PlayerLike {
-  id: string;
-  nome_completo: string;
-  nick_playroom: string | null;
-  is_team?: boolean | null;
+    id: string;
+    nome_completo: string;
+    nick_playroom: string | null;
+    is_team?: boolean | null;
 }
-
-type TeamMembersMap = Record<string, { nome: string; nick: string | null }[]>;
-
+type TeamMembersMap = Record<string, {
+    nome: string;
+    nick: string | null;
+}[]>;
 interface Props {
-  hideHeading?: boolean;
-  qualifiers: QualifiersResult;
-  variant?: "admin" | "public";
-  viewMode?: ViewMode;
-  playerMesaMap?: Map<string, number>;
-  players?: PlayerLike[];
-  teamMembers?: TeamMembersMap;
-  /** Vencedores da fase extra de Repescagem (quando já disputada). */
-  repescagemWinners?: QualifierRow[];
+    hideHeading?: boolean;
+    qualifiers: QualifiersResult;
+    variant?: "admin" | "public";
+    viewMode?: ViewMode;
+    playerMesaMap?: Map<string, number>;
+    players?: PlayerLike[];
+    teamMembers?: TeamMembersMap;
+    /** Vencedores da fase extra de Repescagem (quando já disputada). */
+    repescagemWinners?: QualifierRow[];
 }
-
 const noWrapText = "public-nowrap";
 const scrollLine = "public-scroll-line";
 const compactCardPadding = "p-3 min-[360px]:p-4";
-const keepTogether = (text: string | number) =>
-  String(text).replace(/ /g, "\u00A0").replace(/-/g, "\u2011");
-
+const keepTogether = (text: string | number) => String(text).replace(/ /g, "\u00A0").replace(/-/g, "\u2011");
 const naturalGroupSort = (a: string, b: string) => {
-  const na = Number(a), nb = Number(b);
-  if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
-  return a.localeCompare(b);
+    const na = Number(a), nb = Number(b);
+    if (!Number.isNaN(na) && !Number.isNaN(nb))
+        return na - nb;
+    return a.localeCompare(b);
 };
-
-const formatTeamWithMembers = (
-  baseName: string,
-  player: PlayerLike | undefined,
-  teamMembers: TeamMembersMap,
-) => {
-  if (!player?.is_team) return baseName;
-  const members = teamMembers[player.id] || [];
-  if (members.length === 0) return baseName;
-  const labels = members.map((m) => (m.nick || "").trim() || (m.nome || "").trim()).filter(Boolean);
-  if (labels.length === 0) return baseName;
-  return `${baseName} (${labels.join(" x ")})`;
+const formatTeamWithMembers = (baseName: string, player: PlayerLike | undefined, teamMembers: TeamMembersMap) => {
+    if (!player?.is_team)
+        return baseName;
+    const members = teamMembers[player.id] || [];
+    if (members.length === 0)
+        return baseName;
+    const labels = members.map((m) => (m.nick || "").trim() || (m.nome || "").trim()).filter(Boolean);
+    if (labels.length === 0)
+        return baseName;
+    return `${baseName} (${labels.join(" x ")})`;
 };
-
-function TableSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembers, showGroup, small, hidePosition }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number>; playerMap?: Map<string, PlayerLike>; teamMembers: TeamMembersMap; showGroup?: boolean; small?: boolean; hidePosition?: boolean }) {
-  return (
-    <section>
-      {title && <h3 className={`font-semibold mb-2 ${small ? "text-base text-muted-foreground" : "text-lg"}`}>{title}</h3>}
+function TableSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembers, showGroup, small, hidePosition }: {
+    title: string;
+    rows: QualifierRow[];
+    usePos: "group" | "overall";
+    playerMesaMap?: Map<string, number>;
+    playerMap?: Map<string, PlayerLike>;
+    teamMembers: TeamMembersMap;
+    showGroup?: boolean;
+    small?: boolean;
+    hidePosition?: boolean;
+}) {
+    usePublicLanguage();
+    return (<section>
+      {title && <h3 className={`font-semibold mb-2 ${small ? "text-base text-muted-foreground" : "text-lg"}`}>{tr(title)}</h3>}
       <div className="rounded-md border overflow-x-auto">
         <Table className="min-w-max">
           <TableHeader>
             <TableRow>
               {!hidePosition && <TableHead className="w-12">#</TableHead>}
-              <TableHead>Jogador</TableHead>
-              <TableHead className="text-right whitespace-nowrap">Pts. vitória</TableHead>
-              <TableHead className="text-right whitespace-nowrap">Pts. mesa</TableHead>
-              <TableHead className="whitespace-nowrap">Penalidades</TableHead>
+              <TableHead>{tr("Jogador")}</TableHead>
+              <TableHead className="text-right whitespace-nowrap">{tr("Pts. vit\u00F3ria")}</TableHead>
+              <TableHead className="text-right whitespace-nowrap">{tr("Pts. mesa")}</TableHead>
+              <TableHead className="whitespace-nowrap">{tr("Penalidades")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {rows.map(s => {
-              const pos = usePos === "group" ? s.groupPosition : s.position;
-              const baseName = formatTeamWithMembers(s.nick || s.playerName, playerMap?.get(s.playerId), teamMembers);
-              const mesa = playerMesaMap?.get(s.playerId);
-              const withMesa = mesa ? `${baseName}, mesa ${mesa}` : baseName;
-              const displayName = showGroup && s.grupo ? `${withMesa} — Grupo ${s.grupo}` : withMesa;
-              return (
-                <TableRow key={`${s.grupo}-${s.playerId}`} className={s.hasPenalty ? "bg-destructive/5" : ""}>
-                  {!hidePosition && <TableCell className="font-bold tabular-nums">{pos}º</TableCell>}
+            const pos = usePos === "group" ? s.groupPosition : s.position;
+            const baseName = formatTeamWithMembers(s.nick || s.playerName, playerMap?.get(s.playerId), teamMembers);
+            const mesa = playerMesaMap?.get(s.playerId);
+            const withMesa = mesa ? tr("{0}, mesa {1}", { "0": baseName, "1": mesa }) : baseName;
+            const displayName = showGroup && s.grupo ? tr("{0} \u2014 Grupo {1}", { "0": withMesa, "1": s.grupo }) : withMesa;
+            return (<TableRow key={`${s.grupo}-${s.playerId}`} className={s.hasPenalty ? "bg-destructive/5" : ""}>
+                  {!hidePosition && <TableCell className="font-bold tabular-nums">{pos}{tr("\u00BA")}</TableCell>}
                   <TableCell className={`font-medium ${noWrapText}`}>{displayName}</TableCell>
                   <TableCell className={`text-right tabular-nums ${noWrapText}`}>{s.pontosJogo}</TableCell>
                   <TableCell className={`text-right tabular-nums ${noWrapText}`}>{s.pontosMesa}</TableCell>
                   <TableCell className={`${noWrapText} ${s.hasPenalty ? "text-destructive" : "text-muted-foreground"}`}>
-                    {s.penalidades}
+                    {tr(s.penalidades)}
                   </TableCell>
-                </TableRow>
-              );
-            })}
+                </TableRow>);
+        })}
           </TableBody>
         </Table>
       </div>
-    </section>
-  );
+    </section>);
 }
-
-function ListSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembers, showGroup, small, hidePosition }: { title: string; rows: QualifierRow[]; usePos: "group" | "overall"; playerMesaMap?: Map<string, number>; playerMap?: Map<string, PlayerLike>; teamMembers: TeamMembersMap; showGroup?: boolean; small?: boolean; hidePosition?: boolean }) {
-  return (
-    <section>
-      {title && <h3 className={`font-semibold mb-2 ${small ? "text-base text-muted-foreground" : "text-lg"}`}>{title}</h3>}
-      <ol className="space-y-2" aria-label="Classificados">
+function ListSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembers, showGroup, small, hidePosition }: {
+    title: string;
+    rows: QualifierRow[];
+    usePos: "group" | "overall";
+    playerMesaMap?: Map<string, number>;
+    playerMap?: Map<string, PlayerLike>;
+    teamMembers: TeamMembersMap;
+    showGroup?: boolean;
+    small?: boolean;
+    hidePosition?: boolean;
+}) {
+    usePublicLanguage();
+    return (<section>
+      {title && <h3 className={`font-semibold mb-2 ${small ? "text-base text-muted-foreground" : "text-lg"}`}>{tr(title)}</h3>}
+      <ol className="space-y-2" aria-label={tr("Classificados")}>
         {rows.map(s => {
-          const pos = usePos === "group" ? s.groupPosition : s.position;
-          const baseName = formatTeamWithMembers(s.nick || s.playerName, playerMap?.get(s.playerId), teamMembers);
-          const mesa = playerMesaMap?.get(s.playerId);
-          const withMesa = mesa ? `${baseName}, mesa ${mesa}` : baseName;
-          const displayName = showGroup && s.grupo ? `${withMesa} — Grupo ${s.grupo}` : withMesa;
-          return (
-            <li
-              key={`${s.grupo}-${s.playerId}`}
-              className={`rounded-md border bg-background flex items-start gap-3 min-w-0 overflow-hidden ${compactCardPadding} ${s.hasPenalty ? "bg-destructive/5" : ""}`}
-            >
-              {!hidePosition && (
-                <div className="font-bold tabular-nums text-lg min-w-[2.5rem]" aria-label={`Posição ${pos}`}>
-                  {pos}º
-                </div>
-              )}
+            const pos = usePos === "group" ? s.groupPosition : s.position;
+            const baseName = formatTeamWithMembers(s.nick || s.playerName, playerMap?.get(s.playerId), teamMembers);
+            const mesa = playerMesaMap?.get(s.playerId);
+            const withMesa = mesa ? tr("{0}, mesa {1}", { "0": baseName, "1": mesa }) : baseName;
+            const displayName = showGroup && s.grupo ? tr("{0} \u2014 Grupo {1}", { "0": withMesa, "1": s.grupo }) : withMesa;
+            return (<li key={`${s.grupo}-${s.playerId}`} className={`rounded-md border bg-background flex items-start gap-3 min-w-0 overflow-hidden ${compactCardPadding} ${s.hasPenalty ? "bg-destructive/5" : ""}`}>
+              {!hidePosition && (<div className="font-bold tabular-nums text-lg min-w-[2.5rem]" aria-label={tr("Posi\u00E7\u00E3o {0}", { "0": pos })}>
+                  {pos}{tr("\u00BA")}</div>)}
               <div className="flex-1 min-w-0">
                 <p className={`font-medium ${scrollLine}`}><span className="public-line-content">{keepTogether(displayName)}</span></p>
                 <p className={`text-sm mt-0.5 ${scrollLine}`}>
-                  <span className="public-line-content">{keepTogether(`${s.pontosJogo} pontos de vitória, ${s.pontosMesa} pontos de mesa.`)}</span>
+                  <span className="public-line-content">{keepTogether(tr("{0} pontos de vit\u00F3ria, {1} pontos de mesa.", { "0": s.pontosJogo, "1": s.pontosMesa }))}</span>
                 </p>
                 <p className={`text-sm ${scrollLine} ${s.hasPenalty ? "text-destructive" : "text-muted-foreground"}`}>
-                  <span className="public-line-content">{keepTogether(`Penalidades: ${s.penalidades}.`)}</span>
+                  <span className="public-line-content">{keepTogether(tr("Penalidades: {0}.", { "0": tr(s.penalidades) }))}</span>
                 </p>
               </div>
-            </li>
-          );
+            </li>);
         })}
       </ol>
-    </section>
-  );
+    </section>);
 }
-
 export default function QualifiersView({ hideHeading = false, qualifiers, viewMode = "list", playerMesaMap, players, teamMembers = {}, repescagemWinners = [] }: Props) {
-  const Section = viewMode === "table" ? TableSection : ListSection;
-  const playerMap = (() => {
-    const m = new Map<string, PlayerLike>();
-    (players || []).forEach((p) => m.set(p.id, p));
-    return m;
-  })();
-
-  if (!qualifiers.hasGroups) {
-    return (
-      <div className="space-y-6">
-        <Section title={hideHeading ? "" : "Classificados"} rows={qualifiers.direct} usePos="overall" playerMesaMap={playerMesaMap} playerMap={playerMap} teamMembers={teamMembers} />
-      </div>
-    );
-  }
-
-  const groups = [...new Set(qualifiers.direct.map(r => r.grupo))].sort(naturalGroupSort);
-
-  // Formato "1000 Milhas": há fase extra de repescagem — mostra apenas os
-  // primeiros de cada grupo, depois os melhores Nº colocados, depois a repescagem.
-  if (qualifiers.playoff.length > 0) {
-    const winners = qualifiers.direct
-      .filter(r => r.groupPosition === 1)
-      .sort((a, b) => naturalGroupSort(a.grupo, b.grupo))
-      .map((r, i) => ({ ...r, position: i + 1 }));
-    const byes = qualifiers.repescagem
-      .slice()
-      .sort((a, b) => naturalGroupSort(a.grupo, b.grupo))
-      .map((r, i) => ({ ...r, position: i + 1 }));
-
-    const GroupedSection = ({ title, rows, hidePosition }: { title: string; rows: QualifierRow[]; hidePosition?: boolean }) => {
-      const gs = [...new Set(rows.map(r => r.grupo))].sort(naturalGroupSort);
-      return (
-        <section className="space-y-4">
-          <h3 className="font-semibold text-lg">{title}</h3>
-          {gs.map(g => (
-            <Section
-              key={g}
-              small
-              title={g ? `Grupo ${g}` : "Sem grupo"}
-              rows={rows.filter(r => r.grupo === g)}
-              usePos="overall"
-              playerMesaMap={playerMesaMap}
-              playerMap={playerMap}
-              teamMembers={teamMembers}
-              hidePosition={hidePosition}
-            />
-          ))}
-        </section>
-      );
-    };
-
-    return (
-      <div className="space-y-6">
-        <GroupedSection
-          title="Classificados diretos para a segunda fase — Primeiros colocados de cada grupo:"
-          rows={winners}
-          hidePosition
-        />
-        {byes.length > 0 && (
-          <GroupedSection
-            title={`Classificados diretos para a segunda fase — ${byes.length === 7 ? "sete" : byes.length} melhores ${qualifiers.nextSlotPosition}º colocados do ranking geral:`}
-            rows={byes}
-          />
-        )}
-        {repescagemWinners.length > 0 && (
-          <Section
-            title="Classificados da repescagem para a segunda fase:"
-            rows={repescagemWinners}
-            usePos="overall"
-            playerMesaMap={playerMesaMap}
-            playerMap={playerMap}
-            teamMembers={teamMembers}
-          />
-        )}
-        <Section
-          title={repescagemWinners.length > 0 ? "Jogadores que disputaram a repescagem" : "Jogadores que irão para a repescagem"}
-          rows={qualifiers.playoff}
-          usePos="overall"
-          playerMesaMap={playerMesaMap}
-          playerMap={playerMap}
-          teamMembers={teamMembers}
-        />
-      </div>
-    );
-  }
-
-
-  return (
-    <div className="space-y-6">
+    usePublicLanguage();
+    const Section = viewMode === "table" ? TableSection : ListSection;
+    const playerMap = (() => {
+        const m = new Map<string, PlayerLike>();
+        (players || []).forEach((p) => m.set(p.id, p));
+        return m;
+    })();
+    if (!qualifiers.hasGroups) {
+        return (<div className="space-y-6">
+        <Section title={hideHeading ? "" : tr("Classificados")} rows={qualifiers.direct} usePos="overall" playerMesaMap={playerMesaMap} playerMap={playerMap} teamMembers={teamMembers}/>
+      </div>);
+    }
+    const groups = [...new Set(qualifiers.direct.map(r => r.grupo))].sort(naturalGroupSort);
+    // Formato "1000 Milhas": há fase extra de repescagem — mostra apenas os
+    // primeiros de cada grupo, depois os melhores Nº colocados, depois a repescagem.
+    if (qualifiers.playoff.length > 0) {
+        const winners = qualifiers.direct
+            .filter(r => r.groupPosition === 1)
+            .sort((a, b) => naturalGroupSort(a.grupo, b.grupo))
+            .map((r, i) => ({ ...r, position: i + 1 }));
+        const byes = qualifiers.repescagem
+            .slice()
+            .sort((a, b) => naturalGroupSort(a.grupo, b.grupo))
+            .map((r, i) => ({ ...r, position: i + 1 }));
+        const GroupedSection = ({ title, rows, hidePosition }: {
+            title: string;
+            rows: QualifierRow[];
+            hidePosition?: boolean;
+        }) => {
+            const gs = [...new Set(rows.map(r => r.grupo))].sort(naturalGroupSort);
+            return (<section className="space-y-4">
+          <h3 className="font-semibold text-lg">{tr(title)}</h3>
+          {gs.map(g => (<Section key={g} small title={g ? tr("Grupo {0}", { "0": g }) : tr("Sem grupo")} rows={rows.filter(r => r.grupo === g)} usePos="overall" playerMesaMap={playerMesaMap} playerMap={playerMap} teamMembers={teamMembers} hidePosition={hidePosition}/>))}
+        </section>);
+        };
+        return (<div className="space-y-6">
+        <GroupedSection title={tr("Classificados diretos para a segunda fase \u2014 Primeiros colocados de cada grupo:")} rows={winners} hidePosition/>
+        {byes.length > 0 && (<GroupedSection title={`Classificados diretos para a segunda fase — ${byes.length === 7 ? "sete" : byes.length} melhores ${qualifiers.nextSlotPosition}º colocados do ranking geral:`} rows={byes}/>)}
+        {repescagemWinners.length > 0 && (<Section title={tr("Classificados da repescagem para a segunda fase:")} rows={repescagemWinners} usePos="overall" playerMesaMap={playerMesaMap} playerMap={playerMap} teamMembers={teamMembers}/>)}
+        <Section title={repescagemWinners.length > 0 ? tr("Jogadores que disputaram a repescagem") : tr("Jogadores que ir\u00E3o para a repescagem")} rows={qualifiers.playoff} usePos="overall" playerMesaMap={playerMesaMap} playerMap={playerMap} teamMembers={teamMembers}/>
+      </div>);
+    }
+    return (<div className="space-y-6">
       {groups.map(g => {
-        const rows = qualifiers.direct
-          .filter(r => r.grupo === g)
-          .sort((a, b) => a.groupPosition - b.groupPosition);
-        return <Section key={g} title={`Grupo ${g}`} rows={rows} usePos="group" playerMesaMap={playerMesaMap} playerMap={playerMap} teamMembers={teamMembers} />;
-      })}
-      {qualifiers.repescagem.length > 0 && (
-        <Section
-          title={qualifiers.repescagem.some(r => r.groupPosition !== qualifiers.nextSlotPosition) ? "Classificados pelo ranking e preenchimento de vagas" : `Melhores ${qualifiers.nextSlotPosition}º colocados (classificados)`}
-          rows={qualifiers.repescagem}
-          usePos="overall"
-          playerMesaMap={playerMesaMap}
-          playerMap={playerMap}
-          teamMembers={teamMembers}
-        />
-      )}
-    </div>
-  );
+            const rows = qualifiers.direct
+                .filter(r => r.grupo === g)
+                .sort((a, b) => a.groupPosition - b.groupPosition);
+            return <Section key={g} title={`Grupo ${g}`} rows={rows} usePos="group" playerMesaMap={playerMesaMap} playerMap={playerMap} teamMembers={teamMembers}/>;
+        })}
+      {qualifiers.repescagem.length > 0 && (<Section title={qualifiers.repescagem.some(r => r.groupPosition !== qualifiers.nextSlotPosition) ? tr("Classificados pelo ranking e preenchimento de vagas") : tr("Melhores {0}\u00BA colocados (classificados)", { "0": qualifiers.nextSlotPosition })} rows={qualifiers.repescagem} usePos="overall" playerMesaMap={playerMesaMap} playerMap={playerMap} teamMembers={teamMembers}/>)}
+    </div>);
 }
-

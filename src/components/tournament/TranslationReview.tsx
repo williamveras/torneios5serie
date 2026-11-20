@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { standardScheduleNote } from "@/lib/standardScheduleNote";
 
 interface Row { tournament_id: string; kind: string; source_id: string; language: string; source_text: string; source_hash: string; translated_text: string | null; status: string; reviewed: boolean; }
 function Editor({ row }: { row: Row }) {
@@ -33,19 +34,37 @@ function Editor({ row }: { row: Row }) {
     <div className="flex gap-2 flex-wrap"><Button disabled={busy || !(draft ?? row.translated_text ?? "").trim()} onClick={() => action(false)}>Salvar revisão</Button><Button variant="outline" disabled={busy || row.status === "pending"} onClick={() => action(true)}>Gerar novamente</Button></div>
   </section>;
 }
-export default function TranslationReview({ tournamentId }: { tournamentId: string }) {
+export default function TranslationReview({ tournamentId, kind = "rules", sourceId, sourceText }: { tournamentId: string; kind?: "rules" | "note"; sourceId?: string; sourceText?: string }) {
   const [language, setLanguage] = useState("en");
   const { data, isLoading, error } = useQuery<Row[]>({ queryKey: ["translation-review", tournamentId], queryFn: async () => {
     const { data, error } = await (supabase as any).rpc("get_translation_review", { tid: tournamentId });
     if (error) throw error;
     return data || [];
   }, refetchInterval: 15000 });
+  const rows = data?.filter(row => row.kind === kind && row.language === language
+    && (kind === "rules" ? row.source_id === tournamentId : row.source_id === sourceId && !standardScheduleNote(row.source_text))
+    && (sourceText === undefined || row.source_text === sourceText));
   return <div className="space-y-4 border-t pt-6">
-    <h3 className="text-lg font-semibold">Traduções públicas</h3>
-    <p className="text-sm text-muted-foreground">Ao salvar o regulamento ou observações dos confrontos, o sistema traduz na VPS. Revise principalmente pontuações, critérios e prazos. Alterar o original invalida as traduções anteriores, incluindo revisões.</p>
+    <h3 className="text-lg font-semibold">{kind === "rules" ? "Traduções do regulamento" : "Tradução da observação deste confronto"}</h3>
+    <p className="text-sm text-muted-foreground">{kind === "rules" ? "Ao salvar o regulamento, o sistema traduz na VPS. Revise principalmente pontuações, critérios e prazos." : "Ao salvar a observação deste confronto, o sistema traduz na VPS."} Alterar o original invalida as traduções anteriores, incluindo revisões.</p>
     <label className="flex gap-2 items-center">Idioma<select className="border rounded p-2 bg-background" value={language} onChange={e => setLanguage(e.target.value)}><option value="en">Inglês</option><option value="es">Espanhol</option><option value="fr">Francês</option></select></label>
     {isLoading && <p>Carregando traduções...</p>}{error && <p role="alert">Não foi possível carregar as traduções.</p>}
-    {data?.length === 0 && <p>Salve um regulamento ou observação para iniciar as traduções.</p>}
-    {data?.filter(r => r.language === language).map(row => <Editor key={`${row.kind}-${row.source_id}-${row.language}-${row.source_hash}`} row={row} />)}
+    {rows?.length === 0 && <p>{kind === "rules" ? "Salve um regulamento para iniciar as traduções." : "Nenhuma tradução disponível para a observação atual. Se acabou de salvar, aguarde a atualização."}</p>}
+    {rows?.map(row => <Editor key={`${row.kind}-${row.source_id}-${row.language}-${row.source_hash}`} row={row} />)}
   </div>;
+}
+
+export function ScheduleTranslationReview({ tournamentId, items }: { tournamentId: string; items: { id: string; label: string; source: string | null }[] }) {
+  const [selectedId, setSelectedId] = useState("");
+  const eligible = items.filter(item => item.source?.trim() && !standardScheduleNote(item.source));
+  const selected = eligible.find(item => item.id === selectedId);
+  if (!eligible.length) return null;
+  return <details className="rounded border p-4 space-y-4">
+    <summary className="cursor-pointer font-semibold">Revisar traduções das observações dos confrontos</summary>
+    <label className="block">Confronto<select className="block w-full rounded border bg-background p-2" value={selected?.id || ""} onChange={e => setSelectedId(e.target.value)}>
+      <option value="">Selecione um confronto</option>
+      {eligible.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
+    </select></label>
+    {selected && <div key={selected.id}><p className="font-medium">{selected.label}</p><TranslationReview tournamentId={tournamentId} kind="note" sourceId={selected.id} sourceText={selected.source!} /></div>}
+  </details>;
 }

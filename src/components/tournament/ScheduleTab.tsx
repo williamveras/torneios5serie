@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ScheduleTranslationReview } from "./TranslationReview";
 import { getPlayerDisplayName } from "@/lib/playerDisplay";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -859,6 +860,14 @@ export default function ScheduleTab({ tournamentId, prefillPlayerId, prefillPlay
 
 
       {/* Edit Dialog */}
+      <ScheduleTranslationReview tournamentId={tournamentId} items={schedules.map(s => {
+        const groupPhase = /^\d+$/.test(s.grupo);
+        const mesa = !groupPhase ? getMesa(s.grupo, s.player1_id, s.player2_id) : null;
+        const phase = groupPhase ? `Fase de Grupos — Grupo ${s.grupo}` : s.grupo;
+        const place = mesa != null ? ` — Mesa ${mesa}` : "";
+        const round = s.rodada != null ? ` — Rodada ${s.rodada}` : "";
+        return { id: s.id, source: s.observacao, label: `${phase}${place}${round} — ${getPlayerName(s.player1_id)} x ${getPlayerName(s.player2_id)}` };
+      })} />
       <Dialog open={!!editItem} onOpenChange={(open) => !open && setEditItem(null)}>
         <DialogContent>
           <DialogHeader>

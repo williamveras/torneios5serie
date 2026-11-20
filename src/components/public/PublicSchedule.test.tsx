@@ -1,4 +1,5 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
+import { setPublicLanguage } from "@/lib/publicI18n";
 import { afterEach, describe, expect, it } from "vitest";
 import PublicSchedule from "./PublicSchedule";
 import type { Tables } from "@/integrations/supabase/types";
@@ -19,6 +20,17 @@ const schedule = (grupo: string, data_partida = "2020-01-01") => ({
 } as Tables<"match_schedule">);
 
 describe("public elimination schedule phase isolation", () => {
+  it("uses the standard translated label instead of an old machine translation", () => {
+    window.history.replaceState(null, "", "/p/test");
+    act(() => setPublicLanguage("en"));
+    try {
+      const item = { ...schedule("Segunda Fase", "2099-01-01"), horario: null, observacao: "a definir:" };
+      render(<PublicSchedule players={players} matchups={[matchup("Segunda Fase")]} mainFases={["Segunda Fase"]} schedules={[item]}
+        translations={[{ kind: "note", source_id: item.id, source_text: item.observacao, source_hash: "x", text: "To be defined:", status: "ready", reviewed: false }]} />);
+      expect(screen.getByText("To be confirmed", { exact: false })).toBeInTheDocument();
+      expect(screen.queryByText("To be defined:")).not.toBeInTheDocument();
+    } finally { cleanup(); act(() => setPublicLanguage("pt")); window.history.replaceState(null, "", "/"); }
+  });
   it.each(["2", "Primeira Fase"])("keeps new matchup visible despite old schedule in %s", (oldPhase) => {
     render(<PublicSchedule players={players} matchups={[matchup("Segunda Fase")]}
       mainFases={["Segunda Fase"]} schedules={[schedule(oldPhase)]} />);

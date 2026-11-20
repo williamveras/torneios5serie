@@ -1,4 +1,5 @@
 import type { Translation } from "./TranslatedText";
+import { standardScheduleNote } from "@/lib/standardScheduleNote";
 import { t as tr, usePublicLanguage, localeCode } from "@/lib/publicI18n";
 import { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -63,6 +64,8 @@ export default function PublicSchedule({ translations, schedules, players, match
     usePublicLanguage();
     const note = (schedule?: Schedule) => {
         if (!schedule?.observacao) return tr("A definir");
+        const standard = standardScheduleNote(schedule.observacao);
+        if (standard) return tr(standard);
         const row = translations?.find(r => r.kind === "note" && r.source_id === schedule.id && r.source_text === schedule.observacao && r.status === "ready");
         return row?.text || (schedule.observacao + (localeCode() !== "pt-BR" ? " (Português)" : ""));
     };

@@ -194,7 +194,7 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
     const playersToInsert = rows.map(row => ({
       tournament_id: tournamentId,
       nome_completo: findCol(row, ["nome"]) || Object.values(row)[0]?.toString() || "Sem nome",
-      nick_playroom: findCol(row, ["nick", "playroom"]) || null,
+      nick_playroom: findCol(row, ["nic", "nick", "playroom"]) || null,
       whatsapp: findCol(row, ["whatsapp", "telefone", "celular", "ddd"]) || null,
       preferencia_horarios: findCol(row, ["horário", "horario", "preferência", "preferencia"]) || null,
       comentario: findCol(row, ["comentário", "comentario", "adicional", "observação"]) || null,
@@ -423,7 +423,7 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
       ];
     }
     return [
-      { key: "nick", label: "Nick no Playroom", get: (p) => p.nick_playroom || "" },
+      { key: "nick", label: "Nic", get: (p) => p.nick_playroom || "" },
       { key: "nome", label: "Nome completo", get: (p) => p.nome_completo || "" },
       { key: "email", label: "E-mail", get: (p) => p.email || "" },
       { key: "whatsapp", label: "WhatsApp", get: (p) => p.whatsapp || "" },
@@ -862,7 +862,7 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
             {!(editPlayer as any)?.is_team && (
               <>
                 <div>
-                  <Label htmlFor="edit-nick">Nick no Playroom</Label>
+                  <Label htmlFor="edit-nick">Nic</Label>
                   <Input id="edit-nick" value={editNick} onChange={e => setEditNick(e.target.value)} />
                 </div>
                 <div>
@@ -891,7 +891,7 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
                     <Input value={m.member_nome} onChange={e => setEditMembers(prev => prev.map((x, i) => i === idx ? { ...x, member_nome: e.target.value } : x))} />
                   </div>
                   <div>
-                    <Label className="text-xs">Nick no Playroom</Label>
+                    <Label className="text-xs">Nic</Label>
                     <Input value={m.member_nick ?? ""} onChange={e => setEditMembers(prev => prev.map((x, i) => i === idx ? { ...x, member_nick: e.target.value } : x))} />
                   </div>
                   <div>
@@ -960,7 +960,7 @@ export default function PlayersTab({ tournamentId, onScheduleMatch }: Props) {
                     <Input value={m.member_nome} onChange={e => setNewTeamMembers(prev => prev.map((x, i) => i === idx ? { ...x, member_nome: e.target.value } : x))} />
                   </div>
                   <div>
-                    <Label className="text-xs">Nick no Playroom</Label>
+                    <Label className="text-xs">Nic</Label>
                     <Input value={m.member_nick ?? ""} onChange={e => setNewTeamMembers(prev => prev.map((x, i) => i === idx ? { ...x, member_nick: e.target.value } : x))} />
                   </div>
                   <div>

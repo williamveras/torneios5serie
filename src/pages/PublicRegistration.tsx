@@ -113,7 +113,7 @@ export default function PublicRegistration() {
                 return;
             }
             if (!p1Nick.trim() || !p2Nick.trim()) {
-                toast.error(tr("Informe o nick no Playroom dos dois jogadores"));
+                toast.error(tr("Informe o nic dos dois jogadores"));
                 setSubmitting(false);
                 return;
             }
@@ -157,7 +157,7 @@ export default function PublicRegistration() {
                 return;
             }
             if (!nick.trim()) {
-                toast.error(tr("Informe o nick no Playroom"));
+                toast.error(tr("Informe o nic"));
                 setSubmitting(false);
                 return;
             }
@@ -286,7 +286,7 @@ export default function PublicRegistration() {
                       <Input id="p1Nome" value={p1Nome} onChange={(e) => setP1Nome(e.target.value)} required maxLength={200}/>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="p1Nick">{tr("Nick no Playroom *")}</Label>
+                      <Label htmlFor="p1Nick">{tr("Nic *")}</Label>
                       <Input id="p1Nick" value={p1Nick} onChange={(e) => setP1Nick(e.target.value)} required maxLength={100}/>
                     </div>
                     <div className="space-y-2">
@@ -310,7 +310,7 @@ export default function PublicRegistration() {
                       <Input id="p2Nome" value={p2Nome} onChange={(e) => setP2Nome(e.target.value)} required maxLength={200}/>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="p2Nick">{tr("Nick no Playroom *")}</Label>
+                      <Label htmlFor="p2Nick">{tr("Nic *")}</Label>
                       <Input id="p2Nick" value={p2Nick} onChange={(e) => setP2Nick(e.target.value)} required maxLength={100}/>
                     </div>
                     <div className="space-y-2">
@@ -333,7 +333,7 @@ export default function PublicRegistration() {
                     <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} required maxLength={200}/>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="nick">{tr("Nick no Playroom *")}</Label>
+                    <Label htmlFor="nick">{tr("Nic *")}</Label>
                     <Input id="nick" value={nick} onChange={(e) => setNick(e.target.value)} required maxLength={100}/>
                   </div>
                   <div className="space-y-2">

@@ -29,6 +29,10 @@ class TranslationTests(unittest.TestCase):
         with patch("argostranslate.translate.translate", return_value="3rd place gets three points"):
             self.assertEqual(translate_text("Terceiro lugar recebe 3 pontos", "en"), "3rd place gets three points")
 
+    def test_french_encoded_space_is_not_an_invented_number(self):
+        with patch("argostranslate.translate.translate", return_value="Configuration de la table & #160;:"):
+            self.assertEqual(translate_text("Configuração da Mesa:", "fr"), "Configuration de la table \u00a0:")
+
 
 if __name__ == "__main__":
     unittest.main()

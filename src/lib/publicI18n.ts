@@ -7,8 +7,12 @@ const listeners = new Set<() => void>();
 const valid = (value: string | null): value is PublicLanguage => !!value && Object.prototype.hasOwnProperty.call(languages, value);
 let selected: PublicLanguage = "pt";
 try {
-  const value = new URLSearchParams(window.location.search).get("lang") || localStorage.getItem("tournament-language");
-  if (valid(value)) selected = value;
+  const shared = new URLSearchParams(window.location.search).get("lang");
+  const value = valid(shared) ? shared : localStorage.getItem("tournament-language");
+  if (valid(value)) {
+    selected = value;
+    if (valid(shared)) localStorage.setItem("tournament-language", shared);
+  }
 } catch { /* Storage may be unavailable in private browsers. */ }
 export const isPublicPath = (path: string) => path === "/" || path.startsWith("/p/") || path.startsWith("/inscricao/");
 export const publicLanguage = (): PublicLanguage => typeof window !== "undefined" && isPublicPath(window.location.pathname) ? selected : "pt";

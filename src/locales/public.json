@@ -238,7 +238,8 @@
     "Geral": "Overall",
     "Idioma": "Language",
     "Digitação na mesa": "Typing at the table",
-    "Outra": "Other"
+    "Outra": "Other",
+    "Resultados nesta fase: {0} {1}.": "Results in this stage: {0} {1}."
   },
   "es": {
     " (rodada atual)": " (ronda actual)",
@@ -479,7 +480,8 @@
     "Geral": "General",
     "Idioma": "Idioma",
     "Digitação na mesa": "Escritura en la mesa",
-    "Outra": "Otra"
+    "Outra": "Otra",
+    "Resultados nesta fase: {0} {1}.": "Resultados de esta fase: {0} {1}."
   },
   "fr": {
     " (rodada atual)": " (tour actuel)",
@@ -720,6 +722,7 @@
     "Geral": "Général",
     "Idioma": "Langue",
     "Digitação na mesa": "Saisie à la table",
-    "Outra": "Autre"
+    "Outra": "Autre",
+    "Resultados nesta fase: {0} {1}.": "Résultats de cette phase : {0} {1}."
   }
 }

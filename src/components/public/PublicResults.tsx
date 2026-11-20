@@ -282,7 +282,7 @@ export default function PublicResults({ results, players, matchups = [], phaseSt
         </Card>) : (<>
           <p className="text-sm text-muted-foreground">
             {isFaseDeGrupos
-                ? tr("Acompanhe aqui os resultados individuais dos confrontos j\u00E1 ocorridos. Toque em uma rodada para expandir. ({0} {1} registrados)", { "0": confrontos.length, "1": confrontos.length === 1 ? tr("jogo") : tr("jogos") }) : tr("{0} {1} registrados nesta fase.", { "0": confrontos.length, "1": confrontos.length === 1 ? tr("jogo") : tr("jogos") })}
+                ? tr("Acompanhe aqui os resultados individuais dos confrontos j\u00E1 ocorridos. Toque em uma rodada para expandir. ({0} {1} registrados)", { "0": confrontos.length, "1": confrontos.length === 1 ? tr("jogo") : tr("jogos") }) : tr("Resultados nesta fase: {0} {1}.", { "0": confrontos.length, "1": confrontos.length === 1 ? tr("jogo") : tr("jogos") })}
           </p>
           {isFaseDeGrupos ? (<Accordion type="multiple" key={defaultExpanded ? `exp-${defaultOpenRodadas.join(",")}` : "rod"} defaultValue={defaultOpenRodadas} className="space-y-2">
               {rodadasGroups.map(group => {

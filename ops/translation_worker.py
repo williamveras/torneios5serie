@@ -2,6 +2,7 @@
 import base64
 import collections
 import fcntl
+import html
 import json
 import os
 import re
@@ -53,8 +54,13 @@ def translate_text(source, language):
         # words such as weekday names to be translated as numbers.
         return not ((before - after) - spelled(translated, language)) and not ((after - before) - spelled(original, "pt"))
     def run_model(text):
-        translated = argostranslate.translate.translate(text, "pt", "en")
-        return argostranslate.translate.translate(translated, "en", language) if language != "en" else translated
+        def decode(value):
+            # Some French model outputs encode a nonbreaking space as "& #160;".
+            # Decode entities before comparing numbers or feeding the pivot model.
+            value = re.sub(r"&\s*#\s*(\d+)\s*;", r"&#\1;", value)
+            return html.unescape(value)
+        translated = decode(argostranslate.translate.translate(text, "pt", "en"))
+        return decode(argostranslate.translate.translate(translated, "en", language)) if language != "en" else translated
 
     def keep_numeric_segments(text):
         source_words = "zero|dois|duas|três|quatro|cinco|seis|sete|oito|nove|dez"

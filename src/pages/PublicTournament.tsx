@@ -311,7 +311,7 @@ export default function PublicTournament() {
                   <PublicDraw matchups={matchups} players={players} fase={drawFase} scheduledDraws={scheduledDraws} viewMode={drawView} teamMembers={teamMembers}/>
                 </TabsContent>)}
               <TabsContent value="regulamento">
-                <PublicRegulamento tournamentId={tournament.id} regulamento={tournament.regulamento ?? null}/>
+                <PublicRegulamento tournamentId={tournament.id} regulamento={tournament.regulamento ?? null} resumo={tournament.regulamento_resumo}/>
               </TabsContent>
             </Tabs>);
         })()}

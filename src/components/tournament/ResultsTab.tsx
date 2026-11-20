@@ -358,7 +358,7 @@ export default function ResultsTab({ tournamentId }: Props) {
 
         <div className="space-y-2">
           <Label htmlFor="comentario-input">
-            Comentário <span className="text-muted-foreground font-normal">(opcional — visível apenas para administradores)</span>
+            Comentário <span className="text-muted-foreground font-normal">(opcional — visível ao público)</span>
           </Label>
           <Textarea
             id="comentario-input"

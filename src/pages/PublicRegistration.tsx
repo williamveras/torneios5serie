@@ -1,4 +1,4 @@
-import TranslatedText from "@/components/public/TranslatedText";
+import RulesContent from "@/components/public/RulesContent";
 import { t as tr, usePublicLanguage, localeCode } from "@/lib/publicI18n";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
@@ -19,6 +19,7 @@ type LinkInfo = {
     tournament_name?: string;
     modalidade: "individual" | "duplas";
     regulamento?: string | null;
+    regulamento_resumo?: string | null;
     whatsapp_group_url?: string | null;
 };
 export default function PublicRegistration() {
@@ -77,6 +78,7 @@ export default function PublicRegistration() {
                 tournament_name: row.tournament_name,
                 modalidade: (row.modalidade as "individual" | "duplas") || "individual",
                 regulamento: row.regulamento ?? null,
+                regulamento_resumo: row.regulamento_resumo ?? null,
                 whatsapp_group_url: row.whatsapp_group_url ?? null,
             });
             setLoading(false);
@@ -264,7 +266,7 @@ export default function PublicRegistration() {
                 </div>
                 <div className="rounded-lg border bg-muted/30 p-4 max-h-80 overflow-auto">
                   {link?.regulamento && link.regulamento.trim() ? (<div className="whitespace-pre-wrap text-sm leading-relaxed">
-                      <TranslatedText tournamentId={link.tournament_id} source={link.regulamento} />
+                      <RulesContent tournamentId={link.tournament_id} regulamento={link.regulamento} resumo={link.regulamento_resumo} />
                     </div>) : (<p className="text-sm text-muted-foreground italic">{tr("O organizador ainda n\u00E3o publicou um regulamento para este torneio.")}</p>)}
                 </div>
                 <label className="flex items-start gap-2 cursor-pointer">

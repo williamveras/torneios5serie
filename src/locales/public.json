@@ -239,7 +239,10 @@
     "Idioma": "Language",
     "Digitação na mesa": "Typing at the table",
     "Outra": "Other",
-    "Resultados nesta fase: {0} {1}.": "Results in this stage: {0} {1}."
+    "Resultados nesta fase: {0} {1}.": "Results in this stage: {0} {1}.",
+    "Ver regulamento completo": "View full rules",
+    "Ocultar regulamento completo": "Hide full rules",
+    "Observações": "Notes"
   },
   "es": {
     " (rodada atual)": " (ronda actual)",
@@ -481,7 +484,10 @@
     "Idioma": "Idioma",
     "Digitação na mesa": "Escritura en la mesa",
     "Outra": "Otra",
-    "Resultados nesta fase: {0} {1}.": "Resultados de esta fase: {0} {1}."
+    "Resultados nesta fase: {0} {1}.": "Resultados de esta fase: {0} {1}.",
+    "Ver regulamento completo": "Ver el reglamento completo",
+    "Ocultar regulamento completo": "Ocultar el reglamento completo",
+    "Observações": "Observaciones"
   },
   "fr": {
     " (rodada atual)": " (tour actuel)",
@@ -723,6 +729,9 @@
     "Idioma": "Langue",
     "Digitação na mesa": "Saisie à la table",
     "Outra": "Autre",
-    "Resultados nesta fase: {0} {1}.": "Résultats de cette phase : {0} {1}."
+    "Resultados nesta fase: {0} {1}.": "Résultats de cette phase : {0} {1}.",
+    "Ver regulamento completo": "Voir le règlement complet",
+    "Ocultar regulamento completo": "Masquer le règlement complet",
+    "Observações": "Remarques"
   }
 }

@@ -1,3 +1,5 @@
+import PublicResultNotes from "./PublicResultNotes";
+import { uniqueResultNotes } from "@/lib/resultNotes";
 import { t as tr, usePublicLanguage, localeCode } from "@/lib/publicI18n";
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -321,7 +323,7 @@ export default function PublicResults({ results, players, matchups = [], phaseSt
                                     {dia.confrontos.flatMap(c => {
                                     const horaPostagem = formatTime(new Date(c.created_at));
                                     const mod = moderatorName(c.registered_by);
-                                    return c.players.map((r, idx) => (<TableRow key={r.id} className={idx === 0 ? "border-t-2" : ""}>
+                                    return [...c.players.map((r, idx) => (<TableRow key={r.id} className={idx === 0 ? "border-t-2" : ""}>
                                           {idx === 0 && (<TableCell rowSpan={c.players.length} className={`align-top font-medium ${noWrapText}`}>
                                               {c.players.length < 2
                                                 ? tr("{0} (avulso)", { "0": displayName(c.players[0].player_id) }) : `${displayName(c.players[0].player_id)} x ${displayName(c.players[1].player_id)}`}
@@ -335,7 +337,7 @@ export default function PublicResults({ results, players, matchups = [], phaseSt
                                           </TableCell>
                                           {idx === 0 && (<TableCell rowSpan={c.players.length} className={`align-top ${noWrapText}`}>{mod}</TableCell>)}
                                           {idx === 0 && (<TableCell rowSpan={c.players.length} className={`align-top tabular-nums ${noWrapText}`}>{horaPostagem}</TableCell>)}
-                                        </TableRow>));
+                                        </TableRow>)), ...(uniqueResultNotes(c.players).length ? [<TableRow key={`${c.key}-notes`}><TableCell colSpan={8}><PublicResultNotes results={c.players} /></TableCell></TableRow>] : [])];
                                 })}
                                   </TableBody>
                                 </Table>
@@ -386,6 +388,7 @@ export default function PublicResults({ results, players, matchups = [], phaseSt
                                                   </li>);
                                         })}
                                             </ul>
+                                  <PublicResultNotes results={c.players} />
                                           </CardContent>
                                         </Card>
                                       </article>
@@ -441,7 +444,7 @@ export default function PublicResults({ results, players, matchups = [], phaseSt
                             const mesaNum = c.players.length >= 2
                                 ? mesaMap.get(pairKey(c.players[0].player_id, c.players[1].player_id))
                                 : undefined;
-                            return c.players.map((r, idx) => (<TableRow key={r.id} className={idx === 0 ? "border-t-2" : ""}>
+                            return [...c.players.map((r, idx) => (<TableRow key={r.id} className={idx === 0 ? "border-t-2" : ""}>
                                     {idx === 0 && (<TableCell rowSpan={c.players.length} className={`align-top font-medium ${noWrapText}`}>
                                         {mesaNum ? tr("Mesa {0}", { "0": mesaNum }) : "—"}
                                       </TableCell>)}
@@ -457,7 +460,7 @@ export default function PublicResults({ results, players, matchups = [], phaseSt
                                     </TableCell>
                                     {idx === 0 && (<TableCell rowSpan={c.players.length} className={`align-top ${noWrapText}`}>{mod}</TableCell>)}
                                     {idx === 0 && (<TableCell rowSpan={c.players.length} className={`align-top tabular-nums ${noWrapText}`}>{horaPostagem}</TableCell>)}
-                                  </TableRow>));
+                                  </TableRow>)), ...(uniqueResultNotes(c.players).length ? [<TableRow key={`${c.key}-notes`}><TableCell colSpan={8}><PublicResultNotes results={c.players} /></TableCell></TableRow>] : [])];
                         })}
                             </TableBody>
                           </Table>
@@ -504,6 +507,7 @@ export default function PublicResults({ results, players, matchups = [], phaseSt
                                         </li>);
                                 })}
                                   </ul>
+                                  <PublicResultNotes results={c.players} />
                                 </AccordionContent>
                               </AccordionItem>);
                         })}

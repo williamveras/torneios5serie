@@ -14,6 +14,7 @@ interface Props {
 
 export default function RegulamentoTab({ tournamentId }: Props) {
   const client = useQueryClient();
+  const [resumo, setResumo] = useState("");
   const [regulamento, setRegulamento] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -23,22 +24,24 @@ export default function RegulamentoTab({ tournamentId }: Props) {
     setLoading(true);
     supabase
       .from("tournaments")
-      .select("regulamento")
+      .select("regulamento, regulamento_resumo")
       .eq("id", tournamentId)
       .maybeSingle()
       .then(({ data }) => {
         if (cancelled) return;
         setRegulamento((data as any)?.regulamento ?? "");
+        setResumo(data?.regulamento_resumo ?? "");
         setLoading(false);
       });
     return () => { cancelled = true; };
   }, [tournamentId]);
 
   const handleSave = async () => {
+    if (resumo.trim() && !regulamento.trim()) { toast.error("Preencha também o regulamento completo."); return; }
     setSaving(true);
     const { error } = await supabase
       .from("tournaments")
-      .update({ regulamento: regulamento || null } as any)
+      .update({ regulamento: regulamento || null, regulamento_resumo: resumo.trim() ? resumo : null } as any)
       .eq("id", tournamentId);
     setSaving(false);
     if (error) {
@@ -61,7 +64,11 @@ export default function RegulamentoTab({ tournamentId }: Props) {
           </div>
         ) : (
           <>
-            <Textarea
+            <label className="block font-medium" htmlFor="rules-summary">Resumo do regulamento (opcional)</label>
+            <Textarea id="rules-summary" value={resumo} onChange={e => setResumo(e.target.value)} className="min-h-32" placeholder="Cole aqui o resumo do regulamento..." />
+            <p className="text-sm text-muted-foreground">Quando preenchido, será mostrado primeiro na página pública e na inscrição, com um link para o regulamento completo.</p>
+            <label className="block font-medium" htmlFor="full-rules">Regulamento completo</label>
+            <Textarea id="full-rules"
               value={regulamento}
               onChange={(e) => setRegulamento(e.target.value)}
               placeholder="Cole aqui o regulamento do torneio..."

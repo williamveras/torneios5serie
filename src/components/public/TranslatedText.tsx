@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { t, usePublicLanguage } from "@/lib/publicI18n";
 
-export interface Translation { kind: "rules" | "note"; source_id: string; source_text: string; source_hash: string; text: string | null; status: string; reviewed: boolean; }
+export interface Translation { kind: "rules" | "note" | "rules_summary" | "result_note"; source_id: string; source_text: string; source_hash: string; text: string | null; status: string; reviewed: boolean; }
 export function useTranslations(tournamentId?: string) {
   const language = usePublicLanguage();
   return useQuery<Translation[]>({
@@ -15,7 +15,7 @@ export function useTranslations(tournamentId?: string) {
     }, refetchInterval: 15000,
   });
 }
-export default function TranslatedText({ tournamentId, source, kind = "rules", sourceId }: { tournamentId: string; source: string; kind?: "rules" | "note"; sourceId?: string }) {
+export default function TranslatedText({ tournamentId, source, kind = "rules", sourceId }: { tournamentId: string; source: string; kind?: "rules" | "note" | "rules_summary" | "result_note"; sourceId?: string }) {
   const language = usePublicLanguage();
   const { data } = useTranslations(tournamentId);
   const [original, setOriginal] = useState(false);

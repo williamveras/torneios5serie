@@ -9,7 +9,7 @@ import catalog from "@/locales/public.json";
 
 vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
 
-vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc: vi.fn(async (name: string) => ({ data: name === "get_tournament_translations" ? [] : [{ tournament_id: "test", tournament_name: "Torneio Alfa", modalidade: "individual", regulamento: "Regras", expires_at: "2099-01-01" }], error: null })) } }));
+vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc: vi.fn(async (name: string) => ({ data: name === "get_tournament_translations" ? [] : [{ tournament_id: "test", tournament_name: "Torneio Alfa", modalidade: "individual", regulamento: "Regras", regulamento_resumo: "Resumo das regras", expires_at: "2099-01-01" }], error: null })) } }));
 afterEach(() => { cleanup(); window.history.replaceState(null, "", "/"); act(() => setPublicLanguage("pt")); });
 
 it("keeps every placeholder in each reviewed UI translation", () => {
@@ -34,6 +34,10 @@ it("switches language without losing entered registration details", async () => 
   window.history.replaceState(null, "", "/inscricao/test");
   act(() => setPublicLanguage("pt"));
   render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><MemoryRouter initialEntries={["/inscricao/test"]}><Routes><Route path="/inscricao/:token" element={<PublicRegistration />} /></Routes></MemoryRouter></QueryClientProvider>);
+  expect(await screen.findByText("Resumo das regras")).toBeVisible();
+  expect(screen.queryByText("Regras")).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Ver regulamento completo" }));
+  expect(screen.getByText("Regras")).toBeVisible();
   fireEvent.click(await screen.findByRole("checkbox"));
   fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
   const name = screen.getByLabelText("Nome completo *");

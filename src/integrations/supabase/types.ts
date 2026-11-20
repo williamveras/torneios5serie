@@ -556,6 +556,7 @@ export type Database = {
           nome: string
           numero_rodadas: number | null
           organization_id: string
+          regulamento_resumo: string | null
           regulamento: string | null
           repescagem_enabled: boolean
           repescagem_mode: string
@@ -580,6 +581,7 @@ export type Database = {
           nome: string
           numero_rodadas?: number | null
           organization_id: string
+          regulamento_resumo?: string | null
           regulamento?: string | null
           repescagem_enabled?: boolean
           repescagem_mode?: string
@@ -604,6 +606,7 @@ export type Database = {
           nome?: string
           numero_rodadas?: number | null
           organization_id?: string
+          regulamento_resumo?: string | null
           regulamento?: string | null
           repescagem_enabled?: boolean
           repescagem_mode?: string
@@ -761,6 +764,7 @@ export type Database = {
         Returns: {
           expires_at: string
           modalidade: string
+          regulamento_resumo: string | null
           regulamento: string
           tournament_id: string
           tournament_name: string

@@ -256,7 +256,7 @@ export default function PublicTournament() {
                 <div className="flex justify-end mb-3">
                   <ViewModeToggle value={standingsView} onChange={setStandingsView}/>
                 </div>
-                <PublicStandings mainFases={mainFases} results={results} players={players} teamMembers={teamMembers} matchups={matchups} phaseStatuses={phaseStatuses} viewMode={standingsView} lowerWins={(tournament as any)?.lower_score_wins === true} h2hFirst={(tournament as any)?.h2h_before_mesa === true} qualifierOpts={(() => {
+                <PublicStandings criteria={tournament.tie_breaker_order} mainFases={mainFases} results={results} players={players} teamMembers={teamMembers} matchups={matchups} phaseStatuses={phaseStatuses} viewMode={standingsView} lowerWins={(tournament as any)?.lower_score_wins === true} h2hFirst={(tournament as any)?.h2h_before_mesa === true} qualifierOpts={(() => {
                     const td = tournament as any;
                     const opts: {
                         directPerGroup?: number;

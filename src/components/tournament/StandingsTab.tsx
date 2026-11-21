@@ -1,3 +1,4 @@
+import RankingCriteria, { RankingMetrics } from "@/components/RankingCriteria";
 import { applyPlayerEliminations } from "@/lib/playerElimination";
 import { useState, useEffect, useMemo } from "react";
 import { useMainFases } from "@/hooks/useMainFases";
@@ -51,6 +52,7 @@ export default function StandingsTab({ tournamentId }: Props) {
   const [campeaoId, setCampeaoId] = useState<string | null>(null);
   const [qualifierOpts, setQualifierOpts] = useState<{ directPerGroup?: number; repescagemTotal?: number; mode?: "ranking" | "playoff"; playoffSize?: number; byePosition?: number; byeTotal?: number }>({});
   const [lowerWins, setLowerWins] = useState<boolean>(false);
+  const [criteria, setCriteria] = useState<string[] | null>(null);
   const [h2hFirst, setH2hFirst] = useState<boolean>(false);
 
   const loadPhaseStatuses = () => {
@@ -75,6 +77,7 @@ export default function StandingsTab({ tournamentId }: Props) {
         setCampeaoId(td.campeao_id ?? null);
         setLowerWins(td.lower_score_wins === true);
         setH2hFirst(td.h2h_before_mesa === true);
+        setCriteria(td.tie_breaker_order ?? null);
         const opts: { directPerGroup?: number; repescagemTotal?: number; mode?: "ranking" | "playoff"; playoffSize?: number; byePosition?: number; byeTotal?: number } = {};
         if (td.direct_per_group != null) opts.directPerGroup = td.direct_per_group;
         if (td.repescagem_enabled === false) opts.repescagemTotal = 0;
@@ -150,7 +153,7 @@ export default function StandingsTab({ tournamentId }: Props) {
     if (!hasAnyGroup) {
       return [{
         grupo: "",
-        rows: computeStandings(filteredByFase, getPlayerName, getPlayerNick, { lowerWins, h2hFirst }),
+        rows: computeStandings(filteredByFase, getPlayerName, getPlayerNick, { lowerWins, h2hFirst, criteria }),
       }];
     }
     return groups.map(g => ({
@@ -159,16 +162,16 @@ export default function StandingsTab({ tournamentId }: Props) {
         filteredByFase.filter(r => r.grupo === g),
         getPlayerName,
         getPlayerNick,
-        { lowerWins, h2hFirst },
+        { lowerWins, h2hFirst, criteria },
       ),
     }));
-  }, [filteredByFase, groups, hasAnyGroup, players, lowerWins]);
+  }, [filteredByFase, groups, hasAnyGroup, players, lowerWins, h2hFirst, criteria]);
 
   const totalRows = sections.reduce((acc, s) => acc + s.rows.length, 0);
 
   const qualifiers = useMemo(
-    () => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins, h2hFirst }),
-    [filteredByFase, players, qualifierOpts, lowerWins],
+    () => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins, h2hFirst, criteria }),
+    [filteredByFase, players, qualifierOpts, lowerWins, h2hFirst, criteria],
   );
   const nextFase = nextPhaseName(selectedFase, mainFases);
   const isGroupsPhase = selectedFase === "Fase de Grupos";
@@ -184,8 +187,8 @@ export default function StandingsTab({ tournamentId }: Props) {
     const winnersResults = filteredByFase
       .filter(r => qualifiedIds.has(r.player_id))
       .map(r => ({ ...r, grupo: "" })) as MatchResult[];
-    return computeQualifiers(winnersResults, getPlayerName, getPlayerNick, { lowerWins, h2hFirst });
-  }, [matchups, filteredByFase, selectedFase, isGroupsPhase, players, lowerWins]);
+    return computeQualifiers(winnersResults, getPlayerName, getPlayerNick, { lowerWins, h2hFirst, criteria });
+  }, [matchups, filteredByFase, selectedFase, isGroupsPhase, players, lowerWins, h2hFirst, criteria]);
 
   const showQualifiers = isConcluded && !!nextFase && totalRows > 0 && (
     isGroupsPhase
@@ -203,8 +206,8 @@ export default function StandingsTab({ tournamentId }: Props) {
     const rows = results
       .filter(r => (r.fase || "Fase de Grupos") === "Repescagem" && ids.has(r.player_id))
       .map(r => ({ ...r, grupo: "" })) as MatchResult[];
-    return computeQualifiers(rows, getPlayerName, getPlayerNick, { lowerWins, h2hFirst }).direct;
-  }, [matchups, results, isGroupsPhase, players, lowerWins, h2hFirst]);
+    return computeQualifiers(rows, getPlayerName, getPlayerNick, { lowerWins, h2hFirst, criteria }).direct;
+  }, [matchups, results, isGroupsPhase, players, lowerWins, h2hFirst, criteria]);
 
   // === Projeção automática das fases eliminatórias ===
   // Conta classificados saídos da Fase de Grupos (usando a regra configurada
@@ -214,8 +217,8 @@ export default function StandingsTab({ tournamentId }: Props) {
     [results],
   );
   const grupoQualifiers = useMemo(
-    () => computeQualifiers(grupoResults, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins, h2hFirst }),
-    [grupoResults, players, qualifierOpts, lowerWins],
+    () => computeQualifiers(grupoResults, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins, h2hFirst, criteria }),
+    [grupoResults, players, qualifierOpts, lowerWins, h2hFirst, criteria],
   );
   const classifiedCount = countMainQualifiers(grupoQualifiers);
   const projection = useMemo(() => projectPhases(classifiedCount), [classifiedCount]);
@@ -349,6 +352,7 @@ export default function StandingsTab({ tournamentId }: Props) {
         "Pts Vitória": s.pontosJogo,
         "Pts Mesa": s.pontosMesa,
         "Penalidades": s.penalidades,
+        ...(s.wins !== undefined ? { "Vitórias": s.wins, "Ocorrências de penalidade": s.penaltyCount } : {}),
       }));
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), "Classificação");
     } else {
@@ -361,6 +365,7 @@ export default function StandingsTab({ tournamentId }: Props) {
           "Pts Vitória": s.pontosJogo,
           "Pts Mesa": s.pontosMesa,
           "Penalidades": s.penalidades,
+        ...(s.wins !== undefined ? { "Vitórias": s.wins, "Ocorrências de penalidade": s.penaltyCount } : {}),
         })),
       );
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(geral), "Geral");
@@ -373,6 +378,7 @@ export default function StandingsTab({ tournamentId }: Props) {
           "Pts Vitória": s.pontosJogo,
           "Pts Mesa": s.pontosMesa,
           "Penalidades": s.penalidades,
+        ...(s.wins !== undefined ? { "Vitórias": s.wins, "Ocorrências de penalidade": s.penaltyCount } : {}),
         }));
         const sheetName = `Grupo ${sec.grupo}`.slice(0, 31);
         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), sheetName);
@@ -386,6 +392,7 @@ export default function StandingsTab({ tournamentId }: Props) {
 
   return (
     <div className="space-y-4">
+      <RankingCriteria criteria={criteria} />
       {campeao && (
         <Alert role="status" className="border-amber-500/50 bg-amber-500/10">
           <Info className="h-4 w-4 text-amber-600" />
@@ -523,7 +530,7 @@ export default function StandingsTab({ tournamentId }: Props) {
                             <TableCell className="font-medium">{s.nick || s.playerName}</TableCell>
                             <TableCell className="text-right tabular-nums">{s.pontosJogo}</TableCell>
                             <TableCell className="text-right tabular-nums">{s.pontosMesa}</TableCell>
-                            <TableCell className={s.hasPenalty ? "text-destructive" : "text-muted-foreground"}>{s.penalidades}</TableCell>
+                            <TableCell className={s.hasPenalty ? "text-destructive" : "text-muted-foreground"}>{s.penalidades}<RankingMetrics row={s} /></TableCell>
                           </TableRow>
                         ))}
                       </TableBody>

@@ -555,6 +555,7 @@ export type Database = {
           data_inicio: string
           direct_per_group: number | null
           elimination_only: boolean
+          tie_breaker_order: string[] | null
           h2h_before_mesa: boolean
           id: string
           lower_score_wins: boolean
@@ -580,6 +581,7 @@ export type Database = {
           data_inicio: string
           direct_per_group?: number | null
           elimination_only?: boolean
+          tie_breaker_order?: string[] | null
           h2h_before_mesa?: boolean
           id?: string
           lower_score_wins?: boolean
@@ -605,6 +607,7 @@ export type Database = {
           data_inicio?: string
           direct_per_group?: number | null
           elimination_only?: boolean
+          tie_breaker_order?: string[] | null
           h2h_before_mesa?: boolean
           id?: string
           lower_score_wins?: boolean

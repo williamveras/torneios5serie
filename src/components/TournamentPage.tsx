@@ -28,6 +28,7 @@ interface Props {
 
 export default function TournamentPage({ tournament, onBack }: Props) {
   const [activeTab, setActiveTab] = useState("players");
+  const [settingsRevision, setSettingsRevision] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const mainFases = useMainFases(tournament.id);
   const [health, setHealth] = useState<{pending?: boolean; conflicts?: string[]}>({});
@@ -112,6 +113,7 @@ export default function TournamentPage({ tournament, onBack }: Props) {
       <TournamentSettingsDialog
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
+        onSaved={() => setSettingsRevision(value => value + 1)}
         tournamentId={tournament.id}
       />
 
@@ -121,7 +123,7 @@ export default function TournamentPage({ tournament, onBack }: Props) {
           <p className="font-semibold">É necessário revisar o torneio</p>
           {health.conflicts.map(message => <p key={message}>{message}</p>)}
         </div>}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs key={settingsRevision} value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4 flex-wrap h-auto">
             <TabsTrigger value="players">Participantes</TabsTrigger>
             <TabsTrigger value="matchups">Confrontos e sorteios</TabsTrigger>

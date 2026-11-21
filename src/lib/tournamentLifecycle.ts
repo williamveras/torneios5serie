@@ -26,7 +26,7 @@ export function deriveTournament(snapshot: TournamentSnapshot) {
   const q = computeQualifiers(groupResults, id => id, () => "", {
     directPerGroup: t.direct_per_group ?? undefined,
     repescagemTotal: t.repescagem_enabled === false ? 0 : t.repescagem_total ?? undefined,
-    lowerWins: t.lower_score_wins, h2hFirst: t.h2h_before_mesa,
+    lowerWins: t.lower_score_wins, h2hFirst: t.h2h_before_mesa, criteria: t.tie_breaker_order,
     mode: t.repescagem_mode as "ranking" | "playoff", playoffSize: t.repescagem_playoff_size ?? undefined,
     byePosition: t.bye_rank_position ?? undefined, byeTotal: t.bye_rank_total ?? undefined,
   });

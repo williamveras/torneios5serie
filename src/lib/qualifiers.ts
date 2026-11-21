@@ -1,3 +1,5 @@
+import { validCriteria } from "./tiebreakers";
+import { compareCriterion } from "./customStandings";
 import type { Tables } from "@/integrations/supabase/types";
 import { computeStandings, type StandingRow } from "./standings";
 import { FASES } from "./constants";
@@ -41,6 +43,7 @@ export function computeQualifiers(
     lowerWins?: boolean;
     /** Quando true, o confronto direto vira o 2º critério de desempate (antes dos pontos de mesa). */
     h2hFirst?: boolean;
+    criteria?: string[] | null;
     mode?: "ranking" | "playoff";
     playoffSize?: number;
     /** Posição de grupo usada para o ranking dos "melhores Xº colocados". */
@@ -61,7 +64,7 @@ export function computeQualifiers(
 
   const hasGroups = results.some(r => !!r.grupo && r.grupo.trim() !== "");
   if (!hasGroups) {
-    const rows = computeStandings(results, getPlayerName, getPlayerNick, { lowerWins, h2hFirst });
+    const rows = computeStandings(results, getPlayerName, getPlayerNick, { lowerWins, h2hFirst, criteria: opts.criteria });
     const eligible = rows.filter(r => !isOutOfTournament(r.penalidades));
     const wo = rows.filter(r => isOutOfTournament(r.penalidades));
     return {
@@ -90,7 +93,7 @@ export function computeQualifiers(
       results.filter(r => r.grupo === g),
       getPlayerName,
       getPlayerNick,
-      { lowerWins, h2hFirst },
+      { lowerWins, h2hFirst, criteria: opts.criteria },
     );
     // Reposiciona ignorando os eliminados por W.O, para que as vagas
     // sejam preenchidas apenas por quem continua no torneio.
@@ -109,6 +112,13 @@ export function computeQualifiers(
 
   // Tie-break cross-grupo (sem confronto direto — só intra-grupo)
   const crossSort = (a: QualifierRow, b: QualifierRow) => {
+    if (validCriteria(opts.criteria)) {
+      for (const criterion of opts.criteria) {
+        const diff = compareCriterion(a, b, criterion, lowerWins);
+        if (diff) return diff;
+      }
+      return 0;
+    }
     if (a.pontosJogo !== b.pontosJogo) return b.pontosJogo - a.pontosJogo;
     if (a.pontosMesa !== b.pontosMesa) {
       return lowerWins ? a.pontosMesa - b.pontosMesa : b.pontosMesa - a.pontosMesa;

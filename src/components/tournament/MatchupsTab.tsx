@@ -86,6 +86,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
   const [groupResults, setGroupResults] = useState<any[]>([]);
   const [qualifierOpts, setQualifierOpts] = useState<any>({});
   const [lowerWins, setLowerWins] = useState(false);
+  const [criteria, setCriteria] = useState<string[] | null>(null);
   const [h2hFirst, setH2hFirst] = useState(false);
   const [fase, setFase] = useState<Fase>("Fase de Grupos");
   const [userPickedFase, setUserPickedFase] = useState(false);
@@ -131,6 +132,7 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
     if (td) {
       setLowerWins(td.lower_score_wins === true);
       setH2hFirst(td.h2h_before_mesa === true);
+        setCriteria(td.tie_breaker_order ?? null);
       const opts: any = {};
       if (td.direct_per_group != null) opts.directPerGroup = td.direct_per_group;
       if (td.repescagem_enabled === false) opts.repescagemTotal = 0;
@@ -296,10 +298,10 @@ export default function MatchupsTab({ tournamentId, onScheduleMatchup, onRealloc
     if (groupResults.length === 0) return [] as Player[];
     const nameOf = (id: string) => getPlayerDisplayName(players.find((p) => p.id === id) as any, "—");
     const nickOf = (id: string) => getPlayerNickForStandings(players.find((p) => p.id === id) as any);
-    const q = computeQualifiers(groupResults, nameOf, nickOf, { ...qualifierOpts, lowerWins, h2hFirst });
+    const q = computeQualifiers(groupResults, nameOf, nickOf, { ...qualifierOpts, lowerWins, h2hFirst, criteria });
     const ids = new Set(q.playoff.map((r) => r.playerId));
     return players.filter((p) => ids.has(p.id) && !p.eliminado);
-  }, [groupResults, players, qualifierOpts, lowerWins, h2hFirst]);
+  }, [groupResults, players, qualifierOpts, lowerWins, h2hFirst, criteria]);
 
   const hasGroups = players.some((p) => p.grupo);
   const canPorGrupo = fase === "Fase de Grupos" && hasGroups;

@@ -1,3 +1,4 @@
+import RankingCriteria, { RankingMetrics } from "@/components/RankingCriteria";
 import { t as tr, usePublicLanguage, localeCode } from "@/lib/publicI18n";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { QualifiersResult, QualifierRow } from "@/lib/qualifiers";
@@ -82,7 +83,7 @@ function TableSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembe
                   <TableCell className={`text-right tabular-nums ${noWrapText}`}>{s.pontosJogo}</TableCell>
                   <TableCell className={`text-right tabular-nums ${noWrapText}`}>{s.pontosMesa}</TableCell>
                   <TableCell className={`${noWrapText} ${s.hasPenalty ? "text-destructive" : "text-muted-foreground"}`}>
-                    {tr(s.penalidades)}
+                    {tr(s.penalidades)}<RankingMetrics row={s} />
                   </TableCell>
                 </TableRow>);
         })}
@@ -121,7 +122,7 @@ function ListSection({ title, rows, usePos, playerMesaMap, playerMap, teamMember
                   <span className="public-line-content">{keepTogether(tr("{0} pontos de vit\u00F3ria, {1} pontos de mesa.", { "0": s.pontosJogo, "1": s.pontosMesa }))}</span>
                 </p>
                 <p className={`text-sm ${scrollLine} ${s.hasPenalty ? "text-destructive" : "text-muted-foreground"}`}>
-                  <span className="public-line-content">{keepTogether(tr("Penalidades: {0}.", { "0": tr(s.penalidades) }))}</span>
+                  <span className="public-line-content">{keepTogether(tr("Penalidades: {0}.", { "0": tr(s.penalidades) }))}</span><RankingMetrics row={s} />
                 </p>
               </div>
             </li>);

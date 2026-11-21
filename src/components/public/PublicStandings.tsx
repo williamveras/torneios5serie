@@ -1,3 +1,4 @@
+import RankingCriteria, { RankingMetrics } from "@/components/RankingCriteria";
 import { t as tr, usePublicLanguage, localeCode } from "@/lib/publicI18n";
 import { applyPlayerEliminations } from "@/lib/playerElimination";
 import { useEffect, useMemo, useState } from "react";
@@ -62,6 +63,7 @@ interface Props {
     };
     lowerWins?: boolean;
     h2hFirst?: boolean;
+    criteria?: string[] | null;
 }
 const naturalGroupSort = (a: string, b: string) => {
     const na = Number(a), nb = Number(b);
@@ -74,7 +76,7 @@ const noWrapText = "public-nowrap";
 const scrollLine = "public-scroll-line";
 const compactCardPadding = "p-3 min-[360px]:p-4";
 const keepTogether = (text: string | number) => String(text).replace(/ /g, "\u00A0").replace(/-/g, "\u2011");
-export default function PublicStandings({ mainFases, results: rawResults, players, teamMembers = {}, phaseStatuses, matchups = [], viewMode = "list", qualifierOpts = {}, lowerWins = false, h2hFirst = false }: Props) {
+export default function PublicStandings({ mainFases, results: rawResults, players, teamMembers = {}, phaseStatuses, matchups = [], viewMode = "list", qualifierOpts = {}, lowerWins = false, h2hFirst = false, criteria = null }: Props) {
     usePublicLanguage();
     const results = useMemo(() => applyPlayerEliminations(rawResults, players), [rawResults, players]);
     // Default fase: latest concluded phase (so the public view follows the tournament progression).
@@ -132,19 +134,19 @@ export default function PublicStandings({ mainFases, results: rawResults, player
         if (!hasAnyGroup) {
             return [{
                     grupo: "",
-                    rows: computeStandings(filteredByFase, getPlayerName, getPlayerNick, { lowerWins, h2hFirst }),
+                    rows: computeStandings(filteredByFase, getPlayerName, getPlayerNick, { lowerWins, h2hFirst, criteria }),
                 }];
         }
         return groups.map(g => ({
             grupo: g,
-            rows: computeStandings(filteredByFase.filter(r => r.grupo === g), getPlayerName, getPlayerNick, { lowerWins, h2hFirst }),
+            rows: computeStandings(filteredByFase.filter(r => r.grupo === g), getPlayerName, getPlayerNick, { lowerWins, h2hFirst, criteria }),
         }));
-    }, [filteredByFase, groups, hasAnyGroup, players, lowerWins]);
+    }, [filteredByFase, groups, hasAnyGroup, players, lowerWins, h2hFirst, criteria]);
     const totalRows = sections.reduce((acc, s) => acc + s.rows.length, 0);
     const phaseStatus = phaseStatuses.find(p => p.fase === selectedFase)?.status || "em_andamento";
     const isInProgress = phaseStatus === "em_andamento" && totalRows > 0;
     const isConcluded = phaseStatus === "concluida";
-    const qualifiers = useMemo(() => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins, h2hFirst }), [filteredByFase, players, qualifierOpts, lowerWins]);
+    const qualifiers = useMemo(() => computeQualifiers(filteredByFase, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins, h2hFirst, criteria }), [filteredByFase, players, qualifierOpts, lowerWins, h2hFirst, criteria]);
     const nextFase = nextPhaseName(selectedFase, mainFases);
     // Mesa lookup for the NEXT phase — used to annotate qualifiers with the mesa where they will play.
     const nextPhaseMesaMap = useMemo(() => {
@@ -179,8 +181,8 @@ export default function PublicStandings({ mainFases, results: rawResults, player
             .filter(r => qualifiedIds.has(r.player_id))
             // Compute as a flat list, ignoring any synthetic `grupo` on elimination results.
             .map(r => ({ ...r, grupo: "" })) as MatchResult[];
-        return computeQualifiers(winnersResults, getPlayerName, getPlayerNick, { lowerWins, h2hFirst });
-    }, [matchups, filteredByFase, selectedFase, isGroupsPhase, players, lowerWins]);
+        return computeQualifiers(winnersResults, getPlayerName, getPlayerNick, { lowerWins, h2hFirst, criteria });
+    }, [matchups, filteredByFase, selectedFase, isGroupsPhase, players, lowerWins, h2hFirst, criteria]);
     const showQualifiers = isConcluded && !!nextFase && totalRows > 0 && (isGroupsPhase
         ? hasAnyGroup
         : (elimWinnersQualifiers !== null && elimWinnersQualifiers.direct.length > 0));
@@ -196,11 +198,11 @@ export default function PublicStandings({ mainFases, results: rawResults, player
         const rows = results
             .filter(r => (r.fase || "Fase de Grupos") === "Repescagem" && ids.has(r.player_id))
             .map(r => ({ ...r, grupo: "" })) as MatchResult[];
-        return computeQualifiers(rows, getPlayerName, getPlayerNick, { lowerWins, h2hFirst }).direct;
-    }, [matchups, results, isGroupsPhase, players, lowerWins, h2hFirst]);
+        return computeQualifiers(rows, getPlayerName, getPlayerNick, { lowerWins, h2hFirst, criteria }).direct;
+    }, [matchups, results, isGroupsPhase, players, lowerWins, h2hFirst, criteria]);
     // Projeção de fases eliminatórias (visível na fase de grupos para mostrar o roadmap completo).
     const grupoResults = useMemo(() => results.filter(r => (r.fase || "Fase de Grupos") === "Fase de Grupos"), [results]);
-    const grupoQualifiers = useMemo(() => computeQualifiers(grupoResults, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins, h2hFirst }), [grupoResults, players, qualifierOpts, lowerWins]);
+    const grupoQualifiers = useMemo(() => computeQualifiers(grupoResults, getPlayerName, getPlayerNick, { ...qualifierOpts, lowerWins, h2hFirst, criteria }), [grupoResults, players, qualifierOpts, lowerWins, h2hFirst, criteria]);
     const classifiedCount = countMainQualifiers(grupoQualifiers);
     const projection = useMemo(() => projectPhases(classifiedCount), [classifiedCount]);
     const concludedFases = phaseStatuses.filter(p => p.status === "concluida").map(p => p.fase);
@@ -213,6 +215,7 @@ export default function PublicStandings({ mainFases, results: rawResults, player
                 [tr("Pts Vitória")]: s.pontosJogo,
                 [tr("Pts Mesa")]: s.pontosMesa,
                 [tr("Penalidades")]: tr(s.penalidades),
+                ...(s.wins !== undefined ? { [tr("Número de vitórias")]: s.wins, [tr("Ocorrências de penalidade")]: s.penaltyCount } : {}),
             }));
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), tr("Classificação"));
         }
@@ -224,6 +227,7 @@ export default function PublicStandings({ mainFases, results: rawResults, player
                 [tr("Pts Vitória")]: s.pontosJogo,
                 [tr("Pts Mesa")]: s.pontosMesa,
                 [tr("Penalidades")]: tr(s.penalidades),
+                ...(s.wins !== undefined ? { [tr("Número de vitórias")]: s.wins, [tr("Ocorrências de penalidade")]: s.penaltyCount } : {}),
             })));
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(geral), tr("Geral"));
             sections.forEach(sec => {
@@ -233,6 +237,7 @@ export default function PublicStandings({ mainFases, results: rawResults, player
                     [tr("Pts Vitória")]: s.pontosJogo,
                     [tr("Pts Mesa")]: s.pontosMesa,
                     [tr("Penalidades")]: tr(s.penalidades),
+                ...(s.wins !== undefined ? { [tr("Número de vitórias")]: s.wins, [tr("Ocorrências de penalidade")]: s.penaltyCount } : {}),
                 }));
                 const sheetName = tr("Grupo {0}", { "0": sec.grupo }).slice(0, 31);
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), sheetName);
@@ -265,7 +270,7 @@ export default function PublicStandings({ mainFases, results: rawResults, player
                         <TableCell className={`text-right tabular-nums ${noWrapText}`}>{s.pontosJogo}</TableCell>
                         <TableCell className={`text-right tabular-nums ${noWrapText}`}>{s.pontosMesa}</TableCell>
                         <TableCell className={`${noWrapText} ${s.hasPenalty ? "text-destructive" : "text-muted-foreground"}`}>
-                          {tr(s.penalidades)}
+                          {tr(s.penalidades)}<RankingMetrics row={s} />
                         </TableCell>
                       </TableRow>);
             })}
@@ -291,7 +296,7 @@ export default function PublicStandings({ mainFases, results: rawResults, player
                         <span className="public-line-content">{keepTogether(tr("{0} pontos de vit\u00F3ria, {1} pontos de mesa.", { "0": s.pontosJogo, "1": s.pontosMesa }))}</span>
                       </p>
                       <p className={`text-sm ${scrollLine} ${s.hasPenalty ? "text-destructive" : "text-muted-foreground"}`}>
-                        <span className="public-line-content">{keepTogether(tr("Penalidades: {0}.", { "0": tr(s.penalidades) }))}</span>
+                        <span className="public-line-content">{keepTogether(tr("Penalidades: {0}.", { "0": tr(s.penalidades) }))}</span><RankingMetrics row={s} />
                       </p>
                     </div>
                   </li>);
@@ -300,6 +305,7 @@ export default function PublicStandings({ mainFases, results: rawResults, player
           </section>))}
       </div>));
     return (<div className="space-y-4">
+      <RankingCriteria criteria={criteria} />
       {totalRows > 0 && (<div className="flex justify-end">
           <Button variant="outline" size="sm" onClick={exportToXlsx}>
             <Download className="h-4 w-4 mr-1"/>{tr(" Exportar planilha")}</Button>

@@ -1,3 +1,5 @@
+import { validCriteria } from "./tiebreakers";
+import { matchStats, sortCustomStandings } from "./customStandings";
 import type { Tables } from "@/integrations/supabase/types";
 
 type MatchResult = Tables<"match_results">;
@@ -11,13 +13,15 @@ export interface StandingRow {
   pontosMesa: number;
   penalidades: string;
   hasPenalty: boolean;
+  wins?: number;
+  penaltyCount?: number;
 }
 
 export function computeStandings(
   results: MatchResult[],
   getPlayerName: (id: string) => string,
   getPlayerNick: (id: string) => string,
-  opts: { lowerWins?: boolean; h2hFirst?: boolean } = {},
+  opts: { lowerWins?: boolean; h2hFirst?: boolean; criteria?: string[] | null } = {},
 ): StandingRow[] {
   const lowerWins = !!opts.lowerWins;
   const h2hFirst = !!opts.h2hFirst;
@@ -53,6 +57,8 @@ export function computeStandings(
     h2h.set(`${b.player_id}|${a.player_id}`, winner);
   }
 
+  const custom = validCriteria(opts.criteria);
+  const stats = custom ? matchStats(results) : null;
   const rows: StandingRow[] = [];
   for (const [playerId, data] of agg) {
     rows.push({
@@ -70,8 +76,11 @@ export function computeStandings(
           ? Array.from(new Set(data.penalties)).join("; ")
           : "Sem penalidades",
       hasPenalty: data.penalties.length > 0,
+      ...(custom ? { wins: stats!.wins.get(playerId) || 0, penaltyCount: data.penalties.filter(p => p && p.split(";").some(v => v.trim() && !/^(sem penalidades|desistente|eliminado por w\.o)$/i.test(v.trim()))).length } : {}),
     });
   }
+
+  if (validCriteria(opts.criteria)) return sortCustomStandings(rows, opts.criteria, lowerWins, stats!.direct);
 
   rows.sort((a, b) => {
     const isOut = (penalty: string) => /desistente|eliminado por w\.o/i.test(penalty);

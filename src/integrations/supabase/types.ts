@@ -14,6 +14,13 @@ export type Database = {
   }
   public: {
     Tables: {
+      tournament_sponsors: {
+        Row: { id: string; tournament_id: string; name: string; category: string; website: string | null; enabled: boolean; position: number }
+        Insert: { id?: string; tournament_id: string; name: string; category?: string; website?: string | null; enabled?: boolean; position?: number }
+        Update: { id?: string; tournament_id?: string; name?: string; category?: string; website?: string | null; enabled?: boolean; position?: number }
+        Relationships: [{ foreignKeyName: "tournament_sponsors_tournament_id_fkey"; columns: ["tournament_id"]; isOneToOne: false; referencedRelation: "tournaments"; referencedColumns: ["id"] }]
+      }
+
       match_reminders_sent: {
         Row: {
           id: string

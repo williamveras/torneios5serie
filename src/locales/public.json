@@ -242,7 +242,11 @@
     "Resultados nesta fase: {0} {1}.": "Results in this stage: {0} {1}.",
     "Ver regulamento completo": "View full rules",
     "Ocultar regulamento completo": "Hide full rules",
-    "Observações": "Notes"
+    "Observações": "Notes",
+    "Patrocínios": "Sponsors",
+    "Patrocínio": "Sponsor",
+    "Patrocínio master": "Main sponsor",
+    "Apoio": "Support"
   },
   "es": {
     " (rodada atual)": " (ronda actual)",
@@ -487,7 +491,11 @@
     "Resultados nesta fase: {0} {1}.": "Resultados de esta fase: {0} {1}.",
     "Ver regulamento completo": "Ver el reglamento completo",
     "Ocultar regulamento completo": "Ocultar el reglamento completo",
-    "Observações": "Observaciones"
+    "Observações": "Observaciones",
+    "Patrocínios": "Patrocinios",
+    "Patrocínio": "Patrocinio",
+    "Patrocínio master": "Patrocinador principal",
+    "Apoio": "Apoyo"
   },
   "fr": {
     " (rodada atual)": " (tour actuel)",
@@ -732,6 +740,10 @@
     "Resultados nesta fase: {0} {1}.": "Résultats de cette phase : {0} {1}.",
     "Ver regulamento completo": "Voir le règlement complet",
     "Ocultar regulamento completo": "Masquer le règlement complet",
-    "Observações": "Remarques"
+    "Observações": "Remarques",
+    "Patrocínios": "Sponsors",
+    "Patrocínio": "Sponsor",
+    "Patrocínio master": "Sponsor principal",
+    "Apoio": "Soutien"
   }
 }

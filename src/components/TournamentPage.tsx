@@ -1,3 +1,4 @@
+import SponsorsTab from "./tournament/SponsorsTab";
 import { useState, useEffect } from "react";
 import { ArrowLeft, Share2, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -129,10 +130,12 @@ export default function TournamentPage({ tournament, onBack }: Props) {
             <TabsTrigger value="standings">{standingsLabel}</TabsTrigger>
             <TabsTrigger value="stats">Estatísticas</TabsTrigger>
             <TabsTrigger value="export">Exportação</TabsTrigger>
+            <TabsTrigger value="sponsors">Patrocínios</TabsTrigger>
             <TabsTrigger value="regulamento">Regulamento</TabsTrigger>
             <TabsTrigger value="inscricoes">Inscrições</TabsTrigger>
           </TabsList>
 
+          <TabsContent value="sponsors"><SponsorsTab tournamentId={tournament.id} /></TabsContent>
           <TabsContent value="players">
             <PlayersTab tournamentId={tournament.id} onScheduleMatch={handleScheduleForPlayer} />
           </TabsContent>

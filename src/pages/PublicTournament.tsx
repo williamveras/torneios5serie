@@ -1,3 +1,4 @@
+import PublicSponsors from "@/components/public/PublicSponsors";
 import { useTranslations } from "@/components/public/TranslatedText";
 import { t as tr, usePublicLanguage, localeCode } from "@/lib/publicI18n";
 import { useEffect, useState } from "react";
@@ -27,19 +28,6 @@ type Schedule = Tables<"match_schedule">;
 type PhaseStatus = Tables<"phase_status">;
 type Matchup = Tables<"matchups">;
 type ScheduledDraw = Pick<Tables<"scheduled_draws">, "id" | "fase" | "scheduled_at" | "status" | "kind">;
-const SPONSORED_TOURNAMENT_IDS = new Set(["b21eec68-3681-4a37-9740-6dbb8703f61e"]);
-const normalizeTournamentName = (name: string) => name
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .trim();
-const shouldShowSponsorBanner = (tournament: Tournament) => {
-    if (SPONSORED_TOURNAMENT_IDS.has(tournament.id))
-        return true;
-    const normalizedName = normalizeTournamentName(tournament.nome || "");
-    return /(^|\s)(1000|mil)\s+milhas(\s|$)/.test(normalizedName);
-};
 interface PlayerLite {
     id: string;
     nome_completo: string;
@@ -225,7 +213,7 @@ export default function PublicTournament() {
     const showGroupsTab = !eliminationOnly && (hasGroupsDefined || hasPendingGroupDraw);
     const campeaoId = (tournament as any).campeao_id as string | null | undefined;
     const campeao = campeaoId ? players.find(p => p.id === campeaoId) : null;
-    const sponsorBanner = shouldShowSponsorBanner(tournament) ? (<div className="mb-4 rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm font-medium text-amber-900 dark:text-amber-200">{tr("Patroc\u00EDnio master: Bar\u00E3o. Apoio: Web R\u00E1dio Mix Play.")}</div>) : null;
+
     return (<div className="public-page min-h-screen bg-muted/30">
       <header className="border-b bg-background">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3">
@@ -240,7 +228,7 @@ export default function PublicTournament() {
       </header>
 
       <main className="max-w-5xl mx-auto px-3 py-6 sm:px-4">
-        {sponsorBanner}
+        <PublicSponsors tournamentId={tournament.id} />
         {(() => {
             const tabCount = 4 + (showDrawTab ? 1 : 0) + (showGroupsTab ? 1 : 0);
             const gridCls = tabCount >= 6

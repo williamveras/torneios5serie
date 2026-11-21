@@ -2,7 +2,7 @@ BEGIN;
 -- All fixtures roll back; the production database is not used.
 UPDATE public.tournaments SET regulamento='Translation fixture: 32 jogadores.' WHERE id='b21eec68-3681-4a37-9740-6dbb8703f61e';
 DO $$ BEGIN
- IF (SELECT count(*) FROM tournament_security.translations WHERE tournament_id='b21eec68-3681-4a37-9740-6dbb8703f61e' AND kind='rules' AND status='pending')<>3 THEN RAISE EXCEPTION 'Missing queue rows'; END IF;
+ IF (SELECT count(*) FROM tournament_security.translations WHERE tournament_id='b21eec68-3681-4a37-9740-6dbb8703f61e' AND kind='rules' AND status='pending')<>4 THEN RAISE EXCEPTION 'Missing queue rows'; END IF;
 END $$;
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','8686f612-56af-487a-b899-1b223f913201',true);

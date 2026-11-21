@@ -24,7 +24,7 @@ def sql(statement):
 
 def translate_text(source, language):
     import argostranslate.translate
-    if language not in ("en", "es", "fr") or len(source) > 100000:
+    if language not in ("en", "es", "fr", "it") or len(source) > 100000:
         raise ValueError("Unsupported translation")
     number_words = {
         "pt": dict(zip("zero dois duas três quatro cinco seis sete oito nove dez".split(), "0 2 2 3 4 5 6 7 8 9 10".split())),
@@ -38,6 +38,8 @@ def translate_text(source, language):
         "es": ["uno una primer primero primera", "segundo segunda", "tercer tercero tercera", "cuarto cuarta", "quinto quinta", "sexto sexta", "séptimo séptima", "octavo octava", "noveno novena", "décimo décima"],
         "fr": ["un une premier première", "second seconde deuxième", "troisième", "quatrième", "cinquième", "sixième", "septième", "huitième", "neuvième", "dixième"],
     }
+    number_words["it"] = dict(zip("zero due tre quattro cinque sei sette otto nove dieci".split(), "0 2 3 4 5 6 7 8 9 10".split()))
+    ordinal_words["it"] = ["uno una un primo prima", "secondo seconda", "terzo terza", "quarto quarta", "quinto quinta", "sesto sesta", "settimo settima", "ottavo ottava", "nono nona", "decimo decima"]
     for locale, groups in ordinal_words.items():
         for value, group in enumerate(groups, 1):
             number_words[locale].update({word: str(value) for word in group.split()})

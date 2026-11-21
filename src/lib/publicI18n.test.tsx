@@ -19,6 +19,9 @@ it("keeps every placeholder in each reviewed UI translation", () => {
 });
 it("translates knockout sizes correctly and preserves player names", () => {
   expect(translate("16 Avos", "en")).toBe("Round of 32");
+  expect(translate("16 Avos", "it")).toBe("16esimi di finale");
+  expect(translate("Oitavas de Final", "it")).toBe("Ottavi di finale");
+  expect(Object.keys(catalog.it).sort()).toEqual(Object.keys(catalog.en).sort());
   expect(translate("{0}, mesa {1}", "en", { "0": "MesaFinal", "1": 4 })).toBe("MesaFinal, table 4");
   window.history.replaceState(null, "", "/p/test");
   act(() => setPublicLanguage("en"));
@@ -47,4 +50,8 @@ it("switches language without losing entered registration details", async () => 
   expect(screen.getByRole("button", { name: "Submit registration" })).toBeInTheDocument();
   act(() => setPublicLanguage("fr"));
   expect(screen.getByLabelText(/Nom complet/)).toHaveValue("Ana Silva");
+  act(() => setPublicLanguage("it"));
+  expect(screen.getByLabelText("Nome completo *")).toHaveValue("Ana Silva");
+  expect(screen.getByRole("button", { name: "Invia iscrizione" })).toBeInTheDocument();
+  expect(document.documentElement.lang).toBe("it-IT");
 });

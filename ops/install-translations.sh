@@ -14,7 +14,7 @@ import argostranslate.package as package
 package.update_package_index()
 installed={(p.from_code,p.to_code) for p in package.get_installed_packages()}
 available=package.get_available_packages()
-for pair in [('pt','en'),('en','es'),('en','fr')]:
+for pair in [('pt','en'),('en','es'),('en','fr'),('en','it')]:
     if pair not in installed:
         model=next(p for p in available if (p.from_code,p.to_code)==pair)
         package.install_from_path(model.download())

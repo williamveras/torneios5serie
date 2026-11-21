@@ -1,8 +1,8 @@
 import { useSyncExternalStore } from "react";
 import catalog from "@/locales/public.json";
 
-export type PublicLanguage = "pt" | "en" | "es" | "fr";
-export const languages: Record<PublicLanguage, string> = { pt: "Português", en: "English", es: "Español", fr: "Français" };
+export type PublicLanguage = "pt" | "en" | "es" | "fr" | "it";
+export const languages: Record<PublicLanguage, string> = { pt: "Português", en: "English", es: "Español", fr: "Français", it: "Italiano" };
 const listeners = new Set<() => void>();
 const valid = (value: string | null): value is PublicLanguage => !!value && Object.prototype.hasOwnProperty.call(languages, value);
 let selected: PublicLanguage = "pt";
@@ -28,7 +28,7 @@ export function setPublicLanguage(language: PublicLanguage) {
 }
 const subscribe = (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; };
 export const usePublicLanguage = () => useSyncExternalStore(subscribe, publicLanguage, () => "pt" as PublicLanguage);
-export const localeCode = () => ({ pt: "pt-BR", en: "en-US", es: "es-ES", fr: "fr-FR" })[publicLanguage()];
+export const localeCode = () => ({ pt: "pt-BR", en: "en-US", es: "es-ES", fr: "fr-FR", it: "it-IT" })[publicLanguage()];
 export function translate(source: string, language: PublicLanguage, vars: Record<string, string | number> = {}): string {
   const dictionary = language === "pt" ? {} : catalog[language] as Record<string, string>;
   let result = dictionary[source];
@@ -37,7 +37,7 @@ export function translate(source: string, language: PublicLanguage, vars: Record
     result = dictionary[match[2]] === undefined ? source : match[1] + dictionary[match[2]] + match[3];
     if (result === source && source.includes("; ")) result = source.split("; ").map(part => translate(part, language)).join("; ");
     const avos = match[2].match(/^(\d+) avos$/i);
-    if (avos && language !== "pt") result = ({ en: `Round of ${Number(avos[1]) * 2}`, es: `${avos[1]}avos de final`, fr: `${avos[1]}es de finale` })[language];
+    if (avos && language !== "pt") result = ({ en: `Round of ${Number(avos[1]) * 2}`, es: `${avos[1]}avos de final`, fr: `${avos[1]}es de finale`, it: `${avos[1]}esimi di finale` })[language];
   }
   return result.replace(/\{(\w+)\}/g, (token, key) => Object.prototype.hasOwnProperty.call(vars, key) ? String(vars[key]) : token).replace(/&ldquo;/g, "“").replace(/&rdquo;/g, "”");
 }

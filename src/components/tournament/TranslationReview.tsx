@@ -47,7 +47,7 @@ export default function TranslationReview({ tournamentId, kind = "rules", source
   return <div className="space-y-4 border-t pt-6">
     <h3 className="text-lg font-semibold">{kind === "rules" ? "Traduções do regulamento" : "Tradução da observação deste confronto"}</h3>
     <p className="text-sm text-muted-foreground">{kind === "rules" ? "Ao salvar o regulamento, o sistema traduz na VPS. Revise principalmente pontuações, critérios e prazos." : "Ao salvar a observação deste confronto, o sistema traduz na VPS."} Alterar o original invalida as traduções anteriores, incluindo revisões.</p>
-    <label className="flex gap-2 items-center">Idioma<select className="border rounded p-2 bg-background" value={language} onChange={e => setLanguage(e.target.value)}><option value="en">Inglês</option><option value="es">Espanhol</option><option value="fr">Francês</option></select></label>
+    <label className="flex gap-2 items-center">Idioma<select className="border rounded p-2 bg-background" value={language} onChange={e => setLanguage(e.target.value)}><option value="en">Inglês</option><option value="es">Espanhol</option><option value="fr">Francês</option><option value="it">Italiano</option></select></label>
     {isLoading && <p>Carregando traduções...</p>}{error && <p role="alert">Não foi possível carregar as traduções.</p>}
     {rows?.length === 0 && <p>{kind === "rules" ? "Salve um regulamento para iniciar as traduções." : "Nenhuma tradução disponível para a observação atual. Se acabou de salvar, aguarde a atualização."}</p>}
     {rows?.map(row => <Editor key={`${row.kind}-${row.source_id}-${row.language}-${row.source_hash}`} row={row} />)}

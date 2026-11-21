@@ -1,10 +1,10 @@
 BEGIN;
 UPDATE public.tournaments SET regulamento_resumo='Summary fixture' WHERE id='b21eec68-3681-4a37-9740-6dbb8703f61e';
 DO $$ DECLARE tid uuid:='b21eec68-3681-4a37-9740-6dbb8703f61e'; rid uuid; tok text; BEGIN
- IF (SELECT count(*) FROM tournament_security.translations WHERE tournament_id=tid AND kind='rules_summary')<>3 THEN RAISE EXCEPTION 'Summary queue missing'; END IF;
+ IF (SELECT count(*) FROM tournament_security.translations WHERE tournament_id=tid AND kind='rules_summary')<>4 THEN RAISE EXCEPTION 'Summary queue missing'; END IF;
  SELECT id INTO STRICT rid FROM public.match_results WHERE tournament_id=tid LIMIT 1;
  UPDATE public.match_results SET comentario='Public note fixture' WHERE id=rid;
- IF (SELECT count(*) FROM tournament_security.translations WHERE source_id=rid AND kind='result_note')<>3 THEN RAISE EXCEPTION 'Result queue missing'; END IF;
+ IF (SELECT count(*) FROM tournament_security.translations WHERE source_id=rid AND kind='result_note')<>4 THEN RAISE EXCEPTION 'Result queue missing'; END IF;
  IF NOT EXISTS(SELECT 1 FROM jsonb_array_elements(public.get_tournament_translations(tid,'en')) x WHERE x->>'source_text'='Public note fixture') THEN RAISE EXCEPTION 'Public note missing'; END IF;
  UPDATE public.match_results SET comentario='' WHERE id=rid;
  IF EXISTS(SELECT 1 FROM tournament_security.translations WHERE source_id=rid AND kind='result_note') THEN RAISE EXCEPTION 'Stale notes retained'; END IF;

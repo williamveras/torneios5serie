@@ -4,6 +4,10 @@ from translation_worker import translate_text
 
 
 class TranslationTests(unittest.TestCase):
+    def test_italian_ordinals_numbers_and_links(self):
+        with patch("argostranslate.translate.translate", return_value="Il terzo posto riceve tre punti"):
+            self.assertEqual(translate_text("Terceiro lugar recebe 3 pontos\nhttps://example.com/32", "it"), "Il terzo posto riceve tre punti\nhttps://example.com/32")
+
     def test_numeric_omission_retries_with_protected_values(self):
         def model(text, source, target):
             return {"2 jogadores precisam de 32 pontos.": "Players need points.", "jogadores precisam de": "players need", "pontos.": "points."}.get(text, text)

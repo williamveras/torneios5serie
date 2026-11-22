@@ -22,11 +22,11 @@ describe("configurable ranking", () => {
     const rows = [row("a", 3, 100), row("b", 3, 20), row("out", 99, 0, "Sem penalidades; Desistente")];
     expect(rank(rows, ["victory_points", "table_points"], true).map(r => r.playerId)).toEqual(["b", "a", "out"]);
   });
-  it("keeps legacy ranking when the new setting is absent", () => {
+  it("uses penalty counts even when the explicit setting is absent", () => {
     const rows = [row("a", 3, 100, "Outra"), row("a", 3, 100, "Outra", 2), row("b", 3, 100, "Outra"), row("b", 3, 100, undefined, 2)];
     expect(rank(rows, null)).toEqual(rank(rows));
-    expect(rank(rows).map(r => r.playerId)).toEqual(["a", "b"]);
-    expect(rank(rows)[0].wins).toBeUndefined();
+    expect(rank(rows).map(r => r.playerId)).toEqual(["b", "a"]);
+    expect(rank(rows)[0].penaltyCount).toBe(1);
   });
   it("resolves a direct match only within a two-player tie", () => {
     const rows = [row("a", 3, 20), row("b", 0, 100), row("a", 0, 10, undefined, 2), row("b", 3, 100, undefined, 3)];

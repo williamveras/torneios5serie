@@ -249,13 +249,12 @@
     "Apoio": "Support",
     "Pontos de vitória": "Win points",
     "Número de vitórias": "Number of wins",
-    "Menos penalidades sofridas": "Fewest penalties",
     "Pontos de mesa": "Table points",
     "Confronto direto": "Head-to-head",
-    "Ausência de penalidades (regra antiga)": "No penalties (previous rule)",
     "Critérios de classificação:": "Ranking criteria:",
     "Vitórias: {0}; ocorrências de penalidade: {1}.": "Wins: {0}; penalty occurrences: {1}.",
-    "Ocorrências de penalidade": "Penalty occurrences"
+    "Ocorrências de penalidade": "Penalty occurrences",
+    "Penalidades sofridas": "Penalties received"
   },
   "es": {
     " (rodada atual)": " (ronda actual)",
@@ -507,13 +506,12 @@
     "Apoio": "Apoyo",
     "Pontos de vitória": "Puntos de victoria",
     "Número de vitórias": "Número de victorias",
-    "Menos penalidades sofridas": "Menos penalizaciones",
     "Pontos de mesa": "Puntos de mesa",
     "Confronto direto": "Enfrentamiento directo",
-    "Ausência de penalidades (regra antiga)": "Sin penalizaciones (regla anterior)",
     "Critérios de classificação:": "Criterios de clasificación:",
     "Vitórias: {0}; ocorrências de penalidade: {1}.": "Victorias: {0}; penalizaciones: {1}.",
-    "Ocorrências de penalidade": "Penalizaciones recibidas"
+    "Ocorrências de penalidade": "Penalizaciones recibidas",
+    "Penalidades sofridas": "Penalizaciones recibidas"
   },
   "fr": {
     " (rodada atual)": " (tour actuel)",
@@ -765,13 +763,12 @@
     "Apoio": "Soutien",
     "Pontos de vitória": "Points de victoire",
     "Número de vitórias": "Nombre de victoires",
-    "Menos penalidades sofridas": "Moins de pénalités",
     "Pontos de mesa": "Points de table",
     "Confronto direto": "Confrontation directe",
-    "Ausência de penalidades (regra antiga)": "Absence de pénalités (ancienne règle)",
     "Critérios de classificação:": "Critères de classement :",
     "Vitórias: {0}; ocorrências de penalidade: {1}.": "Victoires : {0} ; pénalités reçues : {1}.",
-    "Ocorrências de penalidade": "Pénalités reçues"
+    "Ocorrências de penalidade": "Pénalités reçues",
+    "Penalidades sofridas": "Pénalités reçues"
   },
   "it": {
     " (rodada atual)": " (turno attuale)",
@@ -1023,12 +1020,11 @@
     "Apoio": "Sostegno",
     "Pontos de vitória": "Punti vittoria",
     "Número de vitórias": "Numero di vittorie",
-    "Menos penalidades sofridas": "Meno penalità ricevute",
     "Pontos de mesa": "Punti tavolo",
     "Confronto direto": "Scontro diretto",
-    "Ausência de penalidades (regra antiga)": "Assenza di penalità (regola precedente)",
     "Critérios de classificação:": "Criteri di classifica:",
     "Vitórias: {0}; ocorrências de penalidade: {1}.": "Vittorie: {0}; penalità ricevute: {1}.",
-    "Ocorrências de penalidade": "Penalità ricevute"
+    "Ocorrências de penalidade": "Penalità ricevute",
+    "Penalidades sofridas": "Penalità ricevute"
   }
 }

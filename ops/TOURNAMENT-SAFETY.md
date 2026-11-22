@@ -36,12 +36,13 @@ Operational checks: `systemctl status torneios-lifecycle.timer`,
 dirty/conflicts counts, and the tournament administrator's conflict notice.
 Failed scheduled draws now show the reason in the administrative draw list.
 
-Configurable tie-breakers: `tie_breaker_order = null` retains the legacy comparator
-and preserves its group signature. Explicit arrays always start with victory
-points; optional following criteria are wins, penalty occurrences, table points,
-head-to-head and legacy penalty presence. Each positive victory-point result
-counts as one win (fixed victory points make this equivalent to the primary
-criterion). Each penalized result counts once. Head-to-head resolves only a
-two-player tied block and is skipped between groups. Withdrawals and eliminations
-always rank last. Deploy the migration and rebuild the central lifecycle worker
-as well as all frontends; changing this logic only in the frontend is insufficient.
+Configurable tie-breakers always start with victory points. Optional following
+criteria are wins, penalty occurrences, table points and head-to-head. Missing
+configuration uses the default order with penalty counts. Each positive
+victory-point result counts as one win (fixed victory points make this equivalent
+to the primary criterion). Each penalized result counts once. Head-to-head
+resolves only a two-player tied block and is skipped between groups. Withdrawals
+and eliminations always rank last. The unify_penalty_criteria migration replaces
+legacy penalty presence, keeping an existing penalty-count criterion in its
+chosen position if both were configured. Deploy migrations and rebuild the
+central lifecycle worker as well as all frontends.

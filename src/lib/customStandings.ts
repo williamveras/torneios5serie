@@ -33,7 +33,6 @@ export function compareCriterion(a: StandingRow, b: StandingRow, criterion: Crit
     case "victory_points": return b.pontosJogo - a.pontosJogo;
     case "wins": return (b.wins || 0) - (a.wins || 0);
     case "penalties": return (a.penaltyCount || 0) - (b.penaltyCount || 0);
-    case "penalty_presence": return Number(a.hasPenalty) - Number(b.hasPenalty);
     case "table_points": return lowerWins ? a.pontosMesa - b.pontosMesa : b.pontosMesa - a.pontosMesa;
     default: return 0;
   }

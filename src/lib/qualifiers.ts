@@ -1,4 +1,4 @@
-import { validCriteria } from "./tiebreakers";
+import { validCriteria, defaultCriteria } from "./tiebreakers";
 import { compareCriterion } from "./customStandings";
 import type { Tables } from "@/integrations/supabase/types";
 import { computeStandings, type StandingRow } from "./standings";
@@ -111,19 +111,12 @@ export function computeQualifiers(
   }
 
   // Tie-break cross-grupo (sem confronto direto — só intra-grupo)
+  const crossCriteria = validCriteria(opts.criteria) ? opts.criteria : defaultCriteria(h2hFirst);
   const crossSort = (a: QualifierRow, b: QualifierRow) => {
-    if (validCriteria(opts.criteria)) {
-      for (const criterion of opts.criteria) {
-        const diff = compareCriterion(a, b, criterion, lowerWins);
-        if (diff) return diff;
-      }
-      return 0;
+    for (const criterion of crossCriteria) {
+      const diff = compareCriterion(a, b, criterion, lowerWins);
+      if (diff) return diff;
     }
-    if (a.pontosJogo !== b.pontosJogo) return b.pontosJogo - a.pontosJogo;
-    if (a.pontosMesa !== b.pontosMesa) {
-      return lowerWins ? a.pontosMesa - b.pontosMesa : b.pontosMesa - a.pontosMesa;
-    }
-    if (a.hasPenalty !== b.hasPenalty) return a.hasPenalty ? 1 : -1;
     return 0;
   };
   extras.sort(crossSort);

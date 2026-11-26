@@ -1,3 +1,4 @@
+import PendingDrawRoster from "./PendingDrawRoster";
 import { t as tr, usePublicLanguage, localeCode } from "@/lib/publicI18n";
 import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,6 +19,7 @@ interface ScheduledDrawLite {
     fase: string;
     scheduled_at: string;
     status: string;
+    kind?: string | null;
 }
 type TeamMembersMap = Record<string, {
     nome: string;
@@ -75,13 +77,13 @@ export default function PublicDraw({ matchups, players, fase, scheduledDraws = [
             return { grupo, items };
         });
     }, [faseMatchups]);
-    if (faseMatchups.length === 0) {
-        const pending = scheduledDraws
-            .filter((s) => s.fase === fase && s.status === "pending")
+    const pending = scheduledDraws
+            .filter((s) => s.fase === fase && s.status === "pending" && s.kind !== "grupos")
             .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime())[0];
-        if (pending) {
-            const dt = new Date(pending.scheduled_at);
-            return (<Card>
+    const pendingNotice = (() => {
+        if (!pending) return null;
+        const dt = new Date(pending.scheduled_at);
+        return (<Card>
           <CardContent className="py-12 text-center space-y-2">
             <Shuffle className="h-10 w-10 mx-auto mb-3 text-primary opacity-60"/>
             <p className="text-lg font-semibold">{tr("Sorteio agendado")}</p>
@@ -92,9 +94,12 @@ export default function PublicDraw({ matchups, players, fase, scheduledDraws = [
               {dt.toLocaleTimeString(localeCode(), { hour: "2-digit", minute: "2-digit" })}
             </p>
             <p className="text-xs text-muted-foreground pt-2">{tr("Volte nesta p\u00E1gina ap\u00F3s o hor\u00E1rio para ver os confrontos sorteados.")}</p>
+            <PendingDrawRoster drawId={pending.id}/>
           </CardContent>
         </Card>);
-        }
+    })();
+    if (faseMatchups.length === 0) {
+        if (pendingNotice) return pendingNotice;
         return (<Card>
         <CardContent className="py-12 text-center text-muted-foreground">
           <Shuffle className="h-10 w-10 mx-auto mb-3 opacity-40"/>
@@ -103,6 +108,7 @@ export default function PublicDraw({ matchups, players, fase, scheduledDraws = [
       </Card>);
     }
     return (<div className="space-y-6">
+      {pendingNotice}
       <p className="text-sm text-muted-foreground">{tr("Confrontos sorteados automaticamente pelo sistema para a ")}<strong>{tr(fase)}</strong>{tr(". Esta visualiza\u00E7\u00E3o garante a transpar\u00EAncia do sorteio.")}</p>
 
       {groups.map(({ grupo, items }) => (<section key={grupo} className="space-y-3">

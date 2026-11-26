@@ -204,12 +204,12 @@ export default function PublicTournament() {
     // ou um sorteio agendado pendente para ela.
     const drawFase = getActivePublicPhase(phaseStatuses, mainFases);
     const hasMatchupsForDrawFase = matchups.some((m) => (m.fase || "Fase de Grupos") === drawFase && (m as any).published === true);
-    const hasPendingDraw = scheduledDraws.some((s) => s.fase === drawFase && s.status === "pending");
+    const hasPendingDraw = scheduledDraws.some((s) => s.fase === drawFase && s.status === "pending" && s.kind !== "grupos");
     const showDrawTab = hasMatchupsForDrawFase || hasPendingDraw;
     const drawTabLabel = tr("Sorteio dos confrontos - {0}", { "0": tr(drawFase) });
     // Disposição dos grupos: só aparece em torneios COM Fase de Grupos
     const hasGroupsDefined = players.some((p) => p.grupo);
-    const hasPendingGroupDraw = scheduledDraws.some((s) => s.status === "pending" && ((s as any).kind === "grupos" || s.fase === "Fase de Grupos"));
+    const hasPendingGroupDraw = scheduledDraws.some((s) => s.status === "pending" && (s.kind === "grupos" || (!s.kind && s.fase === "Fase de Grupos")));
     const showGroupsTab = !eliminationOnly && (hasGroupsDefined || hasPendingGroupDraw);
     const campeaoId = (tournament as any).campeao_id as string | null | undefined;
     const campeao = campeaoId ? players.find(p => p.id === campeaoId) : null;

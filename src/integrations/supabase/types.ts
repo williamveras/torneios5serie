@@ -688,6 +688,7 @@ export type Database = {
     }
     Functions: {
       can_access_tournament: { Args: { _t: string }; Returns: boolean }
+      get_pending_draw_roster: { Args: { draw_id: string }; Returns: Json }
       execute_scheduled_draws: { Args: never; Returns: undefined }
       get_moderators_public: {
         Args: { _tournament_id: string }

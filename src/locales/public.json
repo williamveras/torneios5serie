@@ -254,7 +254,14 @@
     "Critérios de classificação:": "Ranking criteria:",
     "Vitórias: {0}; ocorrências de penalidade: {1}.": "Wins: {0}; penalty occurrences: {1}.",
     "Ocorrências de penalidade": "Penalty occurrences",
-    "Penalidades sofridas": "Penalties received"
+    "Penalidades sofridas": "Penalties received",
+    "Participantes do sorteio": "Draw participants",
+    "Nick não informado": "Nickname not provided",
+    "Total de participantes: {0}": "Total participants: {0}",
+    "Não foi possível carregar a lista. Tentaremos novamente em instantes.": "Unable to load the list. We will try again shortly.",
+    "A lista deste sorteio está aguardando revisão do organizador.": "The list for this draw is awaiting review by the organizer.",
+    "Este sorteio não está mais pendente. Atualize a página para consultar o resultado.": "This draw is no longer pending. Refresh the page to see the result.",
+    "A lista de participantes está sendo atualizada. Aguarde alguns instantes.": "The participant list is being updated. Please wait a moment."
   },
   "es": {
     " (rodada atual)": " (ronda actual)",
@@ -511,7 +518,14 @@
     "Critérios de classificação:": "Criterios de clasificación:",
     "Vitórias: {0}; ocorrências de penalidade: {1}.": "Victorias: {0}; penalizaciones: {1}.",
     "Ocorrências de penalidade": "Penalizaciones recibidas",
-    "Penalidades sofridas": "Penalizaciones recibidas"
+    "Penalidades sofridas": "Penalizaciones recibidas",
+    "Participantes do sorteio": "Participantes del sorteo",
+    "Nick não informado": "Nick no informado",
+    "Total de participantes: {0}": "Total de participantes: {0}",
+    "Não foi possível carregar a lista. Tentaremos novamente em instantes.": "No se pudo cargar la lista. Lo intentaremos de nuevo en unos instantes.",
+    "A lista deste sorteio está aguardando revisão do organizador.": "La lista de este sorteo está pendiente de revisión por el organizador.",
+    "Este sorteio não está mais pendente. Atualize a página para consultar o resultado.": "Este sorteo ya no está pendiente. Actualiza la página para consultar el resultado.",
+    "A lista de participantes está sendo atualizada. Aguarde alguns instantes.": "La lista de participantes se está actualizando. Espera unos instantes."
   },
   "fr": {
     " (rodada atual)": " (tour actuel)",
@@ -768,7 +782,14 @@
     "Critérios de classificação:": "Critères de classement :",
     "Vitórias: {0}; ocorrências de penalidade: {1}.": "Victoires : {0} ; pénalités reçues : {1}.",
     "Ocorrências de penalidade": "Pénalités reçues",
-    "Penalidades sofridas": "Pénalités reçues"
+    "Penalidades sofridas": "Pénalités reçues",
+    "Participantes do sorteio": "Participants au tirage au sort",
+    "Nick não informado": "Pseudo non renseigné",
+    "Total de participantes: {0}": "Nombre de participants : {0}",
+    "Não foi possível carregar a lista. Tentaremos novamente em instantes.": "Impossible de charger la liste. Une nouvelle tentative aura lieu dans quelques instants.",
+    "A lista deste sorteio está aguardando revisão do organizador.": "La liste de ce tirage attend la vérification de l’organisateur.",
+    "Este sorteio não está mais pendente. Atualize a página para consultar o resultado.": "Ce tirage n’est plus en attente. Actualisez la page pour consulter le résultat.",
+    "A lista de participantes está sendo atualizada. Aguarde alguns instantes.": "La liste des participants est en cours de mise à jour. Patientez quelques instants."
   },
   "it": {
     " (rodada atual)": " (turno attuale)",
@@ -1025,6 +1046,13 @@
     "Critérios de classificação:": "Criteri di classifica:",
     "Vitórias: {0}; ocorrências de penalidade: {1}.": "Vittorie: {0}; penalità ricevute: {1}.",
     "Ocorrências de penalidade": "Penalità ricevute",
-    "Penalidades sofridas": "Penalità ricevute"
+    "Penalidades sofridas": "Penalità ricevute",
+    "Participantes do sorteio": "Partecipanti al sorteggio",
+    "Nick não informado": "Nickname non indicato",
+    "Total de participantes: {0}": "Totale partecipanti: {0}",
+    "Não foi possível carregar a lista. Tentaremos novamente em instantes.": "Impossibile caricare la lista. Riproveremo tra poco.",
+    "A lista deste sorteio está aguardando revisão do organizador.": "La lista di questo sorteggio è in attesa di verifica da parte dell’organizzatore.",
+    "Este sorteio não está mais pendente. Atualize a página para consultar o resultado.": "Questo sorteggio non è più in attesa. Aggiorna la pagina per consultare il risultato.",
+    "A lista de participantes está sendo atualizada. Aguarde alguns instantes.": "La lista dei partecipanti è in aggiornamento. Attendi qualche istante."
   }
 }

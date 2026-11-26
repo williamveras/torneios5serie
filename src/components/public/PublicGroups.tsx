@@ -1,3 +1,4 @@
+import PendingDrawRoster from "./PendingDrawRoster";
 import { t as tr, usePublicLanguage, localeCode } from "@/lib/publicI18n";
 import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -65,13 +66,13 @@ export default function PublicGroups({ players, teamMembers = {}, scheduledDraws
                 .sort((a, b) => getPlayerDisplayName(a).localeCompare(getPlayerDisplayName(b))),
         }));
     }, [players]);
-    if (groups.length === 0) {
-        const pending = scheduledDraws
-            .filter((s) => s.status === "pending" && (s.kind === "grupos" || s.fase === "Fase de Grupos"))
+    const pending = scheduledDraws
+            .filter((s) => s.status === "pending" && (s.kind === "grupos" || (!s.kind && s.fase === "Fase de Grupos")))
             .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime())[0];
-        if (pending) {
-            const dt = new Date(pending.scheduled_at);
-            return (<Card>
+    const pendingNotice = (() => {
+        if (!pending) return null;
+        const dt = new Date(pending.scheduled_at);
+        return (<Card>
           <CardContent className="py-12 text-center space-y-2">
             <Users className="h-10 w-10 mx-auto mb-3 text-primary opacity-60"/>
             <p className="text-lg font-semibold">{tr("Sorteio dos grupos agendado")}</p>
@@ -82,9 +83,12 @@ export default function PublicGroups({ players, teamMembers = {}, scheduledDraws
               {dt.toLocaleTimeString(localeCode(), { hour: "2-digit", minute: "2-digit" })}
             </p>
             <p className="text-xs text-muted-foreground pt-2">{tr("Volte nesta p\u00E1gina ap\u00F3s o hor\u00E1rio para ver a disposi\u00E7\u00E3o dos grupos.")}</p>
+            <PendingDrawRoster drawId={pending.id}/>
           </CardContent>
         </Card>);
-        }
+    })();
+    if (groups.length === 0) {
+        if (pendingNotice) return pendingNotice;
         return (<Card>
         <CardContent className="py-12 text-center text-muted-foreground">
           <Users className="h-10 w-10 mx-auto mb-3 opacity-40"/>
@@ -93,6 +97,7 @@ export default function PublicGroups({ players, teamMembers = {}, scheduledDraws
       </Card>);
     }
     return (<div className="space-y-6">
+      {pendingNotice}
       <p className="text-sm text-muted-foreground">{tr("Segue a disposi\u00E7\u00E3o dos grupos para a fase de grupos!")}</p>
 
       <div className="grid gap-4 sm:grid-cols-2">

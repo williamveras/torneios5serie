@@ -519,6 +519,7 @@ export default function StandingsTab({ tournamentId }: Props) {
                           <TableHead className="w-16">#</TableHead>
                           <TableHead>Nick</TableHead>
                           <TableHead className="text-right">Pts Vitória</TableHead>
+                          <TableHead className="text-right">Número de vitórias</TableHead>
                           <TableHead className="text-right">Pts Mesa</TableHead>
                           <TableHead>Penalidades</TableHead>
                         </TableRow>
@@ -529,6 +530,7 @@ export default function StandingsTab({ tournamentId }: Props) {
                             <TableCell className="font-bold tabular-nums">{s.position}º</TableCell>
                             <TableCell className="font-medium">{s.nick || s.playerName}</TableCell>
                             <TableCell className="text-right tabular-nums">{s.pontosJogo}</TableCell>
+                            <TableCell className="text-right tabular-nums">{s.wins ?? 0}</TableCell>
                             <TableCell className="text-right tabular-nums">{s.pontosMesa}</TableCell>
                             <TableCell className={s.hasPenalty ? "text-destructive" : "text-muted-foreground"}>{s.penalidades}<RankingMetrics row={s} /></TableCell>
                           </TableRow>

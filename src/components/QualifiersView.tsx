@@ -66,6 +66,7 @@ function TableSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembe
               {!hidePosition && <TableHead className="w-12">#</TableHead>}
               <TableHead>{tr("Jogador")}</TableHead>
               <TableHead className="text-right whitespace-nowrap">{tr("Pts. vit\u00F3ria")}</TableHead>
+              <TableHead className="text-right whitespace-nowrap">{tr("Número de vitórias")}</TableHead>
               <TableHead className="text-right whitespace-nowrap">{tr("Pts. mesa")}</TableHead>
               <TableHead className="whitespace-nowrap">{tr("Penalidades")}</TableHead>
             </TableRow>
@@ -81,6 +82,7 @@ function TableSection({ title, rows, usePos, playerMesaMap, playerMap, teamMembe
                   {!hidePosition && <TableCell className="font-bold tabular-nums">{pos}{tr("\u00BA")}</TableCell>}
                   <TableCell className={`font-medium ${noWrapText}`}>{displayName}</TableCell>
                   <TableCell className={`text-right tabular-nums ${noWrapText}`}>{s.pontosJogo}</TableCell>
+                  <TableCell className={`text-right tabular-nums ${noWrapText}`}>{s.wins ?? 0}</TableCell>
                   <TableCell className={`text-right tabular-nums ${noWrapText}`}>{s.pontosMesa}</TableCell>
                   <TableCell className={`${noWrapText} ${s.hasPenalty ? "text-destructive" : "text-muted-foreground"}`}>
                     {tr(s.penalidades)}<RankingMetrics row={s} />
@@ -118,6 +120,7 @@ function ListSection({ title, rows, usePos, playerMesaMap, playerMap, teamMember
                   {pos}{tr("\u00BA")}</div>)}
               <div className="flex-1 min-w-0">
                 <p className={`font-medium ${scrollLine}`}><span className="public-line-content">{keepTogether(displayName)}</span></p>
+                <p className="text-sm font-medium">{tr("Número de vitórias")}: {s.wins ?? 0}</p>
                 <p className={`text-sm mt-0.5 ${scrollLine}`}>
                   <span className="public-line-content">{keepTogether(tr("{0} pontos de vit\u00F3ria, {1} pontos de mesa.", { "0": s.pontosJogo, "1": s.pontosMesa }))}</span>
                 </p>

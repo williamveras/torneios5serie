@@ -5,7 +5,7 @@ import type { StandingRow } from "@/lib/standings";
 export function RankingMetrics({ row }: { row: StandingRow }) {
   usePublicLanguage();
   if (row.wins === undefined) return null;
-  return <span className="block text-xs text-muted-foreground whitespace-normal">{t("Vitórias: {0}; ocorrências de penalidade: {1}.", { "0": row.wins, "1": row.penaltyCount || 0 })}</span>;
+  return <span className="block text-xs text-muted-foreground whitespace-normal">{t("Ocorrências de penalidade")}: {row.penaltyCount || 0}</span>;
 }
 export default function RankingCriteria({ criteria }: { criteria?: string[] | null }) {
   usePublicLanguage();
